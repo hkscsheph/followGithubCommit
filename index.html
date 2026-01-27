@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub Commit 實時追蹤器</title>
+    <style>
+      :root {
+        --bg-color: #0d1117;
+        --card-bg: #161b22;
+        --text-main: #c9d1d9;
+        --text-secondary: #8b949e;
+        --accent: #58a6ff;
+        --border: #30363d;
+        --success: #238636;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+          Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      input[type='password'] {
+        background: var(--bg-color);
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        padding: 8px;
+        border-radius: 6px;
+        width: 200px;
+      }
+
+      button {
+        background-color: var(--success);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background-color: #2ea043;
+      }
+      button:disabled {
+        background-color: var(--border);
+        cursor: not-allowed;
+      }
+
+      .status-bar {
+        margin-bottom: 15px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      /* Grid Layout */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+      }
+
+      /* User Card */
+      .card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 15px;
+        transition: transform 0.2s;
+        position: relative;
+      }
+
+      .card:hover {
+        border-color: var(--text-secondary);
+      }
+
+      .user-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+        background-color: var(--border);
+      }
+
+      .username {
+        font-weight: bold;
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .username:hover {
+        text-decoration: underline;
+      }
+
+      .last-active {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-left: auto;
+      }
+
+      .commit-info {
+        font-size: 0.9rem;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+
+      .repo-name {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        margin-bottom: 5px;
+      }
+
+      .commit-msg {
+        background: rgba(110, 118, 129, 0.1);
+        padding: 8px;
+        border-radius: 4px;
+        font-family: monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 0.7rem;
+        border-radius: 10px;
+        margin-left: 5px;
+      }
+      .badge-push {
+        background-color: #238636;
+        color: white;
+      }
+      .badge-none {
+        background-color: var(--border);
+        color: var(--text-secondary);
+      }
+      .badge-error {
+        background-color: #da3633;
+        color: white;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: var(--text-secondary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>GitHub Commit 追蹤儀表板</h1>
+        <div class="controls">
+          <input
+            type="password"
+            id="apiToken"
+            placeholder="GitHub Token (選填，避免被鎖)"
+          />
+          <button id="refreshBtn" onclick="fetchAllData()">立即刷新</button>
+        </div>
+      </header>
+
+      <div class="status-bar" id="statusBar">
+        準備就緒，請點擊刷新或等待自動更新...
+      </div>
+
+      <div id="userGrid" class="grid"></div>
+    </div>
+
+    <script>
+      // 監控目標名單
+      const targetUsers = [
+        '2223107-cami',
+        'Koodybiglookyea',
+        'haha197',
+        'kory520',
+        'kou1gn',
+        'BARON1118',
+        'v1ann',
+        'EmilyLau41',
+        '2526431-Michael',
+        'giovanniuufj',
+        '2526452-cmd',
+        '2526453',
+        '2526454-ship-it',
+        'hayden626',
+        'ethanhksc0930',
+        'AqursP',
+        '2223176-tech',
+      ];
+
+      const grid = document.getElementById('userGrid');
+      const statusBar = document.getElementById('statusBar');
+      const refreshBtn = document.getElementById('refreshBtn');
+
+      // 初始化卡片
+      function initCards() {
+        grid.innerHTML = '';
+        targetUsers.forEach((user) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.id = `card-${user}`;
+          card.innerHTML = `
+                <div class="user-header">
+                    <div class="avatar"></div>
+                    <div>
+                        <a href="https://github.com/${user}" target="_blank" class="username">${user}</a>
+                        <span class="badge badge-none" id="badge-${user}">等待中</span>
+                    </div>
+                </div>
+                <div class="commit-info" id="info-${user}">
+                    <div class="repo-name">讀取中...</div>
+                </div>
+            `;
+          grid.appendChild(card);
+        });
+      }
+
+      async function fetchUserEvents(username, token) {
+        const headers = token ? { Authorization: `token ${token}` } : {};
+        try {
+          const response = await fetch(
+            `https://api.github.com/users/${username}/events/public?per_page=5`,
+            { headers }
+          );
+
+          if (response.status === 404)
+            return { user: username, error: '用戶不存在' };
+          if (response.status === 403)
+            return { user: username, error: 'API 限制 (請填入 Token)' };
+          if (!response.ok) return { user: username, error: '未知錯誤' };
+
+          const events = await response.json();
+          // 尋找最新的 PushEvent
+          const pushEvent = events.find((e) => e.type === 'PushEvent');
+
+          return {
+            user: username,
+            data: pushEvent || null,
+            lastActive: events.length > 0 ? events[0].created_at : null,
+            avatar: events.length > 0 ? events[0].actor.avatar_url : null,
+          };
+        } catch (err) {
+          return { user: username, error: '網絡錯誤' };
+        }
+      }
+
+      async function fetchAllData() {
+        const token = document.getElementById('apiToken').value.trim();
+        refreshBtn.disabled = true;
+        refreshBtn.innerText = '更新中...';
+        statusBar.innerText = `正在抓取 ${targetUsers.length} 位用戶的資料...`;
+
+        const promises = targetUsers.map((user) =>
+          fetchUserEvents(user, token)
+        );
+        const results = await Promise.all(promises);
+
+        // 根據最後活動時間排序 (最新的在前面)
+        results.sort((a, b) => {
+          const dateA = a.data
+            ? new Date(a.data.created_at)
+            : a.lastActive
+            ? new Date(a.lastActive)
+            : new Date(0);
+          const dateB = b.data
+            ? new Date(b.data.created_at)
+            : b.lastActive
+            ? new Date(b.lastActive)
+            : new Date(0);
+          return dateB - dateA;
+        });
+
+        updateUI(results);
+
+        refreshBtn.disabled = false;
+        refreshBtn.innerText = '立即刷新';
+        statusBar.innerText = `更新完成於 ${new Date().toLocaleTimeString()}`;
+      }
+
+      function timeAgo(dateString) {
+        if (!dateString) return '很久以前';
+        const date = new Date(dateString);
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = seconds / 31536000;
+
+        if (interval > 1) return Math.floor(interval) + ' 年前';
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + ' 個月前';
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + ' 天前';
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + ' 小時前';
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + ' 分鐘前';
+        return '剛剛';
+      }
+
+      function updateUI(results) {
+        // 因為排序過了，我們使用 Flex order 或重新插入 DOM 來排序
+        // 這裡選擇清空並重新插入，確保視覺順序
+        grid.innerHTML = '';
+
+        results.forEach((res) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+
+          let statusBadge = '';
+          let contentHtml = '';
+          let avatarUrl = res.avatar || 'https://github.com/github.png?size=40';
+
+          if (res.error) {
+            statusBadge = `<span class="badge badge-error">${res.error}</span>`;
+            contentHtml = `<div class="repo-name" style="color:#da3633">無法讀取資料</div>`;
+          } else if (res.data) {
+            // 有 Push 資料
+            const repo = res.data.repo.name;
+            const msg = res.data.payload.commits[0]
+              ? res.data.payload.commits[0].message
+              : 'No message';
+            const time = timeAgo(res.data.created_at);
+
+            statusBadge = `<span class="badge badge-push">最新 Commit</span>`;
+            contentHtml = `
+                    <div class="repo-name">📂 ${repo}</div>
+                    <div class="commit-msg" title="${msg}">📝 ${msg}</div>
+                    <div class="last-active">🕒 ${time}</div>
+                `;
+          } else {
+            // 沒有 Push 資料，但有其他活動
+            const lastTime = res.lastActive
+              ? timeAgo(res.lastActive)
+              : '無近期活動';
+            statusBadge = `<span class="badge badge-none">無新 Commit</span>`;
+            contentHtml = `
+                    <div class="repo-name">近期無 Push 紀錄</div>
+                    <div class="last-active">最後活動: ${lastTime}</div>
+                `;
+          }
+
+          card.innerHTML = `
+                <div class="user-header">
+                    <img src="${avatarUrl}" class="avatar" alt="${res.user}">
+                    <div>
+                        <a href="https://github.com/${res.user}" target="_blank" class="username">${res.user}</a>
+                        ${statusBadge}
+                    </div>
+                </div>
+                <div class="commit-info">
+                    ${contentHtml}
+                </div>
+            `;
+          grid.appendChild(card);
+        });
+      }
+
+      // 啟動
+      initCards();
+      // 首次自動載入 (如果你希望打開就載入，請取消下面註解。但在沒有 Token 的情況下建議手動點擊)
+      fetchAllData();
+    </script>
+  </body>
+</html>
