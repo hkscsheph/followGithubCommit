@@ -210,6 +210,7 @@
     <script>
       // 監控目標名單
       const targetUsers = [
+        'hkscsheph',
         '2223107-cami',
         'Koodybiglookyea',
         'haha197',
@@ -355,7 +356,7 @@
           } else if (res.data) {
             // 有 Push 資料
             const repo = res.data.repo.name;
-            const msg = res.data.payload.commits[0]
+            const msg = res.data.payload.commits
               ? res.data.payload.commits[0].message
               : 'No message';
             const time = timeAgo(res.data.created_at);
