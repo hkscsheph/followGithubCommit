@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "start": "servor --reload"
+    "start": "node script.js"
   },
   "dependencies": {
-    "servor": "^4.0.2"
+    "dotenv": "^16.0.0"
   }
 }

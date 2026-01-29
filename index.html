@@ -233,6 +233,23 @@
       const grid = document.getElementById('userGrid');
       const statusBar = document.getElementById('statusBar');
       const refreshBtn = document.getElementById('refreshBtn');
+      const apiTokenInput = document.getElementById('apiToken');
+
+      // Load token from backend on page load
+      async function loadTokenFromEnv() {
+        try {
+          const response = await fetch('/api/token');
+          const data = await response.json();
+          if (data.token) {
+            apiTokenInput.value = data.token;
+            statusBar.innerText = '✓ Token 已從 .env 自動載入';
+            return true;
+          }
+        } catch (err) {
+          console.log('無法從後端載入 Token，請手動輸入');
+        }
+        return false;
+      }
 
       // 初始化卡片
       function initCards() {
@@ -397,8 +414,10 @@
 
       // 啟動
       initCards();
-      // 首次自動載入 (如果你希望打開就載入，請取消下面註解。但在沒有 Token 的情況下建議手動點擊)
-      fetchAllData();
+      loadTokenFromEnv().then(() => {
+        // 自動使用載入的 Token 進行首次抓取
+        fetchAllData();
+      });
     </script>
   </body>
 </html>
