@@ -278,7 +278,7 @@
         const headers = token ? { Authorization: `token ${token}` } : {};
         try {
           const response = await fetch(
-            `https://api.github.com/users/${username}/events/public?per_page=5`,
+            `https://api.github.com/users/${username}/events/public?per_page=30`,
             { headers }
           );
 
@@ -289,11 +289,13 @@
           if (!response.ok) return { user: username, error: '未知錯誤' };
 
           const events = await response.json();
-          // 尋找最新的 PushEvent
-          const pushEvent = events.find((e) => e.type === 'PushEvent');
-
-          // If we have a push event, fetch the commit message
-          if (pushEvent) {
+          
+          // Collect all push events
+          const pushEvents = events.filter((e) => e.type === 'PushEvent');
+          
+          // Extract commits from push events
+          const commits = [];
+          for (const pushEvent of pushEvents) {
             const repoName = pushEvent.repo.name;
             const commitSha = pushEvent.payload.head;
             
@@ -304,18 +306,27 @@
               );
               if (commitResponse.ok) {
                 const commitData = await commitResponse.json();
-                pushEvent.commitMessage = commitData.commit.message;
+                commits.push({
+                  message: commitData.commit.message,
+                  repo: repoName,
+                  sha: commitSha,
+                  date: commitData.commit.author.date,
+                  url: commitData.html_url
+                });
               }
             } catch (err) {
-              console.log(`Failed to fetch commit for ${username}`);
+              console.log(`Failed to fetch commit for ${username} in ${repoName}`);
             }
+            
+            if (commits.length >= 5) break;
           }
 
           return {
             user: username,
-            data: pushEvent || null,
+            commits: commits,
             lastActive: events.length > 0 ? events[0].created_at : null,
             avatar: events.length > 0 ? events[0].actor.avatar_url : null,
+            hasActivity: commits.length > 0
           };
         } catch (err) {
           return { user: username, error: '網絡錯誤' };
@@ -389,28 +400,24 @@
           if (res.error) {
             statusBadge = `<span class="badge badge-error">${res.error}</span>`;
             contentHtml = `<div class="repo-name" style="color:#da3633">無法讀取資料</div>`;
-          } else if (res.data) {
-            // 有 Push 資料
-            const repo = res.data.repo.name;
-            const msg = res.data.commitMessage || 'No message';
-            const time = timeAgo(res.data.created_at);
-
-            statusBadge = `<span class="badge badge-push">最新 Commit</span>`;
-            contentHtml = `
-                    <div class="repo-name">📂 ${repo}</div>
-                    <div class="commit-msg" title="${msg}">📝 ${msg}</div>
-                    <div class="last-active">🕒 ${time}</div>
-                `;
+          } else if (res.commits && res.commits.length > 0) {
+            // 有 Commits 資料
+            statusBadge = `<span class="badge badge-push">${res.commits.length} Commits</span>`;
+            const commitsHtml = res.commits.map((commit, idx) => {
+              const msg = commit.message.split('\n')[0].substring(0, 40); // 只取第一行，最多40字
+              const time = timeAgo(commit.date);
+              const repoShort = commit.repo.split('/')[1];
+              return `<div style="font-size: 0.8rem; margin-bottom: 5px; display: flex; gap: 8px; align-items: center;">
+                <a href="https://github.com/${commit.repo}" target="_blank" style="color: var(--accent); text-decoration: none; min-width: 50px; cursor: pointer;">${repoShort}</a>
+                <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📝 ${msg}</span>
+                <span style="color: var(--text-secondary); min-width: 60px; text-align: right;">${time}</span>
+              </div>`;
+            }).join('');
+            contentHtml = `<div style="padding-top: 8px;">${commitsHtml}</div>`;
           } else {
-            // 沒有 Push 資料，但有其他活動
-            const lastTime = res.lastActive
-              ? timeAgo(res.lastActive)
-              : '無近期活動';
-            statusBadge = `<span class="badge badge-none">無新 Commit</span>`;
-            contentHtml = `
-                    <div class="repo-name">近期無 Push 紀錄</div>
-                    <div class="last-active">最後活動: ${lastTime}</div>
-                `;
+            // 沒有 Commits 資料
+            statusBadge = `<span class="badge badge-none">無近期活動</span>`;
+            contentHtml = `<div class="repo-name">近期無 Push 紀錄</div>`;
           }
 
           card.innerHTML = `
