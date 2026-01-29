@@ -295,74 +295,68 @@
           // Collect all push events
           const pushEvents = events.filter((e) => e.type === 'PushEvent');
           
-          // Extract commits from push events
-          const commits = [];
-          const reposChecked = new Set();
-          
-          for (const pushEvent of pushEvents) {
-            const repoName = pushEvent.repo.name;
-            const commitSha = pushEvent.payload.head;
-            
-            try {
-              const commitResponse = await fetch(
-                `https://api.github.com/repos/${repoName}/commits/${commitSha}`,
-                { headers }
-              );
-              if (commitResponse.ok) {
-                const commitData = await commitResponse.json();
-                commits.push({
-                  message: commitData.commit.message,
-                  repo: repoName,
-                  sha: commitSha,
-                  date: commitData.commit.author.date,
-                  url: commitData.html_url
-                });
-                reposChecked.add(repoName);
+          // Fetch all commit details in parallel
+          const commitPromises = pushEvents.slice(0, 10).map(pushEvent => 
+            fetch(
+              `https://api.github.com/repos/${pushEvent.repo.name}/commits/${pushEvent.payload.head}`,
+              { headers }
+            )
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+            .then(data => {
+              if (data) {
+                return {
+                  message: data.commit.message,
+                  repo: pushEvent.repo.name,
+                  sha: data.sha,
+                  date: data.commit.author.date,
+                  url: data.html_url
+                };
               }
-            } catch (err) {
-              console.log(`Failed to fetch commit for ${username} in ${repoName}`);
-            }
-            
-            if (commits.length >= 5) break;
-          }
+              return null;
+            })
+          );
 
-          // If we don't have enough commits, try fetching from user's repos directly
+          let commits = (await Promise.all(commitPromises)).filter(c => c).slice(0, 5);
+
+          // If we don't have enough commits, fetch from repos
           if (commits.length < 5) {
             try {
               const reposResponse = await fetch(
-                `https://api.github.com/users/${username}/repos?sort=updated&per_page=10`,
+                `https://api.github.com/users/${username}/repos?sort=updated&per_page=5`,
                 { headers }
               );
               if (reposResponse.ok) {
                 const repos = await reposResponse.json();
-                for (const repo of repos) {
-                  if (reposChecked.has(repo.full_name)) continue;
-                  
-                  try {
-                    const commitsResponse = await fetch(
+                const repoNames = new Set(commits.map(c => c.repo));
+                
+                const repoCommitPromises = repos
+                  .filter(r => !repoNames.has(r.full_name))
+                  .slice(0, 5 - commits.length)
+                  .map(repo =>
+                    fetch(
                       `https://api.github.com/repos/${repo.full_name}/commits?per_page=1`,
                       { headers }
-                    );
-                    if (commitsResponse.ok) {
-                      const repoCommits = await commitsResponse.json();
-                      if (repoCommits.length > 0) {
-                        const commit = repoCommits[0];
-                        commits.push({
+                    )
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null)
+                    .then(data => {
+                      if (data && data.length > 0) {
+                        const commit = data[0];
+                        return {
                           message: commit.commit.message,
                           repo: repo.full_name,
                           sha: commit.sha,
                           date: commit.commit.author.date,
                           url: commit.html_url
-                        });
-                        reposChecked.add(repo.full_name);
+                        };
                       }
-                    }
-                  } catch (err) {
-                    console.log(`Failed to fetch commits from ${repo.full_name}`);
-                  }
-                  
-                  if (commits.length >= 5) break;
-                }
+                      return null;
+                    })
+                  );
+                
+                const repoCommits = (await Promise.all(repoCommitPromises)).filter(c => c);
+                commits = commits.concat(repoCommits).slice(0, 5);
               }
             } catch (err) {
               console.log(`Failed to fetch repos for ${username}`);
