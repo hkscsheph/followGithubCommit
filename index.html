@@ -295,29 +295,40 @@
           // Collect all push events
           const pushEvents = events.filter((e) => e.type === 'PushEvent');
           
-          // Fetch all commit details in parallel
-          const commitPromises = pushEvents.slice(0, 10).map(pushEvent => 
-            fetch(
-              `https://api.github.com/repos/${pushEvent.repo.name}/commits/${pushEvent.payload.head}`,
-              { headers }
-            )
-            .then(r => r.ok ? r.json() : null)
-            .catch(() => null)
-            .then(data => {
-              if (data) {
-                return {
-                  message: data.commit.message,
-                  repo: pushEvent.repo.name,
-                  sha: data.sha,
-                  date: data.commit.author.date,
-                  url: data.html_url
-                };
-              }
-              return null;
-            })
-          );
+          // Fetch all commits from push events in parallel
+          const commitPromises = [];
+          for (const pushEvent of pushEvents) {
+            const repoName = pushEvent.repo.name;
+            const head = pushEvent.payload.head;
+            const before = pushEvent.payload.before;
+            
+            // Use compare endpoint to get all commits in this push
+            commitPromises.push(
+              fetch(
+                `https://api.github.com/repos/${repoName}/compare/${before}...${head}`,
+                { headers }
+              )
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+              .then(data => {
+                if (data && data.commits && Array.isArray(data.commits)) {
+                  return data.commits.map(commit => ({
+                    message: commit.commit.message,
+                    repo: repoName,
+                    sha: commit.sha,
+                    date: commit.commit.author.date,
+                    url: commit.html_url
+                  }));
+                }
+                return [];
+              })
+            );
+          }
 
-          let commits = (await Promise.all(commitPromises)).filter(c => c).slice(0, 5);
+          const allCommitArrays = await Promise.all(commitPromises);
+          let commits = allCommitArrays.flat()
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5);
 
           // If we don't have enough commits, fetch from repos
           if (commits.length < 5) {
