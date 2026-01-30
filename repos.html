@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub 用戶倉庫</title>
+    <style>
+      :root {
+        --bg-color: #0d1117;
+        --card-bg: #161b22;
+        --text-main: #c9d1d9;
+        --text-secondary: #8b949e;
+        --accent: #58a6ff;
+        --border: #30363d;
+        --success: #238636;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+          Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+
+      .back-btn {
+        background-color: var(--accent);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+
+      .back-btn:hover {
+        background-color: #79c0ff;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+
+      .user-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: var(--border);
+      }
+
+      .user-details h2 {
+        margin: 0 0 5px 0;
+        font-size: 1.3rem;
+      }
+
+      .user-details p {
+        margin: 5px 0;
+        color: var(--text-secondary);
+      }
+
+      .repos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+      }
+
+      .repo-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 15px;
+        transition: transform 0.2s, border-color 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .repo-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+
+      .repo-name {
+        font-weight: bold;
+        color: var(--accent);
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+      }
+
+      .repo-description {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+        flex-grow: 1;
+      }
+
+      .repo-meta {
+        display: flex;
+        gap: 15px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+      }
+
+      .repo-meta span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+      }
+
+      .error {
+        background-color: #da3633;
+        color: white;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+      }
+
+      .empty {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1 id="pageTitle">GitHub 倉庫</h1>
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+      </header>
+
+      <div id="userInfo" class="user-info" style="display: none;">
+        <img id="userAvatar" class="user-avatar" alt="avatar" />
+        <div class="user-details">
+          <h2 id="userName"></h2>
+          <p id="userBio"></p>
+          <p id="userStats"></p>
+        </div>
+      </div>
+
+      <div id="errorMsg" class="error" style="display: none;"></div>
+
+      <div id="loading" class="loading">載入中...</div>
+
+      <div id="reposGrid" class="repos-grid" style="display: none;"></div>
+
+      <div id="empty" class="empty" style="display: none;">
+        此用戶沒有公開倉庫
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const username = params.get('user');
+      const token = params.get('token');
+
+      function goBack() {
+        window.history.back();
+      }
+
+      async function loadUserRepos() {
+        if (!username) {
+          document.getElementById('errorMsg').innerText = '未指定用戶';
+          document.getElementById('errorMsg').style.display = 'block';
+          document.getElementById('loading').style.display = 'none';
+          return;
+        }
+
+        const headers = token ? { Authorization: `token ${token}` } : {};
+
+        try {
+          // Fetch user info
+          const userResponse = await fetch(
+            `https://api.github.com/users/${username}`,
+            { headers }
+          );
+
+          if (userResponse.status === 404) {
+            throw new Error('用戶不存在');
+          }
+
+          if (!userResponse.ok) {
+            throw new Error('無法載入用戶資訊');
+          }
+
+          const userData = await userResponse.json();
+
+          // Display user info
+          document.getElementById('userName').innerText = userData.name || userData.login;
+          document.getElementById('userBio').innerText = userData.bio || '無個人簡介';
+          document.getElementById('userStats').innerText = `公開倉庫: ${userData.public_repos} | 粉絲: ${userData.followers}`;
+          document.getElementById('userAvatar').src = userData.avatar_url;
+          document.getElementById('userInfo').style.display = 'flex';
+
+          // Fetch repos
+          const reposResponse = await fetch(
+            `https://api.github.com/users/${username}/repos?sort=updated&per_page=100`,
+            { headers }
+          );
+
+          if (!reposResponse.ok) {
+            throw new Error('無法載入倉庫列表');
+          }
+
+          const repos = await reposResponse.json();
+
+          if (repos.length === 0) {
+            document.getElementById('empty').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+            return;
+          }
+
+          // Display repos
+          const grid = document.getElementById('reposGrid');
+          grid.innerHTML = '';
+
+          repos.forEach((repo) => {
+            const card = document.createElement('a');
+            card.className = 'repo-card';
+            card.href = repo.html_url;
+            card.target = '_blank';
+
+            const language = repo.language || '未指定';
+            const stars = repo.stargazers_count || 0;
+            const forks = repo.forks_count || 0;
+
+            card.innerHTML = `
+              <div class="repo-name">${repo.name}</div>
+              <div class="repo-description">${repo.description || '無描述'}</div>
+              <div class="repo-meta">
+                <span>⭐ ${stars}</span>
+                <span>🔀 ${forks}</span>
+                <span>📝 ${language}</span>
+              </div>
+            `;
+
+            grid.appendChild(card);
+          });
+
+          grid.style.display = 'grid';
+          document.getElementById('loading').style.display = 'none';
+        } catch (err) {
+          document.getElementById('errorMsg').innerText = `錯誤: ${err.message}`;
+          document.getElementById('errorMsg').style.display = 'block';
+          document.getElementById('loading').style.display = 'none';
+        }
+      }
+
+      // Load on page load
+      loadUserRepos();
+    </script>
+  </body>
+</html>

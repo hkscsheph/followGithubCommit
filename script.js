@@ -28,10 +28,16 @@ const server = http.createServer((req, res) => {
 
   // Serve static files
   let filePath = req.url === '/' ? '/index.html' : req.url;
+  // Remove query string from URL
+  filePath = filePath.split('?')[0];
   filePath = path.join(__dirname, filePath);
+  
+  console.log(`Requested: ${req.url}`);
+  console.log(`Looking for: ${filePath}`);
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
+      console.log(`Error: ${err.message}`);
       res.writeHead(404);
       res.end('Not Found');
       return;
