@@ -175,6 +175,3 @@
 [submodule "portfolio/crazyjayhm/-"]
 	path = portfolio/crazyjayhm/-
 	url = https://github.com/crazyjayhm/-.git
-[submodule "portfolio/crazyjayhm/adrian-ai"]
-	path = portfolio/crazyjayhm/adrian-ai
-	url = https://github.com/crazyjayhm/adrian-ai.git
