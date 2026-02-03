@@ -1,8 +1,7 @@
 [build]
   publish = "."
+  command = "bash build.sh"
 
-[build.environment]
-  GIT_SUBMODULES = "true"
 
 
 
