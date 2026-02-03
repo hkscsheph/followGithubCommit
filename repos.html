@@ -169,7 +169,7 @@
 
         try {
           // Fetch portfolio folder contents from server
-          const response = await fetch(`/api/portfolio/${username}`);
+          const response = await fetch(`/.netlify/functions/portfolio?username=${username}`);
 
           if (response.status === 404) {
             document.getElementById('empty').style.display = 'block';

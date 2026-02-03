@@ -258,7 +258,7 @@
       // Load token from backend on page load
       async function loadTokenFromEnv() {
         try {
-          const response = await fetch('/api/token');
+          const response = await fetch('/.netlify/functions/token');
           const data = await response.json();
           if (data.token) {
             apiTokenInput.value = data.token;
