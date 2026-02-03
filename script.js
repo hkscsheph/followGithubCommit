@@ -7,6 +7,16 @@ const path = require('path');
 const PORT = 3000;
 const githubToken = process.env.GITHUB_TOKEN;
 
+// Repos to exclude from portfolio display
+const excludedRepos = [
+  'node_modules',
+  '.git',
+  '.vscode',
+  'dist',
+  'build',
+  'coverage', 
+];
+
 const server = http.createServer((req, res) => {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,6 +33,31 @@ const server = http.createServer((req, res) => {
   if (req.url === '/api/token' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ token: githubToken || '' }));
+    return;
+  }
+
+  // API endpoint to get portfolio items
+  if (req.url.startsWith('/api/portfolio/') && req.method === 'GET') {
+    const username = req.url.replace('/api/portfolio/', '');
+    const portfolioPath = path.join(__dirname, 'portfolio', username);
+
+    fs.readdir(portfolioPath, { withFileTypes: true }, (err, files) => {
+      if (err) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Portfolio not found' }));
+        return;
+      }
+
+      const items = files
+        .filter((file) => !excludedRepos.includes(file.name))
+        .map((file) => ({
+          name: file.name,
+          type: file.isDirectory() ? 'directory' : 'file',
+        }));
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(items));
+    });
     return;
   }
 

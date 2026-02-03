@@ -67,9 +67,6 @@
 [submodule "portfolio/EmilyLau41/20250908-1-st-repo"]
 	path = portfolio/EmilyLau41/20250908-1-st-repo
 	url = https://github.com/EmilyLau41/20250908-1-st-repo.git
-[submodule "portfolio/2526431-Michael/stackblitz-starters-qtuzkwll"]
-	path = portfolio/2526431-Michael/stackblitz-starters-qtuzkwll
-	url = https://github.com/2526431-Michael/stackblitz-starters-qtuzkwll.git
 [submodule "portfolio/giovanniuufj/stackblitz-starters-wbfpwsvd"]
 	path = portfolio/giovanniuufj/stackblitz-starters-wbfpwsvd
 	url = https://github.com/giovanniuufj/stackblitz-starters-wbfpwsvd.git
