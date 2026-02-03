@@ -53,6 +53,7 @@ const server = http.createServer((req, res) => {
         .map((file) => ({
           name: file.name,
           type: file.isDirectory() ? 'directory' : 'file',
+          repoUrl: `https://github.com/${username}/${file.name}`
         }));
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
