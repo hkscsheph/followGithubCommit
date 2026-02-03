@@ -12,10 +12,7 @@ git submodule add https://github.com/BARON1118/liftCounter.git portfolio/BARON11
 git submodule add https://github.com/BARON1118/cotd.git portfolio/BARON1118/cotd
 git submodule add https://github.com/EmilyLau41/cheat-room.git portfolio/EmilyLau41/cheat-room
 git submodule add https://github.com/EmilyLau41/skyapp.git portfolio/EmilyLau41/skyapp
-git submodule add https://github.com/EmilyLau41/-.git portfolio/EmilyLau41/-
 git submodule add https://github.com/EmilyLau41/emotionapp.git portfolio/EmilyLau41/emotionapp
-git submodule add https://github.com/2526452-cmd/-V2.0.git portfolio/2526452-cmd/-V2.0
-git submodule add https://github.com/2526452-cmd/-.git portfolio/2526452-cmd/-
 git submodule add https://github.com/2526452-cmd/q3-hk-.git portfolio/2526452-cmd/q3-hk-
 git submodule add https://github.com/2526452-cmd/Q4-HKSC-FRIEND.git portfolio/2526452-cmd/Q4-HKSC-FRIEND
 git submodule add https://github.com/2526452-cmd/q1.git portfolio/2526452-cmd/q1
@@ -24,7 +21,6 @@ git submodule add https://github.com/2526453/weeeeeeeeeeee.git portfolio/2526453
 git submodule add https://github.com/2526453/meow.git portfolio/2526453/meow
 git submodule add https://github.com/2526454-ship-it/CW-chcicken-Warfare.git portfolio/2526454-ship-it/CW-chcicken-Warfare
 git submodule add https://github.com/2526454-ship-it/GT.git portfolio/2526454-ship-it/GT
-git submodule add https://github.com/2526454-ship-it/ni.git portfolio/2526454-ship-it/ni
 git submodule add https://github.com/hayden626/Hayden-mugffd.git portfolio/hayden626/Hayden-mugffd
 git submodule add https://github.com/hayden626/po-1.git portfolio/hayden626/po-1
 git submodule add https://github.com/hayden626/stackblitz-starters-lvgcssag.git portfolio/hayden626/stackblitz-starters-lvgcssag
@@ -40,8 +36,6 @@ git submodule add https://github.com/2223176-tech/nba-marks-scot.git portfolio/2
 git submodule add https://github.com/2223176-tech/nba-marks-sc.git portfolio/2223176-tech/nba-marks-sc
 git submodule add https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1.git portfolio/2526470-collab/stackblitz-starters-8lhyu1m1
 git submodule add https://github.com/2526470-collab/hksc-woman-toilet.git portfolio/2526470-collab/hksc-woman-toilet
-git submodule add https://github.com/2526470-collab/-messages.git portfolio/2526470-collab/-messages
 git submodule add https://github.com/2526470-collab/Krystal.git portfolio/2526470-collab/Krystal
 git submodule add https://github.com/crazyjayhm/adrian-.git portfolio/crazyjayhm/adrian-
 git submodule add https://github.com/crazyjayhm/adrian-ai.git portfolio/crazyjayhm/adrian-ai
-git submodule add https://github.com/crazyjayhm/-.git portfolio/crazyjayhm/-

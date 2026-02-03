@@ -16,15 +16,9 @@
 [submodule "portfolio/BARON1118/cotd"]
 	path = portfolio/BARON1118/cotd
 	url = https://github.com/BARON1118/cotd.git
-[submodule "portfolio/EmilyLau41/-"]
-	path = portfolio/EmilyLau41/-
-	url = https://github.com/EmilyLau41/-.git
 [submodule "portfolio/EmilyLau41/emotionapp"]
 	path = portfolio/EmilyLau41/emotionapp
 	url = https://github.com/EmilyLau41/emotionapp.git
-[submodule "portfolio/2526452-cmd/-"]
-	path = portfolio/2526452-cmd/-
-	url = https://github.com/2526452-cmd/-.git
 [submodule "portfolio/2526452-cmd/q3-hk-"]
 	path = portfolio/2526452-cmd/q3-hk-
 	url = https://github.com/2526452-cmd/q3-hk-.git
@@ -82,9 +76,6 @@
 [submodule "portfolio/2526470-collab/Krystal"]
 	path = portfolio/2526470-collab/Krystal
 	url = https://github.com/2526470-collab/Krystal.git
-[submodule "portfolio/crazyjayhm/-"]
-	path = portfolio/crazyjayhm/-
-	url = https://github.com/crazyjayhm/-.git
 [submodule "portfolio/2223107-cami/ICT_AI_W3_Cami"]
 	path = portfolio/2223107-cami/ICT_AI_W3_Cami
 	url = https://github.com/2223107-cami/ICT_AI_W3_Cami.git
@@ -106,9 +97,6 @@
 [submodule "portfolio/EmilyLau41/skyapp"]
 	path = portfolio/EmilyLau41/skyapp
 	url = https://github.com/EmilyLau41/skyapp.git
-[submodule "portfolio/2526452-cmd/-V2.0"]
-	path = portfolio/2526452-cmd/-V2.0
-	url = https://github.com/2526452-cmd/-V2.0.git
 [submodule "portfolio/2526454-ship-it/CW-chcicken-Warfare"]
 	path = portfolio/2526454-ship-it/CW-chcicken-Warfare
 	url = https://github.com/2526454-ship-it/CW-chcicken-Warfare.git
@@ -124,9 +112,6 @@
 [submodule "portfolio/2526470-collab/stackblitz-starters-8lhyu1m1"]
 	path = portfolio/2526470-collab/stackblitz-starters-8lhyu1m1
 	url = https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1.git
-[submodule "portfolio/2526470-collab/-messages"]
-	path = portfolio/2526470-collab/-messages
-	url = https://github.com/2526470-collab/-messages.git
 [submodule "portfolio/crazyjayhm/adrian-"]
 	path = portfolio/crazyjayhm/adrian-
 	url = https://github.com/crazyjayhm/adrian-.git
