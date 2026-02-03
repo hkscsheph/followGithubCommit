@@ -3,6 +3,11 @@
     "user": "2223107-cami",
     "repos": [
       {
+        "name": "ICT_AI_W3_Cami",
+        "url": "https://github.com/2223107-cami/ICT_AI_W3_Cami.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "ICT_AI_W2_Cami",
         "url": "https://github.com/2223107-cami/ICT_AI_W2_Cami.git",
         "description": "Created with StackBlitz ⚡️"
@@ -11,16 +16,6 @@
         "name": "ICT_AI_W1_Cami",
         "url": "https://github.com/2223107-cami/ICT_AI_W1_Cami.git",
         "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "stackblitz-starters-juh8i8kg",
-        "url": "https://github.com/2223107-cami/stackblitz-starters-juh8i8kg.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "20250908-1st-repo",
-        "url": "https://github.com/2223107-cami/20250908-1st-repo.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
@@ -28,8 +23,8 @@
     "user": "Koodybiglookyea",
     "repos": [
       {
-        "name": "stackblitz-starters-evha69ez",
-        "url": "https://github.com/Koodybiglookyea/stackblitz-starters-evha69ez.git",
+        "name": "koody",
+        "url": "https://github.com/Koodybiglookyea/koody.git",
         "description": "Created with StackBlitz ⚡️"
       }
     ]
@@ -37,6 +32,11 @@
   {
     "user": "haha197",
     "repos": [
+      {
+        "name": "jslearning",
+        "url": "https://github.com/haha197/jslearning.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "chat",
         "url": "https://github.com/haha197/chat.git",
@@ -46,37 +46,16 @@
         "name": "stackblitz-starters-nwue149t",
         "url": "https://github.com/haha197/stackblitz-starters-nwue149t.git",
         "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "stackblitz-starters-tdnqalwb",
-        "url": "https://github.com/haha197/stackblitz-starters-tdnqalwb.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
   {
     "user": "kory520",
-    "repos": [
-      {
-        "name": "stackblitz-starters-o7jy76f6",
-        "url": "https://github.com/Kory520/stackblitz-starters-o7jy76f6.git",
-        "description": "Created with StackBlitz ⚡️"
-      }
-    ]
+    "repos": []
   },
   {
     "user": "kou1gn",
     "repos": [
-      {
-        "name": "uhuh",
-        "url": "https://github.com/kou1gn/uhuh.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "hhhhhh",
-        "url": "https://github.com/kou1gn/hhhhhh.git",
-        "description": "oh my braincells"
-      },
       {
         "name": "20250912-1st-repo",
         "url": "https://github.com/kou1gn/20250912-1st-repo.git",
@@ -88,103 +67,71 @@
     "user": "BARON1118",
     "repos": [
       {
-        "name": "liftCounter",
-        "url": "https://github.com/BARON1118/liftCounter.git",
+        "name": "stackblitz-hksc-daily",
+        "url": "https://github.com/BARON1118/stackblitz-hksc-daily.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "lift",
-        "url": "https://github.com/BARON1118/lift.git",
+        "name": "stackblitz-starters-rjvwwbjg",
+        "url": "https://github.com/BARON1118/stackblitz-starters-rjvwwbjg.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
+        "name": "liftCounter",
+        "url": "https://github.com/BARON1118/liftCounter.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
         "name": "cotd",
         "url": "https://github.com/BARON1118/cotd.git",
         "description": null
-      },
-      {
-        "name": "20250908-1st-repa",
-        "url": "https://github.com/BARON1118/20250908-1st-repa.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "20250908-1st-repo-",
-        "url": "https://github.com/BARON1118/20250908-1st-repo-.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "20250908-1st-repo",
-        "url": "https://github.com/BARON1118/20250908-1st-repo.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "stackblitz-starters-ymnevq8v",
-        "url": "https://github.com/BARON1118/stackblitz-starters-ymnevq8v.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
   {
     "user": "v1ann",
-    "repos": [
-      {
-        "name": "stackblitz-starters-q35xbrkr",
-        "url": "https://github.com/v1ann/stackblitz-starters-q35xbrkr.git",
-        "description": "Created with StackBlitz ⚡️"
-      }
-    ]
+    "repos": []
   },
   {
     "user": "EmilyLau41",
     "repos": [
+      {
+        "name": "cheat-room",
+        "url": "https://github.com/EmilyLau41/cheat-room.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
+        "name": "skyapp",
+        "url": "https://github.com/EmilyLau41/skyapp.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "-",
         "url": "https://github.com/EmilyLau41/-.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "stackblitz-starters-phgvusra",
-        "url": "https://github.com/EmilyLau41/stackblitz-starters-phgvusra.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
         "name": "emotionapp",
         "url": "https://github.com/EmilyLau41/emotionapp.git",
         "description": null
-      },
-      {
-        "name": "20250908-1-st-repo",
-        "url": "https://github.com/EmilyLau41/20250908-1-st-repo.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
   {
     "user": "giovanniuufj",
-    "repos": [
-      {
-        "name": "stackblitz-starters-wbfpwsvd",
-        "url": "https://github.com/giovanniuufj/stackblitz-starters-wbfpwsvd.git",
-        "description": "Created with StackBlitz ⚡️"
-      }
-    ]
+    "repos": []
   },
   {
     "user": "2526452-cmd",
     "repos": [
       {
-        "name": "stackblitz-starters-cjqexwz5",
-        "url": "https://github.com/2526452-cmd/stackblitz-starters-cjqexwz5.git",
+        "name": "-V2.0",
+        "url": "https://github.com/2526452-cmd/-V2.0.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
         "name": "-",
         "url": "https://github.com/2526452-cmd/-.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "stackblitz-starters-zdtmo5kf",
-        "url": "https://github.com/2526452-cmd/stackblitz-starters-zdtmo5kf.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
@@ -198,28 +145,8 @@
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "Q3-HKSC-FRIEND",
-        "url": "https://github.com/2526452-cmd/Q3-HKSC-FRIEND.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "stackblitz-starters-hkyjevp5",
-        "url": "https://github.com/2526452-cmd/stackblitz-starters-hkyjevp5.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
         "name": "q1",
         "url": "https://github.com/2526452-cmd/q1.git",
-        "description": null
-      },
-      {
-        "name": "20250908-1st-repo-EEE",
-        "url": "https://github.com/2526452-cmd/20250908-1st-repo-EEE.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "Dio",
-        "url": "https://github.com/2526452-cmd/Dio.git",
         "description": null
       }
     ]
@@ -238,30 +165,20 @@
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "rawrrrrr",
-        "url": "https://github.com/2526453/rawrrrrr.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "rawr",
-        "url": "https://github.com/2526453/rawr.git",
-        "description": null
-      },
-      {
         "name": "meow",
         "url": "https://github.com/2526453/meow.git",
         "description": null
-      },
-      {
-        "name": "stackblitz-starters-6bfqemhf",
-        "url": "https://github.com/2526453/stackblitz-starters-6bfqemhf.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
   {
     "user": "2526454-ship-it",
     "repos": [
+      {
+        "name": "CW-chcicken-Warfare",
+        "url": "https://github.com/2526454-ship-it/CW-chcicken-Warfare.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "GT",
         "url": "https://github.com/2526454-ship-it/GT.git",
@@ -271,11 +188,6 @@
         "name": "ni",
         "url": "https://github.com/2526454-ship-it/ni.git",
         "description": null
-      },
-      {
-        "name": "20250908-1st-repo",
-        "url": "https://github.com/2526454-ship-it/20250908-1st-repo.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
@@ -283,13 +195,13 @@
     "user": "hayden626",
     "repos": [
       {
-        "name": "po-1",
-        "url": "https://github.com/hayden626/po-1.git",
+        "name": "Hayden-mugffd",
+        "url": "https://github.com/hayden626/Hayden-mugffd.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "aoo",
-        "url": "https://github.com/hayden626/aoo.git",
+        "name": "po-1",
+        "url": "https://github.com/hayden626/po-1.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
@@ -298,24 +210,9 @@
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "Hayden",
-        "url": "https://github.com/hayden626/Hayden.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
         "name": "4M24",
         "url": "https://github.com/hayden626/4M24.git",
         "description": null
-      },
-      {
-        "name": "stackblitz-starters-9ttfzune",
-        "url": "https://github.com/hayden626/stackblitz-starters-9ttfzune.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "stackblitz-starters-4ywnsw4z",
-        "url": "https://github.com/hayden626/stackblitz-starters-4ywnsw4z.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
@@ -323,13 +220,18 @@
     "user": "ethanhksc0930",
     "repos": [
       {
+        "name": "simple-Hz-generator",
+        "url": "https://github.com/ethanhksc0930/simple-Hz-generator.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "piano-hehehehehhahhahhahahhahaaahhahahaha",
         "url": "https://github.com/ethanhksc0930/piano-hehehehehhahhahhahahhahaaahhahahaha.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "20250908-1st-repo",
-        "url": "https://github.com/ethanhksc0930/20250908-1st-repo.git",
+        "name": "Sigma-Oscilloscope-simulator",
+        "url": "https://github.com/ethanhksc0930/Sigma-Oscilloscope-simulator.git",
         "description": "Created with StackBlitz ⚡️"
       }
     ]
@@ -347,6 +249,11 @@
   {
     "user": "2223176-tech",
     "repos": [
+      {
+        "name": "nba-daniel",
+        "url": "https://github.com/2223176-tech/nba-daniel.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "stackblitz-starters-6xsn86o2nbanbanbanba",
         "url": "https://github.com/2223176-tech/stackblitz-starters-6xsn86o2nbanbanbanba.git",
@@ -366,16 +273,6 @@
         "name": "nba-marks-sc",
         "url": "https://github.com/2223176-tech/nba-marks-sc.git",
         "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "nba-daniel",
-        "url": "https://github.com/2223176-tech/nba-daniel.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "stackblitz-starters-gee75ekx",
-        "url": "https://github.com/2223176-tech/stackblitz-starters-gee75ekx.git",
-        "description": "Created with StackBlitz ⚡️"
       }
     ]
   },
@@ -383,8 +280,18 @@
     "user": "2526470-collab",
     "repos": [
       {
+        "name": "stackblitz-starters-8lhyu1m1",
+        "url": "https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "hksc-woman-toilet",
         "url": "https://github.com/2526470-collab/hksc-woman-toilet.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
+        "name": "-messages",
+        "url": "https://github.com/2526470-collab/-messages.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
@@ -397,6 +304,11 @@
   {
     "user": "crazyjayhm",
     "repos": [
+      {
+        "name": "adrian-",
+        "url": "https://github.com/crazyjayhm/adrian-.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "adrian-ai",
         "url": "https://github.com/crazyjayhm/adrian-ai.git",

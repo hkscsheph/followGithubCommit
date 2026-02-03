@@ -7,36 +7,21 @@ const { execSync } = require('child_process');
 
 const githubToken = process.env.GITHUB_TOKEN;
 
-// Blacklist configuration - add student usernames or repo names to skip
-const BLACKLIST = {
-  students: [], // e.g., ['user1', 'user2']
-  repos: [
-    'stackblitz-starters-evha69ez',
-    '20250908-1st-repo',
-    'stackblitz-starters-phgvusra',
-    '20250908-1-st-repo',
-    'stackblitz-starters-ymnevq8v',
-    '20250908-1st-repo-',
-    '20250908-1st-repa',
-    'stackblitz-starters-tdnqalwb',
-    'stackblitz-starters-9ttfzune',
-    'stackblitz-starters-4ywnsw4z',
-    '20250908-1st-repo-EEE',
-    'Dio',
-    'stackblitz-starters-gee75ekx',
-    'stackblitz-starters-6bfqemhf',
-    'hhhhhh',
-    'uhuh',
-    'stackblitz-starters-o7jy76f6',
-    'stackblitz-starters-q35xbrkr',
-    'stackblitz-starters-wbfpwsvd'
-  ]     // e.g., ['repo-name-1', 'repo-name-2']
-};
+// Load blacklist from blacklist.json
+function getBlacklist() {
+  try {
+    const content = fs.readFileSync(path.join(__dirname, '../blacklist.json'), 'utf8');
+    return JSON.parse(content);
+  } catch (err) {
+    console.warn('Could not read blacklist.json, using empty blacklist');
+    return { students: [], repos: [] };
+  }
+}
 
 // Repos list from repos-list.json
 function getReposList() {
   try {
-    const content = fs.readFileSync('repos-list.json', 'utf8');
+    const content = fs.readFileSync(path.join(__dirname, '../repos-list.json'), 'utf8');
     return JSON.parse(content);
   } catch (err) {
     console.error('Could not read repos-list.json. Run gather-repos.js first.');
@@ -177,6 +162,7 @@ function buildReactProject(localPath) {
 
 async function updatePortfolio() {
   const reposList = getReposList();
+  const BLACKLIST = getBlacklist();
   console.log(`Found ${reposList.length} students\n`);
 
   for (const student of reposList) {

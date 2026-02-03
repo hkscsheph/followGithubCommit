@@ -40,7 +40,7 @@ function removeEmptyDirs(dirPath) {
   return removed;
 }
 
-const portfolioPath = path.join(__dirname, 'portfolio');
+const portfolioPath = path.join(__dirname, '..', 'portfolio');
 console.log('Cleaning empty portfolio folders...\n');
 
 const count = removeEmptyDirs(portfolioPath);

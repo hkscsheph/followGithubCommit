@@ -2,6 +2,7 @@
 require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 
 const targetUsers = [
   '2223107-cami',
@@ -25,6 +26,17 @@ const targetUsers = [
 ];
 
 const githubToken = process.env.GITHUB_TOKEN;
+
+// Load blacklist from blacklist.json
+function getBlacklist() {
+  try {
+    const content = fs.readFileSync(path.join(__dirname, '../blacklist.json'), 'utf8');
+    return JSON.parse(content);
+  } catch (err) {
+    console.warn('Could not read blacklist.json, using empty blacklist');
+    return { students: [], repos: [] };
+  }
+}
 
 function fetchUserRepos(username) {
   return new Promise((resolve, reject) => {
@@ -69,10 +81,16 @@ function fetchUserRepos(username) {
 async function gatherAllRepos() {
   console.log(`Gathering repos for ${targetUsers.length} users...\n`);
   
+  const BLACKLIST = getBlacklist();
   const results = [];
+  
   for (const user of targetUsers) {
     try {
       const result = await fetchUserRepos(user);
+      
+      // Filter out blacklisted repos
+      result.repos = result.repos.filter(repo => !BLACKLIST.repos.includes(repo.name));
+      
       results.push(result);
       
       if (result.error) {
@@ -89,7 +107,7 @@ async function gatherAllRepos() {
   }
 
   // Save to file
-  fs.writeFileSync('repos-list.json', JSON.stringify(results, null, 2));
+  fs.writeFileSync(path.join(__dirname, '../repos-list.json'), JSON.stringify(results, null, 2));
   console.log('\n✓ Saved to repos-list.json');
   
   // Generate submodule commands
@@ -102,7 +120,7 @@ async function gatherAllRepos() {
     }
   });
 
-  fs.writeFileSync('add-submodules.sh', commands.join('\n'));
+  fs.writeFileSync(path.join(__dirname, '../add-submodules.sh'), commands.join('\n'));
   console.log('✓ Generated add-submodules.sh');
 }
 
