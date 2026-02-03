@@ -1,0 +1,6 @@
+[build]
+  publish = "."
+  command = ""
+
+[build.environment]
+  GIT_SUBMODULES = "true"
