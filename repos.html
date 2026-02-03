@@ -168,20 +168,10 @@
         document.getElementById('pageTitle').innerText = `${username} 的作品集`;
 
         try {
-          // Fetch portfolio folder contents from server
-          const response = await fetch(`/.netlify/functions/portfolio?username=${username}`);
-
-          if (response.status === 404) {
-            document.getElementById('empty').style.display = 'block';
-            document.getElementById('loading').style.display = 'none';
-            return;
-          }
-
-          if (!response.ok) {
-            throw new Error(`無法載入作品集 (${response.status})`);
-          }
-
-          const items = await response.json();
+          // Fetch portfolio data from static JSON file
+          const response = await fetch('/portfolio-data.json');
+          const allData = await response.json();
+          const items = allData[username] || [];
 
           if (!items || items.length === 0) {
             document.getElementById('empty').style.display = 'block';

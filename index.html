@@ -257,17 +257,8 @@
 
       // Load token from backend on page load
       async function loadTokenFromEnv() {
-        try {
-          const response = await fetch('/.netlify/functions/token');
-          const data = await response.json();
-          if (data.token) {
-            apiTokenInput.value = data.token;
-            statusBar.innerText = '✓ Token 已從 .env 自動載入';
-            return true;
-          }
-        } catch (err) {
-          console.log('無法從後端載入 Token，請手動輸入');
-        }
+        // Token must be manually entered by user for security
+        statusBar.innerText = '請輸入 GitHub Token 以開始';
         return false;
       }
 
