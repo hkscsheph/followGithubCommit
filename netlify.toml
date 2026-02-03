@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  command = "bash build.sh"
+  command = "bash scripts/build.sh"
 
 
 
