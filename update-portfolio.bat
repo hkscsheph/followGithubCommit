@@ -12,6 +12,11 @@ echo [0/6] Cleaning submodule working directories...
 git submodule foreach --recursive "git clean -fd && git reset --hard" 2>nul
 echo.
 
+REM Checkout default branch in submodules
+echo [0.5/6] Checking out default branches in submodules...
+git submodule foreach "git checkout -B main origin/main 2>nul || git checkout -B master origin/master 2>nul || true"
+echo.
+
 REM Step 1: Gather repos
 echo [1/6] Gathering latest repositories...
 node scripts\gather-repos.js
@@ -71,7 +76,7 @@ if errorlevel 1 (
   echo Warning: No changes to commit or commit failed
 ) else (
   echo Pushing to remote...
-  git push
+  git push --recurse-submodules=no
   if errorlevel 1 (
     echo Warning: Failed to push to remote
   )
