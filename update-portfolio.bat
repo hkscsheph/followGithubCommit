@@ -7,6 +7,11 @@ echo   Portfolio Update Sequence
 echo ========================================
 echo.
 
+REM Clean any uncommitted submodule changes first
+echo [0/6] Cleaning submodule working directories...
+git submodule foreach --recursive "git clean -fd && git reset --hard" 2>nul
+echo.
+
 REM Step 1: Gather repos
 echo [1/6] Gathering latest repositories...
 node scripts\gather-repos.js
