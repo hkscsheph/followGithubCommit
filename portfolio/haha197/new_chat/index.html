@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Supabase 即時聊天室</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      #chat-box {
+        border: 1px solid #ddd;
+        height: 400px;
+        overflow-y: scroll;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        background: #f9f9f9;
+      }
+      .message {
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 5px;
+        background: white;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .user {
+        font-weight: bold;
+        color: #3b82f6;
+      }
+      .inputs {
+        display: flex;
+        gap: 10px;
+        flex-direction: column;
+      }
+      input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        padding: 10px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2563eb;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>即時聊天室</h2>
+
+    <div id="chat-box">正在讀取訊息...</div>
+
+    <div class="inputs">
+      <input
+        type="text"
+        id="username"
+        placeholder="你的暱稱"
+        value="匿名用戶"
+      />
+      <input type="text" id="content" placeholder="輸入訊息內容..." />
+      <button id="send-btn">發送訊息</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

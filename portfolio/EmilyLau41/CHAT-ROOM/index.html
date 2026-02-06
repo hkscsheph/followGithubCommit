@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原生 JS 即時聊天室</title>
+    <style>
+        /* 基本排版 */
+        body { font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #e5ddd5; }
+        
+        /* 訊息顯示區 */
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        
+        /* 訊息氣泡樣式 */
+        .msg { background: white; padding: 8px 12px; border-radius: 8px; max-width: 75%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; position: relative; }
+        .msg.mine { align-self: flex-end; background: #dcf8c6; }
+        .sender { font-size: 0.7rem; color: #888; font-weight: bold; margin-bottom: 4px; display: block; }
+        .chat-img { max-width: 100%; border-radius: 6px; margin-top: 8px; display: block; cursor: pointer; }
+
+        /* 下方輸入區 */
+        .input-area { background: #f0f0f0; padding: 12px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #ccc; position: relative; z-index: 100; }
+        
+        /* 修正 input 無法輸入的問題：確保沒有被遮擋且寬度正確 */
+        input[type="text"] { 
+            flex: 1; 
+            padding: 10px 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 20px; 
+            outline: none; 
+            font-size: 16px; /* 防止 iOS 自動放大 */
+            background: white;
+        }
+
+        .icon-btn { cursor: pointer; font-size: 1.5rem; user-select: none; }
+        #send-btn { background: #128c7e; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        #send-btn:disabled { background: #bbb; }
+
+        /* 上傳狀態 */
+        #status-bar { font-size: 0.8rem; color: #555; padding: 2px 15px; background: #eee; display: none; }
+    </style>
+</head>
+<body>
+
+<div id="chat-window"></div>
+<div id="status-bar">正在處理...</div>
+
+<div class="input-area">
+    <input type="text" id="username" placeholder="暱稱" style="flex: 0 0 70px;">
+    
+    <label class="icon-btn" title="上傳圖片">
+        📷
+        <input type="file" id="image-input" hidden accept="image/*">
+    </label>
+    
+    <input type="text" id="msg-input" placeholder="輸入訊息..." autocomplete="off">
+    
+    <button id="send-btn">➤</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    // 1. 初始化 Supabase (請替換為你的資訊)
+    const SUPABASE_URL = 'https://dhypkutxhcfjpzmlufxr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_1k3-mNqoqErdRgxC0P11zA_fXVopcwJ';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const chatWindow = document.getElementById('chat-window');
+    const msgInput = document.getElementById('msg-input');
+    const userInput = document.getElementById('username');
+    const imageInput = document.getElementById('image-input');
+    const sendBtn = document.getElementById('send-btn');
+    const statusBar = document.getElementById('status-bar');
+
+    // 2. 渲染訊息函式
+    function renderMessage(msg) {
+        const isMine = msg.sender === userInput.value && userInput.value !== '';
+        const div = document.createElement('div');
+        div.className = `msg ${isMine ? 'mine' : ''}`;
+        
+        let contentHtml = `<span class="sender">${msg.sender || '匿名'}</span>`;
+        if (msg.content) contentHtml += `<div>${msg.content}</div>`;
+        if (msg.image_url) {
+            contentHtml += `<a href="${msg.image_url}" target="_blank"><img src="${msg.image_url}" class="chat-img"></a>`;
+        }
+        
+        div.innerHTML = contentHtml;
+        chatWindow.appendChild(div);
+        
+        // 滾動到底部
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // 3. 發送訊息與上傳圖片邏輯
+    async function handleSend() {
+        const sender = userInput.value.trim() || '匿名者';
+        const content = msgInput.value.trim();
+        const imageFile = imageInput.files[0];
+
+        if (!content && !imageFile) return;
+
+        // 鎖定 UI
+        sendBtn.disabled = true;
+        msgInput.disabled = true;
+        let imageUrl = null;
+
+        try {
+            // A. 處理圖片上傳
+            if (imageFile) {
+                statusBar.style.display = 'block';
+                statusBar.innerText = '正在上傳圖片...';
+                
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                
+                const { data: uploadData, error: uploadError } = await _supabase.storage
+                    .from('chat_images')
+                    .upload(fileName, imageFile);
+
+                if (uploadError) throw uploadError;
+
+                // 取得圖片公開網址
+                const { data: { publicUrl } } = _supabase.storage
+                    .from('chat_images')
+                    .getPublicUrl(fileName);
+                
+                imageUrl = publicUrl;
+            }
+
+            // B. 寫入資料庫
+            const { error: dbError } = await _supabase
+                .from('messages')
+                .insert([{ sender, content, image_url: imageUrl }]);
+
+            if (dbError) throw dbError;
+
+            // C. 成功後清空
+            msgInput.value = '';
+            imageInput.value = '';
+            statusBar.style.display = 'none';
+
+        } catch (err) {
+            console.error('Error:', err);
+            alert('錯誤: ' + err.message);
+        } finally {
+            sendBtn.disabled = false;
+            msgInput.disabled = false;
+            msgInput.focus();
+        }
+    }
+
+    // 4. 初始化：載入歷史與監聽即時更新
+    async function init() {
+        // 載入最近 50 條訊息
+        const { data, error } = await _supabase
+            .from('messages')
+            .select('*')
+            .order('created_at', { ascending: true })
+            .limit(50);
+        
+        if (data) data.forEach(renderMessage);
+
+        // 開啟 Realtime 監聽
+        _supabase
+            .channel('public:messages')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                renderMessage(payload.new);
+            })
+            .subscribe();
+    }
+
+    // 事件監聽
+    sendBtn.onclick = handleSend;
+    msgInput.onkeydown = (e) => {
+        if (e.key === 'Enter') handleSend();
+    };
+
+    // 啟動
+    init();
+</script>
+</body>
+</html>

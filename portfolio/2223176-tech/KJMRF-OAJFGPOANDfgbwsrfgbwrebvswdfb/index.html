@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wizard Duel: Record Breaker</title>
+    <style>
+        body { margin: 0; background: #050b1a; color: #fff; font-family: 'Arial Black', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        canvas { background: #000; border: 5px solid #ff0055; box-shadow: 0 0 50px rgba(255, 0, 85, 0.4); }
+        .hud { display: flex; justify-content: space-between; width: 900px; padding: 10px; background: #111; border-radius: 10px 10px 0 0; }
+        .record-box { position: absolute; top: 10px; right: 10px; background: rgba(255, 215, 0, 0.2); padding: 10px; border: 1px solid gold; border-radius: 5px; color: gold; }
+        .overlay { position: absolute; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); z-index: 100; }
+        button { padding: 15px 30px; font-size: 1.5rem; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="record-box">🏆 ALL-TIME BEST STAGE: <span id="highScore">1</span></div>
+
+    <div id="deathScreen" class="overlay">
+        <h1 style="color: #ff3333;">YOU DIED</h1>
+        <h2 id="finalScoreMsg"></h2>
+        <button onclick="location.reload()">RETRY</button>
+    </div>
+
+    <div class="hud">
+        <div style="color: #00ffcc;">HP: <span id="p1HP">100</span></div>
+        <div id="stageName" style="color: #ff0055;">STAGE: 1</div>
+        <div style="color: #ff3333;">BOSS: <span id="p2HP">100</span></div>
+    </div>
+
+    <canvas id="magicCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('magicCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 900;
+        canvas.height = 500;
+
+        let level = 1;
+        let projectiles = [];
+        let isDead = false;
+        const keys = {};
+
+        // Load High Score from Browser Memory
+        let savedRecord = localStorage.getItem('wizardHighScore') || 1;
+        document.getElementById('highScore').innerText = savedRecord;
+
+        const p1 = { x: 100, y: 250, hp: 100, speed: 6, color: '#00ffcc' };
+        const boss = { x: 750, y: 250, hp: 100, maxHp: 100, color: '#ff0055', size: 40 };
+
+        window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
+        window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
+
+        function saveRecord() {
+            if (level > savedRecord) {
+                localStorage.setItem('wizardHighScore', level);
+                document.getElementById('highScore').innerText = level;
+            }
+        }
+
+        function triggerLevelUp() {
+            saveRecord(); // Record progress every time you win
+
+            if (level === 1) level = 2;
+            else if (level === 2) level = 4;
+            else if (level === 4) {
+                level = 5;
+                p1.hp = Math.min(100, p1.hp + 40); // Level 5 Heal Reward!
+            }
+            else if (level === 5) level = 10;
+            else {
+                // Victory over Level 10
+                level = "MAX";
+                saveRecord();
+                alert("YOU ARE THE ARCH-WIZARD!");
+                location.reload();
+                return;
+            }
+
+            boss.maxHp = (level === "MAX" ? 2000 : level * 120);
+            boss.hp = boss.maxHp;
+            boss.size = 40 + (level * 5);
+            document.getElementById('stageName').innerText = "STAGE: " + level;
+        }
+
+        function update() {
+            if (isDead) return;
+
+            // Player Movement
+            if (keys['w'] || keys['arrowup']) p1.y -= p1.speed;
+            if (keys['s'] || keys['arrowdown']) p1.y += p1.speed;
+            if (keys['a'] || keys['arrowleft']) p1.x -= p1.speed;
+            if (keys['d'] || keys['arrowright']) p1.x += p1.speed;
+
+            // Boss AI
+            let speedFactor = level === "MAX" ? 10 : level;
+            boss.y = 250 + Math.sin(Date.now() * (0.002 * speedFactor)) * 180;
+
+            // Combat Logic
+            if (Math.random() < 0.01 * speedFactor) {
+                projectiles.push({ x: boss.x, y: boss.y, vx: -(5 + speedFactor), vy: 0, owner: 'boss' });
+            }
+
+            projectiles.forEach((proj, i) => {
+                proj.x += proj.vx;
+                if (proj.owner === 'boss' && Math.hypot(proj.x - p1.x, proj.y - p1.y) < 30) {
+                    p1.hp -= (2 * speedFactor);
+                    projectiles.splice(i, 1);
+                    if (p1.hp <= 0) {
+                        isDead = true;
+                        saveRecord();
+                        document.getElementById('finalScoreMsg').innerText = "Highest Stage: " + level;
+                        document.getElementById('deathScreen').style.display = 'flex';
+                    }
+                }
+                if (proj.owner === 'p1' && Math.hypot(proj.x - boss.x, proj.y - boss.y) < boss.size) {
+                    boss.hp -= 20;
+                    projectiles.splice(i, 1);
+                    if (boss.hp <= 0) triggerLevelUp();
+                }
+            });
+
+            document.getElementById('p1HP').innerText = Math.max(0, Math.floor(p1.hp));
+            document.getElementById('p2HP').innerText = Math.max(0, Math.floor(boss.hp));
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (isDead) return;
+
+            // Draw Player
+            ctx.fillStyle = p1.color;
+            ctx.shadowBlur = 20; ctx.shadowColor = p1.color;
+            ctx.beginPath(); ctx.arc(p1.x, p1.y, 20, 0, Math.PI*2); ctx.fill();
+
+            // Draw Boss
+            ctx.fillStyle = boss.color;
+            ctx.shadowColor = boss.color;
+            ctx.beginPath();
+            let sides = level >= 5 ? 10 : 4;
+            for(let i=0; i<=sides; i++) {
+                let angle = (i/sides) * Math.PI * 2;
+                let r = i % 2 === 0 ? boss.size : boss.size/1.5;
+                ctx.lineTo(boss.x + Math.cos(angle)*r, boss.y + Math.sin(angle)*r);
+            }
+            ctx.fill();
+
+            projectiles.forEach(p => {
+                ctx.fillStyle = (p.owner === 'p1') ? p1.color : boss.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill();
+            });
+
+            ctx.shadowBlur = 0;
+            update();
+            requestAnimationFrame(draw);
+        }
+
+        window.onmousedown = () => {
+            if (!isDead) projectiles.push({ x: p1.x, y: p1.y, vx: 15, vy: 0, owner: 'p1' });
+        };
+
+        draw();
+    </script>
+</body>
+</html>//wdsd

@@ -1,0 +1,106 @@
+/* Container & Background */
+body {
+  background-color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+#chat-container {
+  width: 100%;
+  max-width: 450px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e5ea;
+  background: #fff;
+}
+
+/* Scrollable Message Area */
+#messages {
+  flex: 1;
+  overflow-y: scroll;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The Message Bubbles */
+.msg {
+  max-width: 70%;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.4;
+  position: relative;
+  word-wrap: break-word;
+}
+
+/* "Sent" Messages (Blue) */
+.msg.sent {
+  align-self: flex-end;
+  background-color: #007aff; /* Apple Blue */
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+/* "Received" Messages (Grey) */
+.msg.received {
+  align-self: flex-start;
+  background-color: #e5e5ea; /* Apple Light Grey */
+  color: black;
+  border-bottom-left-radius: 4px;
+}
+
+/* Username Label */
+.msg b {
+  display: block;
+  font-size: 10px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Input Area mimicking the iOS text bar */
+#input-area {
+  padding: 10px 15px;
+  border-top: 1px solid #e5e5ea;
+  display: flex;
+  align-items: center;
+  background: #fbfbfb;
+}
+
+input[id="messageInput"] {
+  flex: 1;
+  border: 1px solid #d1d1d6;
+  border-radius: 20px;
+  padding: 8px 15px;
+  outline: none;
+  font-size: 15px;
+}
+
+input[id="username"] {
+  border: none;
+  background: transparent;
+  font-weight: bold;
+  color: #007aff;
+  width: 60px;
+  margin-right: 10px;
+  outline: none;
+}
+
+button {
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}

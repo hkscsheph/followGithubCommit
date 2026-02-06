@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Many IQ Racing - AI Edition</title>
+    <style>
+        body { margin: 0; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Segoe UI', sans-serif; }
+        canvas { background: #1b5e20; border: 5px solid #333; box-shadow: 0 0 50px #000; }
+        .stats { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; border: 1px solid #555; }
+        .rank { color: #00e5ff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="stats">
+        <div>PLAYER 1 (RED): <span id="p1Laps">0</span>/3</div>
+        <div class="rank">AI BOT (BLUE): <span id="aiLaps">0</span>/3</div>
+    </div>
+    <canvas id="raceCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('raceCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 900;
+        canvas.height = 600;
+
+        // The AI's "Brain": A list of points it must drive toward
+        const waypoints = [
+            {x: 700, y: 530}, {x: 800, y: 300}, {x: 700, y: 70}, 
+            {x: 450, y: 50},  {x: 200, y: 70},  {x: 100, y: 300}, 
+            {x: 200, y: 530}, {x: 450, y: 550}
+        ];
+
+        const player = { x: 400, y: 520, color: "#ff3d00", angle: Math.PI/2, speed: 0, laps: 0, crossed: false };
+        const ai = { x: 400, y: 560, color: "#2979ff", angle: Math.PI/2, speed: 0, laps: 0, crossed: false, targetIdx: 0 };
+
+        const keys = {};
+        window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
+        window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
+
+        function drawTrack() {
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 120;
+            ctx.beginPath();
+            ctx.ellipse(450, 300, 350, 230, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Finish Line
+            ctx.fillStyle = "white";
+            ctx.fillRect(445, 470, 10, 120);
+        }
+
+        function updateAI() {
+            let target = waypoints[ai.targetIdx];
+            
+            // 1. Calculate angle to target
+            let dx = target.x - ai.x;
+            let dy = target.y - ai.y;
+            let desiredAngle = Math.atan2(dy, dx) + Math.PI/2;
+
+            // 2. Smoothly rotate toward target
+            let angleDiff = desiredAngle - ai.angle;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            
+            ai.angle += angleDiff * 0.08;
+
+            // 3. Acceleration
+            ai.speed += 0.15;
+            ai.speed *= 0.96;
+            if (ai.speed > 5.5) ai.speed = 5.5;
+
+            // 4. If close to waypoint, move to next one
+            if (Math.hypot(dx, dy) < 60) {
+                ai.targetIdx = (ai.targetIdx + 1) % waypoints.length;
+            }
+        }
+
+        function updatePlayer() {
+            if (keys['arrowup'] || keys['w']) player.speed += 0.2;
+            if (keys['arrowdown'] || keys['s']) player.speed -= 0.1;
+            
+            player.speed *= 0.97;
+            const turnDir = player.speed >= 0 ? 1 : -1;
+            if (keys['arrowleft'] || keys['a']) player.angle -= 0.06 * turnDir;
+            if (keys['arrowright'] || keys['d']) player.angle += 0.06 * turnDir;
+
+            if (player.speed > 8) player.speed = 8;
+        }
+
+        function drive(obj) {
+            obj.x += Math.sin(obj.angle) * obj.speed;
+            obj.y -= Math.cos(obj.angle) * obj.speed;
+
+            // Lap Logic
+            if (obj.x > 440 && obj.x < 460 && obj.y > 470) {
+                if (!obj.crossed) {
+                    obj.laps++; obj.crossed = true;
+                    if(obj === player) document.getElementById('p1Laps').innerText = obj.laps;
+                    if(obj === ai) document.getElementById('aiLaps').innerText = obj.laps;
+                }
+            } else if (obj.x < 400) { obj.crossed = false; }
+        }
+
+        function drawCar(obj) {
+            ctx.save();
+            ctx.translate(obj.x, obj.y);
+            ctx.rotate(obj.angle);
+            ctx.fillStyle = obj.color;
+            ctx.fillRect(-12, -20, 24, 40);
+            ctx.fillStyle = "black";
+            ctx.fillRect(-10, -15, 20, 8); // Windshield
+            ctx.restore();
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawTrack();
+            
+            updatePlayer();
+            updateAI();
+            
+            drive(player);
+            drive(ai);
+            
+            drawCar(player);
+            drawCar(ai);
+            
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>

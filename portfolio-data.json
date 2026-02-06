@@ -6,6 +6,11 @@
       "repoUrl": "https://github.com/2526453/chatroom-but-GREEEEEEEEEEEN"
     },
     {
+      "name": "greenmeow",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526453/greenmeow"
+    },
+    {
       "name": "meow",
       "type": "directory",
       "repoUrl": "https://github.com/2526453/meow"
@@ -17,6 +22,11 @@
     }
   ],
   "2223107-cami": [
+    {
+      "name": "ICT_AI2.0_Cami",
+      "type": "directory",
+      "repoUrl": "https://github.com/2223107-cami/ICT_AI2.0_Cami"
+    },
     {
       "name": "ICT_AI_W1_Cami",
       "type": "directory",
@@ -34,6 +44,16 @@
     }
   ],
   "2223176-tech": [
+    {
+      "name": "KJMRF-OAJFGPOAND",
+      "type": "directory",
+      "repoUrl": "https://github.com/2223176-tech/KJMRF-OAJFGPOAND"
+    },
+    {
+      "name": "KJMRF-OAJFGPOANDfgbwsrfgbwrebvswdfb",
+      "type": "directory",
+      "repoUrl": "https://github.com/2223176-tech/KJMRF-OAJFGPOANDfgbwsrfgbwrebvswdfb"
+    },
     {
       "name": "nba-daniel",
       "type": "directory",
@@ -55,6 +75,11 @@
       "repoUrl": "https://github.com/2223176-tech/one-game"
     },
     {
+      "name": "racr-track-daniel-wong-",
+      "type": "directory",
+      "repoUrl": "https://github.com/2223176-tech/racr-track-daniel-wong-"
+    },
+    {
       "name": "stackblitz-starters-6xsn86o2nbanbanbanba",
       "type": "directory",
       "repoUrl": "https://github.com/2223176-tech/stackblitz-starters-6xsn86o2nbanbanbanba"
@@ -70,6 +95,11 @@
       "name": "-V2.0",
       "type": "directory",
       "repoUrl": "https://github.com/2526452-cmd/-V2.0"
+    },
+    {
+      "name": "6-2-2026",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526452-cmd/6-2-2026"
     },
     {
       "name": "q1",
@@ -165,6 +195,11 @@
       "name": "adrian-ai",
       "type": "directory",
       "repoUrl": "https://github.com/crazyjayhm/adrian-ai"
+    },
+    {
+      "name": "ai-2",
+      "type": "directory",
+      "repoUrl": "https://github.com/crazyjayhm/ai-2"
     }
   ],
   "EmilyLau41": [
@@ -172,6 +207,11 @@
       "name": "-",
       "type": "directory",
       "repoUrl": "https://github.com/EmilyLau41/-"
+    },
+    {
+      "name": "CHAT-ROOM",
+      "type": "directory",
+      "repoUrl": "https://github.com/EmilyLau41/CHAT-ROOM"
     },
     {
       "name": "cheat-room",
@@ -218,6 +258,11 @@
       "repoUrl": "https://github.com/haha197/jslearning"
     },
     {
+      "name": "new_chat",
+      "type": "directory",
+      "repoUrl": "https://github.com/haha197/new_chat"
+    },
+    {
       "name": "stackblitz-starters-nwue149t",
       "type": "directory",
       "repoUrl": "https://github.com/haha197/stackblitz-starters-nwue149t"
@@ -257,6 +302,11 @@
       "name": "20250912-1st-repo",
       "type": "directory",
       "repoUrl": "https://github.com/kou1gn/20250912-1st-repo"
+    },
+    {
+      "name": "stackblitz-starters-chatroom",
+      "type": "directory",
+      "repoUrl": "https://github.com/kou1gn/stackblitz-starters-chatroom"
     }
   ]
 }
