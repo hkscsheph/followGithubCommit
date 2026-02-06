@@ -112,15 +112,3 @@
 [submodule "portfolio/2526470-collab/stackblitz-starters-8lhyu1m1"]
 	path = portfolio/2526470-collab/stackblitz-starters-8lhyu1m1
 	url = https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1.git
-[submodule "portfolio/crazyjayhm/adrian-"]
-	path = portfolio/crazyjayhm/adrian-
-	url = https://github.com/crazyjayhm/adrian-.git
-[submodule "portfolio/crazyjayhm/adrian-ai"]
-	path = portfolio/crazyjayhm/adrian-ai
-	url = https://github.com/crazyjayhm/adrian-ai.git
-[submodule "portfolio/2526452-cmd/-"]
-	path = portfolio/2526452-cmd/-
-	url = https://github.com/2526452-cmd/-.git
-[submodule "portfolio/crazyjayhm/-"]
-	path = portfolio/crazyjayhm/-
-	url = https://github.com/crazyjayhm/-.git
