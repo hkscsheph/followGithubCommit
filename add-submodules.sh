@@ -1,3 +1,5 @@
+git submodule add https://github.com/2223179/chatroom.git portfolio/2223179/chatroom
+git submodule add https://github.com/2223179/xswl.git portfolio/2223179/xswl
 git submodule add https://github.com/2223107-cami/ICT_AI2.0_Cami.git portfolio/2223107-cami/ICT_AI2.0_Cami
 git submodule add https://github.com/2223107-cami/ICT_AI_W3_Cami.git portfolio/2223107-cami/ICT_AI_W3_Cami
 git submodule add https://github.com/2223107-cami/ICT_AI_W2_Cami.git portfolio/2223107-cami/ICT_AI_W2_Cami

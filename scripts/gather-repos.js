@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const targetUsers = [
+  '2223179',
   '2223107-cami',
   'Koodybiglookyea',
   'haha197',
