@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  command = "bash scripts/build.sh"
+  command = "git submodule update --init --recursive --remote && bash scripts/build.sh"
 
 
 
