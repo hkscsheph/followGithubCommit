@@ -1,0 +1,86 @@
+:root {
+  --main-bg: #1a1a1a;
+  --card-bg: #2d2d2d;
+  --accent: #00ff41; /* 螢光綠 */
+  --text: #f0f0f0;
+}
+
+body {
+  background-color: var(--main-bg);
+  color: var(--text);
+  font-family: 'Noto Sans TC', sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  gap: 20px;
+}
+
+.calendar-container {
+  max-width: 900px;
+  margin: auto;
+  background: #1e1e1e;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+  .day-cell {
+    background: #2a2a2a;
+    height: 100px; /* 固定高度讓內容更整齊 */
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    transition: all 0.3s ease;
+}
+.day-cell:hover {
+  background: #333;
+  border: 1px solid var(--accent);
+}
+/* 標示「今天」 */
+.day-cell.today {
+  background: rgba(0, 255, 65, 0.1);
+  border: 2px solid var(--accent);
+}
+.day-number {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* 標記已有塗鴉的日期 */
+.has-graffiti::after {
+  content: '🎨';
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  font-size: 1.2rem;
+}
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.month-nav-btn {
+  background: var(--accent);
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 4px;
+}
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  color: #888;
+  margin-bottom: 10px;
+}

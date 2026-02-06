@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Home</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <!--
+      Need a visual blank slate?
+      Remove all code in `styles.css`!
+    -->
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="script.js"></script>
+    <title>塗鴉分享日誌</title>
+  </head>
+  <body>
+    <div class="friends-sidebar">
+      <h3>我的好友</h3>
+      <div class="add-friend">
+          <input type="text" id="friendIdInput" placeholder="輸入好友 ID">
+          <button onclick="addFriend()">新增</button>
+      </div>
+      <ul id="friendsList">
+          <li onclick="viewCalendar('me')" class="active">我的日曆</li>
+          </ul>
+  </div>
+    <div class="calendar-container">
+      <div id="graffitiModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal()">&times;</span>
+          <h2 id="modalDate">日期</h2>
+          <div id="photoDisplay">
+            <p>點擊下方按鈕上傳這天的塗鴉照片</p>
+          </div>
+
+          <div class="upload-section">
+            <label for="fileInput" class="custom-file-upload">
+              📷 選擇塗鴉照片
+            </label>
+            <input
+              type="file"
+              id="fileInput"
+              accept="image/*"
+              onchange="previewImage(event)"
+            />
+            <button class="save-btn" onclick="saveGraffiti()">
+              儲存並分享
+            </button>
+          </div>
+        </div>
+      </div>
+      <header>
+        <h1 id="monthDisplay">2026年 1月</h1>
+      </header>
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button class="month-nav-btn" onclick="changeMonth(-1)">
+            上個月
+          </button>
+          <button class="month-nav-btn" onclick="changeMonth(1)">下個月</button>
+        </div>
+
+        <div class="weekdays">
+          <div>日</div>
+          <div>一</div>
+          <div>二</div>
+          <div>三</div>
+          <div>四</div>
+          <div>五</div>
+          <div>六</div>
+        </div>
+
+        <div id="calendarGrid" class="days"></div>
+      </div>
+      <div class="weekdays">
+        <div>日</div>
+        <div>一</div>
+        <div>二</div>
+        <div>三</div>
+        <div>四</div>
+        <div>五</div>
+        <div>六</div>
+      </div>
+
+      <div id="calendarGrid" class="days"></div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
