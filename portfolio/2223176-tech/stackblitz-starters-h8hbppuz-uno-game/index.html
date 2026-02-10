@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>4-Player UNO: Chaos Dimension</title>
+    <style>
+        body { margin: 0; background: #0a0a1a; color: white; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .table { width: 900px; height: 500px; border: 15px solid #16213e; border-radius: 150px; display: flex; align-items: center; justify-content: center; position: relative; background: radial-gradient(circle, #1a472a 0%, #050505 100%); box-shadow: 0 0 50px rgba(72, 202, 228, 0.2); }
+        
+        /* Card Styling */
+        .card { width: 55px; height: 85px; border-radius: 6px; border: 2px solid white; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin: -10px; cursor: pointer; transition: 0.2s; position: relative; text-shadow: 1px 1px #000; }
+        .card:hover { transform: translateY(-15px); z-index: 100; border-color: #48cae4; }
+        
+        /* Colors */
+        .red { background: #ff5555; } .blue { background: #5555ff; } .green { background: #55aa55; } .yellow { background: #ffaa00; } .black { background: #111; }
+        
+        /* Positions */
+        .hand { position: absolute; display: flex; justify-content: center; align-items: center; }
+        #p0-hand { bottom: -40px; width: 100%; } /* Player 1 */
+        #p1-hand { left: -60px; flex-direction: column; height: 100%; } /* AI Left */
+        #p2-hand { top: -40px; width: 100%; } /* AI Top */
+        #p3-hand { right: -60px; flex-direction: column; height: 100%; } /* AI Right */
+
+        .discard-pile { width: 80px; height: 110px; border: 4px solid #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #222; }
+        #status { margin-bottom: 20px; font-size: 1.2rem; color: #48cae4; text-align: center; height: 30px; }
+        .active-turn { box-shadow: 0 0 20px #fff; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="status">INITIALIZING DIMENSION...</div>
+
+    <div class="table">
+        <div id="p1-hand" class="hand"></div>
+        <div id="p2-hand" class="hand"></div>
+        <div id="p3-hand" class="hand"></div>
+        
+        <div id="center">
+            <div id="discard" class="discard-pile">?</div>
+            <button onclick="drawCard(0)" style="margin-top: 15px; padding: 10px; cursor: pointer; border-radius: 5px; font-weight: bold;">DRAW</button>
+        </div>
+
+        <div id="p0-hand" class="hand"></div>
+    </div>
+
+    <script>
+        const colors = ['red', 'blue', 'green', 'yellow'];
+        const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'REV', 'D4', 'D16'];
+        
+        let players = [[], [], [], []]; // Hands for Player 0, 1, 2, 3
+        let turn = 0;
+        let direction = 1; // 1 = Clockwise, -1 = Counter-Clockwise
+        let topCard = {};
+
+        function createCard() {
+            let val = values[Math.floor(Math.random() * values.length)];
+            let col = (val === 'D4' || val === 'D16') ? 'black' : colors[Math.floor(Math.random() * colors.length)];
+            return { color: col, value: val };
+        }
+
+        function init() {
+            // Deal 7 cards to each
+            for(let p=0; p<4; p++) {
+                for(let i=0; i<7; i++) players[p].push(createCard());
+            }
+            topCard = createCard();
+            if (topCard.color === 'black') topCard.color = 'red';
+            render();
+        }
+
+        function render() {
+            // Discard Pile
+            const d = document.getElementById('discard');
+            d.className = `discard-pile ${topCard.color}`;
+            d.innerText = topCard.value;
+
+            // Render Hands
+            for(let p=0; p<4; p++) {
+                const container = document.getElementById(`p${p}-hand`);
+                container.innerHTML = '';
+                players[p].forEach((card, i) => {
+                    const div = document.createElement('div');
+                    div.className = `card ${p === 0 ? card.color : ''}`; // Hide AI cards
+                    if (p !== 0) div.style.background = "#222"; 
+                    div.innerText = p === 0 ? card.value : 'UNO';
+                    if (p === 0) div.onclick = () => playCard(i);
+                    container.appendChild(div);
+                });
+            }
+            checkWin();
+        }
+
+        function nextTurn() {
+            turn = (turn + direction + 4) % 4;
+            updateStatus();
+            if (turn !== 0) setTimeout(aiPlay, 1500);
+        }
+
+        function updateStatus() {
+            const names = ["YOUR TURN", "AI LEFT", "AI TOP", "AI RIGHT"];
+            document.getElementById('status').innerText = names[turn] + (direction === 1 ? " (CW)" : " (CCW)");
+        }
+
+        function playCard(index) {
+            if (turn !== 0) return;
+            const card = players[0][index];
+            if (isValid(card)) {
+                executeMove(0, index);
+            }
+        }
+
+        function isValid(card) {
+            return card.color === topCard.color || card.value === topCard.value || card.color === 'black';
+        }
+
+        function executeMove(playerIdx, cardIdx) {
+            const card = players[playerIdx][cardIdx];
+            topCard = (card.color === 'black') ? {color: colors[Math.floor(Math.random()*4)], value: card.value} : card;
+            players[playerIdx].splice(cardIdx, 1);
+
+            // Action Logic
+            if (card.value === 'REV') direction *= -1;
+            
+            let nextP = (turn + direction + 4) % 4;
+            if (card.value === 'D4') for(let i=0; i<4; i++) players[nextP].push(createCard());
+            if (card.value === 'D16') for(let i=0; i<16; i++) players[nextP].push(createCard());
+
+            render();
+            nextTurn();
+        }
+
+        function aiPlay() {
+            const index = players[turn].findIndex(isValid);
+            if (index !== -1) {
+                executeMove(turn, index);
+            } else {
+                players[turn].push(createCard());
+                render();
+                nextTurn();
+            }
+        }
+
+        function drawCard(p) {
+            if (turn !== p) return;
+            players[p].push(createCard());
+            render();
+            nextTurn();
+        }
+
+        function checkWin() {
+            players.forEach((hand, i) => {
+                if (hand.length === 0) {
+                    alert(i === 0 ? "YOU WIN!" : `PLAYER ${i} WINS!`);
+                    location.reload();
+                }
+            });
+        }
+
+        init();
+        updateStatus();
+    </script>
+</body>
+</html>

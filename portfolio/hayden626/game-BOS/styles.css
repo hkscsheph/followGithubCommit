@@ -1,0 +1,17 @@
+body { margin: 0; background: #050505; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: sans-serif; }
+#game-container { position: relative; width: 1000px; height: 500px; border-bottom: 5px solid #333; overflow: hidden; }
+
+/* 城堡背景 */
+#castle-bg {
+  position: absolute; bottom: 0; width: 100%; height: 300px;
+  background: linear-gradient(transparent, #1a1a1a);
+  opacity: 0.4; pointer-events: none;
+}
+
+.ui-overlay { position: absolute; inset: 0; padding: 20px; pointer-events: none; color: #fff; }
+.hp-bar { width: 350px; height: 12px; background: #222; border: 2px solid #444; }
+.fill { width: 100%; height: 100%; transition: width 0.2s; }
+#boss-hp { background: #ff4444; box-shadow: 0 0 10px #ff4444; }
+#player-hp { background: #44ccff; box-shadow: 0 0 10px #44ccff; }
+.player-section { position: absolute; bottom: 20px; right: 20px; text-align: right; }
+#skills { font-size: 12px; margin-bottom: 5px; color: #aaa; }

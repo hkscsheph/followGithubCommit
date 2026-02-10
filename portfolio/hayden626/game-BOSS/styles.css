@@ -1,0 +1,43 @@
+body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: "Microsoft JhengHei", serif; }
+
+#game-container { 
+    position: relative; width: 1000px; height: 500px; background: #1a1c2c; 
+    border-bottom: 15px solid #111; overflow: hidden; transition: background 2s;
+}
+
+/* 二階段背景變紅 */
+#game-container.phase2-bg { background: #330000; box-shadow: inset 0 0 100px #ff000055; }
+
+/* 震動與閃光 */
+.shake-effect { animation: screenShake 0.15s infinite, parryFlash 0.2s forwards; }
+@keyframes screenShake {
+    0% { transform: translate(3px, 3px); }
+    50% { transform: translate(-3px, -3px); }
+    100% { transform: translate(0, 0); }
+}
+@keyframes parryFlash { 0% { filter: brightness(3); } 100% { filter: brightness(1); } }
+
+#death-screen, #win-screen { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 999; 
+}
+
+.centered-box { text-align: center; }
+.death-kanji { color: #bc002d; font-size: 160px; margin: 0; text-shadow: 0 0 40px rgba(188, 0, 45, 0.7); }
+
+#retry-btn, .retry-btn-win {
+    margin-top: 30px; background: rgba(0, 0, 0, 0.5); border: 2px solid #bc002d; color: #bc002d;
+    padding: 12px 50px; font-size: 22px; cursor: pointer; letter-spacing: 5px; transition: 0.3s;
+}
+#retry-btn:hover { background: #bc002d; color: white; }
+
+.ui-overlay { position: absolute; inset: 0; padding: 30px; pointer-events: none; }
+.hp-bar, .stamina-bar { background: rgba(0,0,0,0.7); border: 1px solid #444; margin-bottom: 5px; }
+.hp-bar { width: 350px; height: 8px; }
+.stamina-bar { width: 250px; height: 4px; margin-left: auto; }
+.stamina-bar.boss { width: 400px; height: 6px; margin: 5px auto; }
+.fill { width: 100%; height: 100%; transition: width 0.2s; }
+.red { background: #bc002d; }
+.gold { background: #d4af37; }
+.player-section { position: absolute; bottom: 30px; right: 30px; text-align: right; }
+.label { font-size: 14px; color: #ccc; letter-spacing: 3px; }

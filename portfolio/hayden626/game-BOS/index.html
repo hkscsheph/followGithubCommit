@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="castle-bg"></div>
+      <div class="ui-overlay">
+        <div class="boss-section">
+          <span class="label">THE SHADOW DUELIST</span>
+          <div class="hp-bar"><div id="boss-hp" class="fill"></div></div>
+        </div>
+        <div class="player-section">
+          <div id="skills">Skill [Q] Dash Slash | [E] Light Beam</div>
+          <div class="hp-bar player">
+            <div id="player-hp" class="fill"></div>
+          </div>
+          <span class="label">ROYAL KNIGHT</span>
+        </div>
+      </div>
+      <canvas id="gameCanvas"></canvas>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

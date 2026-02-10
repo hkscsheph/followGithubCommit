@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>魔法系統 - 覺醒</title>
+    <style>
+        :root {
+            --magic-blue: #00d4ff;
+            --dark-bg: #05050a;
+            --border-gold: #c5a059;
+            --door-locked: #5d4037;
+            --door-open: #2ecc71;
+        }
+
+        body, html { margin: 0; padding: 0; overflow: hidden; background: var(--dark-bg); font-family: "Microsoft JhengHei", sans-serif; }
+        canvas { display: block; }
+
+        /* UI 介面 */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        #menu-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            background: radial-gradient(circle, #1a1a2e 0%, #000 100%); 
+            color: white; z-index: 10; transition: opacity 0.8s; pointer-events: auto;
+        }
+
+        h1 { font-size: 3.5rem; letter-spacing: 15px; text-shadow: 0 0 15px var(--magic-blue); margin: 0; }
+        
+        .start-btn { 
+            margin-top: 40px; padding: 15px 50px; font-size: 1.2rem; 
+            background: rgba(0, 0, 0, 0.6); color: var(--magic-blue); 
+            border: 2px solid var(--magic-blue); cursor: pointer; border-radius: 4px; 
+            letter-spacing: 5px; transition: 0.3s;
+        }
+        .start-btn:hover { background: var(--magic-blue); color: #000; box-shadow: 0 0 30px var(--magic-blue); }
+
+        #dialogue-box { 
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            width: 80%; max-width: 700px; height: 100px; 
+            background: rgba(10, 10, 25, 0.95); border: 2px solid var(--border-gold); 
+            padding: 20px; color: #fff; display: none; z-index: 5; 
+            cursor: pointer; pointer-events: auto;
+        }
+
+        #room-hint { 
+            position: absolute; top: 30px; width: 100%; text-align: center; 
+            color: #fff; font-size: 1.5rem; letter-spacing: 10px; display: none; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div id="room-hint">〈 遺 忘 之 室 〉</div>
+        
+        <div id="menu-overlay">
+            <h1>魔法系統</h1>
+            <div style="color: #666; margin-top: 10px; letter-spacing: 2px;">FIRE MAGIC PUZZLE</div>
+            <button class="start-btn" onclick="startGame()">踏入旅程</button>
+        </div>
+
+        <div id="dialogue-box" onclick="handleDialogue()">
+            <div id="dialogue-text"></div>
+            <div style="text-align: right; font-size: 12px; color: var(--border-gold); margin-top: 10px;">點擊繼續...</div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // 使用匿名函式封裝避免變數衝突
+        (function() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            let state = "MENU";
+            let hasMagic = false;
+            let isDoorOpen = false;
+            let currentLine = 0;
+            const TILE_SIZE = 70;
+            const fireballs = [];
+
+            const storyLines = [
+                "系統：權限已重置。你目前位於底層空間。",
+                "那扇門被『代碼鎖』封印了，必須找到遠程觸發裝置。",
+                "先去獲取房間中央的藍色『魔法核心』。",
+                "使用 WASD 移動，滑鼠點擊發射火球。"
+            ];
+
+            const player = { gx: 1, gy: 2 };
+            const map = [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 5, 0, 0, 1], // 5: 紅色機關
+                [1, 0, 0, 0, 0, 3, 0, 4], // 3: 核心, 4: 門
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ];
+
+            function initCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', initCanvas);
+            initCanvas();
+
+            // 全域函式綁定到 window 以便 HTML 呼叫
+            window.startGame = function() {
+                document.getElementById('menu-overlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('menu-overlay').style.display = 'none';
+                    document.getElementById('dialogue-box').style.display = 'block';
+                    state = "STORY";
+                    window.handleDialogue();
+                }, 800);
+            };
+
+            window.handleDialogue = function() {
+                if (currentLine < storyLines.length) {
+                    document.getElementById('dialogue-text').innerText = storyLines[currentLine];
+                    currentLine++;
+                } else {
+                    document.getElementById('dialogue-box').style.display = 'none';
+                    document.getElementById('room-hint').style.display = 'block';
+                    state = "PLAY";
+                }
+            };
+
+            // 移動控制
+            window.addEventListener('keydown', (e) => {
+                if (state !== "PLAY") return;
+                let dx = 0, dy = 0;
+                const key = e.key.toLowerCase();
+                if (key === 'w' || e.key === 'ArrowUp') dy = -1;
+                if (key === 's' || e.key === 'ArrowDown') dy = 1;
+                if (key === 'a' || e.key === 'ArrowLeft') dx = -1;
+                if (key === 'd' || e.key === 'ArrowRight') dx = 1;
+
+                const nx = player.gx + dx;
+                const ny = player.gy + dy;
+
+                if (map[ny] && map[ny][nx] === 0) {
+                    player.gx = nx;
+                    player.gy = ny;
+                } else if (map[ny] && map[ny][nx] === 3) {
+                    hasMagic = true;
+                    map[ny][nx] = 0; // 核心消失
+                    alert("【系統】解鎖成功！點擊滑鼠發射火球。");
+                } else if (map[ny] && map[ny][nx] === 4 && isDoorOpen) {
+                    alert("成功逃脫！進入下一頁...");
+                    location.reload();
+                }
+            });
+
+            // 火球發射
+            canvas.addEventListener('mousedown', (e) => {
+                if (!hasMagic || state !== "PLAY") return;
+                const offX = (canvas.width - map[0].length * TILE_SIZE) / 2;
+                const offY = (canvas.height - map.length * TILE_SIZE) / 2;
+                const px = offX + player.gx * TILE_SIZE + TILE_SIZE / 2;
+                const py = offY + player.gy * TILE_SIZE + TILE_SIZE / 2;
+                
+                const angle = Math.atan2(e.clientY - py, e.clientX - px);
+                fireballs.push({ x: px, y: py, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10 });
+            });
+
+            function update() {
+                ctx.fillStyle = "#000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (state === "PLAY" || state === "STORY") {
+                    const offX = (canvas.width - map[0].length * TILE_SIZE) / 2;
+                    const offY = (canvas.height - map.length * TILE_SIZE) / 2;
+
+                    // 繪製地圖
+                    map.forEach((row, y) => {
+                        row.forEach((tile, x) => {
+                            const tx = offX + x * TILE_SIZE;
+                            const ty = offY + y * TILE_SIZE;
+                            if (tile === 1) {
+                                ctx.fillStyle = "#1a1a2e";
+                                ctx.fillRect(tx + 2, ty + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            } else if (tile === 3) {
+                                ctx.fillStyle = varColor('--magic-blue');
+                                ctx.shadowBlur = 15; ctx.shadowColor = varColor('--magic-blue');
+                                ctx.fillRect(tx + 20, ty + 20, 30, 30);
+                            } else if (tile === 4) {
+                                ctx.fillStyle = isDoorOpen ? "#2ecc71" : "#5d4037";
+                                ctx.fillRect(tx + 5, ty, TILE_SIZE - 10, TILE_SIZE);
+                            } else if (tile === 5) {
+                                ctx.fillStyle = isDoorOpen ? "#444" : "#ff3333";
+                                ctx.beginPath(); ctx.arc(tx + 35, ty + 35, 15, 0, Math.PI * 2); ctx.fill();
+                            }
+                            ctx.shadowBlur = 0;
+                        });
+                    });
+
+                    // 處理火球
+                    fireballs.forEach((f, i) => {
+                        f.x += f.vx; f.y += f.vy;
+                        ctx.fillStyle = "#ffcc00";
+                        ctx.shadowBlur = 10; ctx.shadowColor = "orange";
+                        ctx.beginPath(); ctx.arc(f.x, f.y, 8, 0, Math.PI * 2); ctx.fill();
+                        
+                        // 碰撞偵測 (機關 5)
+                        const gx = Math.floor((f.x - offX) / TILE_SIZE);
+                        const gy = Math.floor((f.y - offY) / TILE_SIZE);
+                        if (map[gy] && map[gy][gx] === 5) {
+                            isDoorOpen = true;
+                            fireballs.splice(i, 1);
+                        }
+                        // 移除出界火球
+                        if (f.x < 0 || f.x > canvas.width || f.y < 0 || f.y > canvas.height) fireballs.splice(i, 1);
+                    });
+
+                    // 繪製玩家
+                    ctx.fillStyle = "#fff";
+                    ctx.shadowBlur = 15; ctx.shadowColor = "#fff";
+                    ctx.fillRect(offX + player.gx * TILE_SIZE + 20, offY + player.gy * TILE_SIZE + 20, 30, 30);
+                    ctx.shadowBlur = 0;
+                }
+                requestAnimationFrame(update);
+            }
+
+            function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
+            update();
+        })();
+    </script>
+</body>
+</html>

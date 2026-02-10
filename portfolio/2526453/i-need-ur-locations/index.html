@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HKSC Teachers | Where are they?</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,400&family=Raleway:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        /* Your Requested Color */
+        --brand-red: #dd3214;
+
+        /* Supporting Palette */
+        --bg-color: #faf9f6; /* Off-white "Paper" color */
+        --card-bg: #ffffff;
+        --text-dark: #2c2c2c;
+        --text-light: #7a7a7a;
+
+        /* Status Indicators */
+        --status-available: #27ae60;
+        --status-away: #bdc3c7;
+        --status-busy: #f39c12;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        font-family: 'Raleway', sans-serif;
+        color: var(--text-dark);
+        padding: 40px 20px;
+        line-height: 1.6;
+      }
+
+      /* --- Header Section --- */
+      header {
+        max-width: 1000px;
+        margin: 0 auto 40px auto;
+        text-align: center;
+      }
+
+      .logo-container {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 15px auto;
+        border-radius: 50%;
+      }
+
+      .logo-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      h1 {
+        font-family: 'Merriweather', serif;
+        color: var(--brand-red);
+        font-size: 2.5rem;
+        margin-bottom: 5px;
+        letter-spacing: -0.5px;
+      }
+
+      p.subtitle {
+        font-family: 'Merriweather', serif;
+        font-style: italic;
+        color: var(--text-light);
+        font-size: 1rem;
+      }
+
+      /* --- Search & Filters --- */
+      .controls {
+        max-width: 800px;
+        margin: 0 auto 40px auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .search-wrapper {
+        width: 100%;
+        position: relative;
+      }
+
+      input[type='text'] {
+        width: 100%;
+        padding: 15px 25px;
+        border: 2px solid transparent;
+        background: white;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-family: 'Raleway', sans-serif;
+        box-shadow: 0 5px 20px rgba(221, 50, 20, 0.08); /* Red tinted shadow */
+        transition: all 0.3s ease;
+        outline: none;
+        color: var(--brand-red);
+      }
+
+      input[type='text']:focus {
+        box-shadow: 0 5px 25px rgba(221, 50, 20, 0.2);
+        border-color: var(--brand-red);
+      }
+
+      input[type='text']::placeholder {
+        color: #d1bkb8;
+        font-weight: 400;
+      }
+
+      .filter-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .btn {
+        background: transparent;
+        border: 1px solid var(--brand-red);
+        color: var(--brand-red);
+        padding: 8px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .btn.active {
+        background: var(--brand-red);
+        color: white;
+        box-shadow: 0 4px 15px rgba(221, 50, 20, 0.3);
+      }
+
+      /* --- Grid Layout --- */
+      .teacher-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      /* --- Artsy Card Style --- */
+      .card {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 25px;
+        position: relative;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border-bottom: 4px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(221, 50, 20, 0.1);
+        border-bottom: 4px solid var(--brand-red);
+      }
+
+      .initials {
+        width: 60px;
+        height: 60px;
+        background: rgba(221, 50, 20, 0.1); /* Very light brand red */
+        color: var(--brand-red);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Merriweather', serif;
+        font-weight: 700;
+        font-size: 1.4rem;
+      }
+
+      .info {
+        flex: 1;
+      }
+
+      .name {
+        font-family: 'Merriweather', serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--text-dark);
+      }
+
+      .dept {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-light);
+        margin-bottom: 10px;
+      }
+
+      /* Status Dot Indicator */
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+        display: inline-block;
+      }
+
+      /* Dynamic Status Colors */
+      .card[data-status='Staff Room'] .dot {
+        background-color: var(--status-available);
+        box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+      }
+      .card[data-status='Staff Room'] .status-text {
+        color: var(--status-available);
+      }
+
+      .card[data-status='Absent'] .dot {
+        background-color: var(--brand-red);
+        opacity: 0.5;
+      }
+      .card[data-status='Absent'] .status-text {
+        color: var(--brand-red);
+      }
+      .card[data-status='Absent'] .name {
+        text-decoration: line-through;
+        color: #ccc;
+      }
+
+      .card[data-status='Holiday'] .dot {
+        background-color: var(--status-busy);
+      }
+      .card[data-status='Holiday'] .status-text {
+        color: var(--status-busy);
+      }
+
+      .card[data-status='Class'] .dot {
+        background-color: #ccc;
+      }
+      .card[data-status='Class'] .status-text {
+        color: #999;
+      }
+
+      @media (min-width: 768px) {
+        .controls {
+          flex-direction: row;
+          justify-content: center;
+        }
+        .search-wrapper {
+          width: 400px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo-container">
+        <img
+          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdqAMJK3hktBW9V6AUFvgXRY7Xiz3877LE6w&s"
+          alt="HKSC Logo"
+        />
+      </div>
+      <h1>HKSC Teachers</h1>
+      <p class="subtitle">WHERE ARE THEY??!!111!!??/!?/</p>
+    </header>
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,400&family=Raleway:wght@400;600;700&display=swap"
+          rel="stylesheet"
+        />
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0"
+            />
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link
+              rel="preconnect"
+              href="https://fonts.gstatic.com"
+              crossorigin
+            />
+            <link
+              href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,400&family=Raleway:wght@400;600;700&display=swap"
+              rel="stylesheet"
+            />
+
+            <style>
+              :root {
+                --brand-red: #dd3214;
+                --bg-color: #faf9f6;
+                --card-bg: #ffffff;
+                --text-dark: #2c2c2c;
+                --text-light: #7a7a7a;
+                --status-available: #27ae60;
+                --status-away: #bdc3c7;
+                --status-busy: #f39c12;
+              }
+
+              * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+              }
+
+              body {
+                background-color: var(--bg-color);
+                font-family: 'Raleway', sans-serif;
+                color: var(--text-dark);
+                padding: 20px;
+                line-height: 1.6;
+              }
+
+              header {
+                max-width: 1000px;
+                margin: 0 auto 30px auto;
+                text-align: center;
+              }
+              h1 {
+                font-family: 'Merriweather', serif;
+                color: var(--brand-red);
+                font-size: 2.2rem;
+              }
+
+              /* --- Management Section --- */
+              .admin-panel {
+                max-width: 800px;
+                margin: 20px auto;
+                background: #fff;
+                padding: 20px;
+                border-radius: 15px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                border: 1px solid #eee;
+              }
+
+              .admin-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+                margin-top: 15px;
+              }
+
+              select,
+              input,
+              .admin-btn {
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #ddd;
+                font-family: inherit;
+              }
+
+              .admin-btn {
+                background: var(--brand-red);
+                color: white;
+                border: none;
+                cursor: pointer;
+                font-weight: bold;
+              }
+
+              .toggle-admin {
+                display: block;
+                margin: 10px auto;
+                background: none;
+                border: 1px solid var(--brand-red);
+                color: var(--brand-red);
+                padding: 5px 15px;
+                border-radius: 20px;
+                cursor: pointer;
+              }
+
+              /* --- Grid & Cards --- */
+              .teacher-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+                max-width: 1000px;
+                margin: 0 auto;
+              }
+
+              .card {
+                background: var(--card-bg);
+                border-radius: 15px;
+                padding: 20px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+              }
+
+              .initials {
+                width: 50px;
+                height: 50px;
+                background: rgba(221, 50, 20, 0.1);
+                color: var(--brand-red);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+              }
+
+              .status-indicator {
+                font-size: 0.85rem;
+                display: flex;
+                align-items: center;
+                margin-top: 5px;
+              }
+              .dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                margin-right: 6px;
+              }
+
+              /* Status Colors */
+              .status-free {
+                color: var(--status-available);
+              }
+              .status-free .dot {
+                background: var(--status-available);
+              }
+              .status-busy {
+                color: var(--brand-red);
+              }
+              .status-busy .dot {
+                background: var(--brand-red);
+              }
+              .status-holiday {
+                color: var(--status-busy);
+              }
+              .status-holiday .dot {
+                background: var(--status-busy);
+              }
+
+              .hidden {
+                display: none;
+              }
+            </style>
+          </head>
+          <body>
+            <button class="toggle-admin" onclick="toggleAdmin()">
+              ⚙️ Manage Schedules
+            </button>
+
+            <div id="adminPanel" class="admin-panel hidden">
+              <h3>Update Teacher Schedule</h3>
+              <div class="admin-grid">
+                <select id="teacherSelect"></select>
+                <select id="daySelect">
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                </select>
+                <select id="periodSelect">
+                  <option value="P1">Period 1</option>
+                  <option value="P2">Period 2</option>
+                  <option value="P3">Period 3</option>
+                  <option value="P4">Period 4</option>
+                  <option value="P5">Period 5</option>
+                  <option value="P6">Period 6</option>
+                  <option value="P7">Period 7</option>
+                  <option value="P8">Period 8</option>
+                </select>
+                <input
+                  type="text"
+                  id="statusInput"
+                  placeholder="Location, 'Absent', or 'Holiday'"
+                />
+                <button class="admin-btn" onclick="saveSchedule()">
+                  Update
+                </button>
+              </div>
+            </div>
+
+            <div id="teacherGrid" class="teacher-grid"></div>
+
+            <script>
+              // --- Initial Data Structure ---
+              // Each teacher has a schedule for Mon-Fri, P1-P8
+              let teachers = [
+                {
+                  id: 1,
+                  name: 'Mr. Shepherd',
+                  dept: 'ICT',
+                  schedule: { Monday: { P1: 'Staff Room', P2: 'Room 101' } },
+                },
+                {
+                  id: 2,
+                  name: 'Ms. Jasmine',
+                  dept: 'English',
+                  schedule: { Monday: { P1: 'Absent' } },
+                },
+              ];
+
+              // Helper to generate empty schedules for others
+              const names = [
+                'Mr. David',
+                'Mr. Jimmy',
+                'Ms. Cindy',
+                'Mr. Peter',
+                'Mr. Tak Suen',
+                'Mr. Avery',
+              ];
+              names.forEach((name, i) => {
+                teachers.push({
+                  id: i + 3,
+                  name: name,
+                  dept: 'Faculty',
+                  schedule: { Monday: { P1: 'Staff Room' } },
+                });
+              });
+
+              // --- Core Functions ---
+
+              function getCurrentTimeInfo() {
+                const now = new Date();
+                const days = [
+                  'Sunday',
+                  'Monday',
+                  'Tuesday',
+                  'Wednesday',
+                  'Thursday',
+                  'Friday',
+                  'Saturday',
+                ];
+                const dayName = days[now.getDay()];
+
+                // Simulating Period based on time (Simplified for Demo)
+                // In a real app, you'd map specific hours to P1, P2 etc.
+                // For this demo, we'll default to "P1" or let user pick.
+                return { day: dayName, period: 'P1' };
+              }
+
+              function renderTeachers() {
+                const grid = document.getElementById('teacherGrid');
+                const timeInfo = getCurrentTimeInfo();
+                grid.innerHTML = '';
+
+                teachers.forEach((t) => {
+                  const currentDaySched = t.schedule[timeInfo.day] || {};
+                  const currentStatus =
+                    currentDaySched[timeInfo.period] || 'Unknown/End of Day';
+
+                  let statusClass = 'status-free';
+                  if (currentStatus === 'Absent') statusClass = 'status-busy';
+                  if (currentStatus === 'Holiday')
+                    statusClass = 'status-holiday';
+
+                  const initials = t.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('');
+
+                  grid.innerHTML += `
+                        <div class="card">
+                            <div class="initials">${initials}</div>
+                            <div class="info">
+                                <div class="name">${t.name}</div>
+                                <div class="dept">${t.dept}</div>
+                                <div class="status-indicator ${statusClass}">
+                                    <span class="dot"></span>
+                                    <span>${timeInfo.period}: ${currentStatus}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+              }
+
+              function populateAdmin() {
+                const select = document.getElementById('teacherSelect');
+                teachers.forEach((t) => {
+                  let opt = document.createElement('option');
+                  opt.value = t.id;
+                  opt.textContent = t.name;
+                  select.appendChild(opt);
+                });
+              }
+
+              function saveSchedule() {
+                const tId = parseInt(
+                  document.getElementById('teacherSelect').value
+                );
+                const day = document.getElementById('daySelect').value;
+                const period = document.getElementById('periodSelect').value;
+                const status = document.getElementById('statusInput').value;
+
+                const teacher = teachers.find((t) => t.id === tId);
+                if (!teacher.schedule[day]) teacher.schedule[day] = {};
+
+                teacher.schedule[day][period] = status;
+
+                alert(`Updated ${teacher.name} for ${day} ${period}`);
+                renderTeachers();
+              }
+
+              function toggleAdmin() {
+                document
+                  .getElementById('adminPanel')
+                  .classList.toggle('hidden');
+              }
+
+              // Initialize
+              populateAdmin();
+              renderTeachers();
+            </script>
+          </body>
+        </html>
+      </head>
+      <div id="live-status-bar" class="live-status-container">
+        <div class="clock-section">
+          <span id="digital-clock">00:00:00</span>
+          <span id="current-date">Loading date...</span>
+        </div>
+        <div class="period-section">
+          <span class="label">Current Status:</span>
+          <span id="current-period-display">Checking Schedule...</span>
+        </div>
+      </div>
+      <script>
+        const updateLiveTracker = () => {
+          const now = new Date();
+
+          // 1. Update Clock (24h format with leading zeros)
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+
+          const clockElement = document.getElementById('digital-clock');
+          if (clockElement) {
+            clockElement.textContent = `${hours}:${minutes}:${seconds}`;
+          }
+
+          // 2. Update Date
+          const dateElement = document.getElementById('current-date');
+          if (dateElement) {
+            const options = {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            };
+            dateElement.textContent = now.toLocaleDateString(
+              undefined,
+              options
+            );
+          }
+
+          // 3. Timetable Logic (HHMM format)
+          const currentTime = now.getHours() * 100 + now.getMinutes();
+          let status = 'School is Out';
+
+          const schedule = [
+            { name: 'Period 1', start: 800, end: 850 },
+            { name: 'Period 2', start: 850, end: 940 },
+            { name: 'Recess', start: 940, end: 1000 },
+            { name: 'Period 3', start: 1000, end: 1050 },
+            { name: 'Period 4', start: 1050, end: 1140 },
+            { name: 'Lunch', start: 1140, end: 1230 },
+            { name: 'Period 5', start: 1230, end: 1320 },
+            { name: 'Period 6', start: 1320, end: 1410 },
+            { name: 'Period 7', start: 1410, end: 1500 },
+            { name: 'Period 8', start: 1500, end: 1550 },
+          ];
+
+          const day = now.getDay(); // 0 is Sunday, 6 is Saturday
+          if (day === 0 || day === 6) {
+            status = 'Weekend - No School';
+          } else {
+            for (const session of schedule) {
+              if (currentTime >= session.start && currentTime < session.end) {
+                status = session.name;
+                break;
+              }
+            }
+          }
+
+          const statusElement = document.getElementById(
+            'current-period-display'
+          );
+          if (statusElement) {
+            statusElement.textContent = status;
+          }
+        };
+
+        // CRITICAL FIX: Ensure the DOM is fully loaded before running
+        document.addEventListener('DOMContentLoaded', () => {
+          updateLiveTracker(); // Run once immediately
+          setInterval(updateLiveTracker, 1000); // Sync every second
+        });
+      </script>
+    </html>
+  </body>
+</html>

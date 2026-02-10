@@ -129,7 +129,64 @@
         padding: 40px;
         color: var(--text-secondary);
       }
+
+      /* Like Button Styles */
+      .like-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        margin-top: 10px;
+      }
+
+      .like-btn:hover {
+        border-color: var(--text-main);
+        color: var(--text-main);
+        transform: scale(1.05);
+      }
+
+      .like-btn.liked {
+        border-color: #da3633;
+        color: #da3633;
+        background-color: rgba(218, 54, 51, 0.1);
+      }
+
+      .like-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .like-btn .heart {
+        font-size: 1.1rem;
+        transition: transform 0.2s;
+      }
+
+      .like-btn.liked .heart {
+        animation: heartBeat 0.3s ease;
+      }
+
+      @keyframes heartBeat {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+      }
+
+      .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
     <div class="container">
@@ -150,11 +207,215 @@
     </div>
 
     <script>
+      // Supabase Configuration
+      const SUPABASE_URL = 'https://wnvgjuhxxwnihmjfrcvk.supabase.co'; // Replace with your Supabase URL
+      const SUPABASE_ANON_KEY = 'sb_publishable_MR0Q28M6SwAHDyy5iqdQXA_U26L7s6b'; // Replace with your Supabase anon key
+      
+      // Initialize Supabase client
+      let supabaseClient = null;
+      try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (err) {
+        console.warn('Supabase not configured:', err);
+      }
+
       const params = new URLSearchParams(window.location.search);
       const username = params.get('user');
 
+      // Local Storage Manager for tracking liked repos
+      class LikeStorage {
+        static getKey(username, repoName) {
+          return `liked_${username}_${repoName}`;
+        }
+
+        static isLiked(username, repoName) {
+          return localStorage.getItem(this.getKey(username, repoName)) === 'true';
+        }
+
+        static setLiked(username, repoName, liked) {
+          if (liked) {
+            localStorage.setItem(this.getKey(username, repoName), 'true');
+          } else {
+            localStorage.removeItem(this.getKey(username, repoName));
+          }
+        }
+      }
+
+      // Like Service for supabaseClient operations
+      class LikeService {
+        static async fetchLikes(username) {
+          if (!supabaseClient) return {};
+          
+          try {
+            const { data, error } = await supabaseClient
+              .from('gh_portfolio_likes')
+              .select('repo_name, like_count')
+              .eq('username', username);
+
+            if (error) throw error;
+
+            const likesMap = {};
+            data.forEach(item => {
+              likesMap[item.repo_name] = item.like_count;
+            });
+            return likesMap;
+          } catch (err) {
+            console.error('Error fetching likes:', err);
+            return {};
+          }
+        }
+
+        static async incrementLike(username, repoName) {
+          if (!supabaseClient) return false;
+
+          try {
+            // Try to insert or update
+            const { data, error } = await supabaseClient
+              .from('gh_portfolio_likes')
+              .upsert(
+                { 
+                  username, 
+                  repo_name: repoName, 
+                  like_count: 1 
+                },
+                { 
+                  onConflict: 'username,repo_name',
+                  ignoreDuplicates: false 
+                }
+              )
+              .select();
+
+            if (error) {
+              // If record exists, increment it
+              const { data: updateData, error: updateError } = await supabaseClient.rpc(
+                'increment_like',
+                { p_username: username, p_repo_name: repoName }
+              );
+              
+              if (updateError) {
+                // Fallback: fetch current count and update
+                const { data: current } = await supabaseClient
+                  .from('gh_portfolio_likes')
+                  .select('like_count')
+                  .eq('username', username)
+                  .eq('repo_name', repoName)
+                  .single();
+
+                if (current) {
+                  await supabaseClient
+                    .from('gh_portfolio_likes')
+                    .update({ like_count: current.like_count + 1 })
+                    .eq('username', username)
+                    .eq('repo_name', repoName);
+                }
+              }
+            }
+
+            return true;
+          } catch (err) {
+            console.error('Error incrementing like:', err);
+            return false;
+          }
+        }
+
+        static async decrementLike(username, repoName) {
+          if (!supabaseClient) return false;
+
+          try {
+            const { data: current } = await supabaseClient
+              .from('gh_portfolio_likes')
+              .select('like_count')
+              .eq('username', username)
+              .eq('repo_name', repoName)
+              .single();
+
+            if (current && current.like_count > 0) {
+              const { error } = await supabaseClient
+                .from('gh_portfolio_likes')
+                .update({ like_count: current.like_count - 1 })
+                .eq('username', username)
+                .eq('repo_name', repoName);
+
+              if (error) throw error;
+            }
+
+            return true;
+          } catch (err) {
+            console.error('Error decrementing like:', err);
+            return false;
+          }
+        }
+      }
+
       function goBack() {
         window.history.back();
+      }
+
+      // Render like button
+      function renderLikeButton(username, repoName, likeCount, isLiked) {
+        const btn = document.createElement('button');
+        btn.className = `like-btn ${isLiked ? 'liked' : ''}`;
+        btn.innerHTML = `
+          <span class="heart">${isLiked ? '❤️' : '🤍'}</span>
+          <span class="count">${likeCount || 0}</span>
+        `;
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          handleLikeClick(username, repoName, btn);
+        };
+        return btn;
+      }
+
+      // Handle like button click
+      async function handleLikeClick(username, repoName, btn) {
+        if (btn.disabled) return;
+
+        btn.disabled = true;
+        const isCurrentlyLiked = LikeStorage.isLiked(username, repoName);
+        const countSpan = btn.querySelector('.count');
+        const heartSpan = btn.querySelector('.heart');
+        let currentCount = parseInt(countSpan.textContent) || 0;
+
+        // Optimistic UI update
+        if (isCurrentlyLiked) {
+          // Unlike
+          currentCount = Math.max(0, currentCount - 1);
+          countSpan.textContent = currentCount;
+          heartSpan.textContent = '🤍';
+          btn.classList.remove('liked');
+          LikeStorage.setLiked(username, repoName, false);
+
+          // Update database
+          const success = await LikeService.decrementLike(username, repoName);
+          if (!success) {
+            // Revert on error
+            currentCount++;
+            countSpan.textContent = currentCount;
+            heartSpan.textContent = '❤️';
+            btn.classList.add('liked');
+            LikeStorage.setLiked(username, repoName, true);
+          }
+        } else {
+          // Like
+          currentCount++;
+          countSpan.textContent = currentCount;
+          heartSpan.textContent = '❤️';
+          btn.classList.add('liked');
+          LikeStorage.setLiked(username, repoName, true);
+
+          // Update database
+          const success = await LikeService.incrementLike(username, repoName);
+          if (!success) {
+            // Revert on error
+            currentCount = Math.max(0, currentCount - 1);
+            countSpan.textContent = currentCount;
+            heartSpan.textContent = '🤍';
+            btn.classList.remove('liked');
+            LikeStorage.setLiked(username, repoName, false);
+          }
+        }
+
+        btn.disabled = false;
       }
 
       async function loadPortfolioItems() {
@@ -179,6 +440,9 @@
             return;
           }
 
+          // Fetch like counts from Supabase
+          const likesMap = await LikeService.fetchLikes(username);
+
           // Display items
           const grid = document.getElementById('reposGrid');
           grid.innerHTML = '';
@@ -186,6 +450,9 @@
           items.forEach((item) => {
             const card = document.createElement('div');
             card.className = 'repo-card';
+
+            const likeCount = likesMap[item.name] || 0;
+            const isLiked = LikeStorage.isLiked(username, item.name);
 
             // For directories, try to load index.html as iframe
             if (item.type === 'directory') {
@@ -196,8 +463,16 @@
                 <div class="repo-description">點擊卡片在新視窗開啟</div>
                 <iframe src="portfolio/${username}/${item.name}/index.html" class="repo-iframe" title="${item.name}"></iframe>
               `;
-              card.onclick = () => {
-                window.open(`portfolio/${username}/${item.name}/index.html`, '_blank');
+              
+              const footer = document.createElement('div');
+              footer.className = 'card-footer';
+              footer.appendChild(renderLikeButton(username, item.name, likeCount, isLiked));
+              card.appendChild(footer);
+
+              card.onclick = (e) => {
+                if (!e.target.closest('.like-btn')) {
+                  window.open(`portfolio/${username}/${item.name}/index.html`, '_blank');
+                }
               };
             } else {
               card.innerHTML = `
@@ -206,6 +481,11 @@
                 </a>
                 <div class="repo-description">檔案</div>
               `;
+              
+              const footer = document.createElement('div');
+              footer.className = 'card-footer';
+              footer.appendChild(renderLikeButton(username, item.name, likeCount, isLiked));
+              card.appendChild(footer);
             }
 
             grid.appendChild(card);
