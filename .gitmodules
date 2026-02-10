@@ -145,10 +145,6 @@
 	path = portfolio/2223179/chatroom
 	url = https://github.com/2223179/chatroom.git
 
-[submodule "portfolio/2223179/xswl"]
-	path = portfolio/2223179/xswl
-	url = https://github.com/2223179/xswl.git
-
 [submodule "portfolio/2526452-cmd/-V2.0"]
 	path = portfolio/2526452-cmd/-V2.0
 	url = https://github.com/2526452-cmd/-V2.0.git
@@ -156,10 +152,6 @@
 [submodule "portfolio/2526452-cmd/6-2-2026"]
 	path = portfolio/2526452-cmd/6-2-2026
 	url = https://github.com/2526452-cmd/6-2-2026.git
-
-[submodule "portfolio/2526453/greenmeow"]
-	path = portfolio/2526453/greenmeow
-	url = https://github.com/2526453/greenmeow.git
 
 [submodule "portfolio/2526470-collab/-messages"]
 	path = portfolio/2526470-collab/-messages

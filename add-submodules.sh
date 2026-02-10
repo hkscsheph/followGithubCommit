@@ -1,5 +1,4 @@
 git submodule add https://github.com/2223179/chatroom.git portfolio/2223179/chatroom
-git submodule add https://github.com/2223179/xswl.git portfolio/2223179/xswl
 git submodule add https://github.com/2223107-cami/ICT_AI2.0_Cami.git portfolio/2223107-cami/ICT_AI2.0_Cami
 git submodule add https://github.com/2223107-cami/ICT_AI_W3_Cami.git portfolio/2223107-cami/ICT_AI_W3_Cami
 git submodule add https://github.com/2223107-cami/ICT_AI_W2_Cami.git portfolio/2223107-cami/ICT_AI_W2_Cami
@@ -26,7 +25,6 @@ git submodule add https://github.com/2526452-cmd/-.git portfolio/2526452-cmd/-
 git submodule add https://github.com/2526452-cmd/q3-hk-.git portfolio/2526452-cmd/q3-hk-
 git submodule add https://github.com/2526452-cmd/Q4-HKSC-FRIEND.git portfolio/2526452-cmd/Q4-HKSC-FRIEND
 git submodule add https://github.com/2526452-cmd/q1.git portfolio/2526452-cmd/q1
-git submodule add https://github.com/2526453/greenmeow.git portfolio/2526453/greenmeow
 git submodule add https://github.com/2526453/chatroom-but-GREEEEEEEEEEEN.git portfolio/2526453/chatroom-but-GREEEEEEEEEEEN
 git submodule add https://github.com/2526453/weeeeeeeeeeee.git portfolio/2526453/weeeeeeeeeeee
 git submodule add https://github.com/2526453/meow.git portfolio/2526453/meow
