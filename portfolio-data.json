@@ -4,11 +4,6 @@
       "name": "chatroom",
       "type": "directory",
       "repoUrl": "https://github.com/2223179/chatroom"
-    },
-    {
-      "name": "xswl",
-      "type": "directory",
-      "repoUrl": "https://github.com/2223179/xswl"
     }
   ],
   "2526453": [
@@ -16,11 +11,6 @@
       "name": "chatroom-but-GREEEEEEEEEEEN",
       "type": "directory",
       "repoUrl": "https://github.com/2526453/chatroom-but-GREEEEEEEEEEEN"
-    },
-    {
-      "name": "greenmeow",
-      "type": "directory",
-      "repoUrl": "https://github.com/2526453/greenmeow"
     },
     {
       "name": "meow",
