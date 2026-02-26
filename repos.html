@@ -187,8 +187,9 @@
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js"></script>
   </head>
-  <body>
+  <body style="visibility: hidden;">
     <div class="container">
       <header>
         <h1 id="pageTitle">學生作品集</h1>
@@ -218,6 +219,9 @@
       } catch (err) {
         console.warn('Supabase not configured:', err);
       }
+
+      // Initialize auth guard
+      const authGuard = new AuthGuard(supabaseClient);
 
       const params = new URLSearchParams(window.location.search);
       const username = params.get('user');
@@ -501,8 +505,14 @@
         }
       }
 
-      // Load on page load
-      loadPortfolioItems();
+      // Load on page load - Initialize auth guard first
+      authGuard.init({
+        containerSelector: 'header',
+        onAuthenticated: () => {
+          // Load portfolio items after authentication
+          loadPortfolioItems();
+        }
+      });
     </script>
   </body>
 </html>

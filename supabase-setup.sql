@@ -1,6 +1,33 @@
 -- Portfolio Likes Table Setup with Authentication
 -- Run this in your Supabase SQL Editor
 
+-- ============================================
+-- PART 1: Email Authentication Setup
+-- ============================================
+
+-- Create function to validate email domain
+CREATE OR REPLACE FUNCTION validate_email_domain()
+RETURNS TRIGGER AS $
+BEGIN
+  IF NEW.email NOT LIKE '%@creativehk.edu.hk' 
+     AND NEW.email NOT LIKE '%@student.creativehk.edu.hk' THEN
+    RAISE EXCEPTION 'Email domain not allowed. Please use your school email.';
+  END IF;
+  RETURN NEW;
+END;
+$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to run validation on user creation
+DROP TRIGGER IF EXISTS check_email_domain ON auth.users;
+CREATE TRIGGER check_email_domain
+  BEFORE INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION validate_email_domain();
+
+-- ============================================
+-- PART 2: Portfolio Likes Setup
+-- ============================================
+
 -- Create the likes table with user tracking
 CREATE TABLE IF NOT EXISTS gh_portfolio_likes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

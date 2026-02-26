@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GitHub Commit 實時追蹤器</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
       :root {
         --bg-color: #0d1117;
@@ -226,7 +227,17 @@
       <div id="userGrid" class="grid"></div>
     </div>
 
+    <script src="auth-guard.js"></script>
     <script>
+      // Supabase Configuration
+      const SUPABASE_URL = 'https://wnvgjuhxxwnihmjfrcvk.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_MR0Q28M6SwAHDyy5iqdQXA_U26L7s6b';
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const authGuard = new AuthGuard(supabaseClient);
+
+      // Hide body initially until auth check completes
+      document.body.style.visibility = 'hidden';
+
       // 監控目標名單
       const targetUsers = [
         // 'hkscsheph',
@@ -500,11 +511,16 @@
         });
       }
 
-      // 啟動
-      initCards();
-      loadTokenFromEnv().then(() => {
-        // 自動使用載入的 Token 進行首次抓取
-        fetchAllData();
+      // 啟動 - Initialize auth guard first
+      authGuard.init({
+        containerSelector: 'header .controls',
+        onAuthenticated: () => {
+          // Initialize cards and fetch data after authentication
+          initCards();
+          loadTokenFromEnv().then(() => {
+            fetchAllData();
+          });
+        }
       });
     </script>
   </body>
