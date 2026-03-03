@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>JS 挑战：测验</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>挑战：JavaScript 知识测验</h1>
+    </header>
+
+    <nav>
+        <a href="index.html">首页</a>
+        <a href="logic.html">课程：逻辑判断</a>
+        <a href="quiz.html">挑战：测验题</a>
+    </nav>
+
+    <main class="container">
+        
+        <section>
+            <h3>问题 1: 在 JavaScript 中，哪个符号用于“赋值”？</h3>
+            <div class="options">
+                <label><input type="radio" name="q1" value="wrong"> == (等于)</label><br>
+                <label><input type="radio" name="q1" value="correct"> = (单等号)</label><br>
+                <label><input type="radio" name="q1" value="wrong"> : (冒号)</label>
+            </div>
+            <button onclick="checkAnswer('q1', 'ans1')">提交答案</button>
+            <div id="ans1" class="feedback"></div>
+        </section>
+
+        <section>
+            <h3>问题 2: 下面哪个函数可以用来弹出一个警告框？</h3>
+            <div class="options">
+                <label><input type="radio" name="q2" value="wrong"> msgBox("Hello")</label><br>
+                <label><input type="radio" name="q2" value="correct"> alert("Hello")</label><br>
+                <label><input type="radio" name="q2" value="wrong"> popup("Hello")</label>
+            </div>
+            <button onclick="checkAnswer('q2', 'ans2')">提交答案</button>
+            <div id="ans2" class="feedback"></div>
+        </section>
+
+    </main>
+
+    <script>
+        function checkAnswer(questionName, outputId) {
+            // 获取用户选中的选项
+            let options = document.getElementsByName(questionName);
+            let selectedValue = null;
+            let output = document.getElementById(outputId);
+
+            // 循环检查哪个被选中了
+            for(let i = 0; i < options.length; i++) {
+                if(options[i].checked) {
+                    selectedValue = options[i].value;
+                    break;
+                }
+            }
+
+            // 判断对错
+            output.style.display = "block";
+            output.className = "feedback"; // 重置样式
+
+            if (selectedValue === "correct") {
+                output.innerText = "✅ 回答正确！";
+                output.classList.add("correct");
+            } else if (selectedValue === "wrong") {
+                output.innerText = "❌ 回答错误，请重试。";
+                output.classList.add("wrong");
+            } else {
+                output.innerText = "⚠️ 请先选择一个选项。";
+                output.style.background = "#fff3cd";
+                output.style.color = "#856404";
+            }
+        }
+    </script>
+</body>
+</html>

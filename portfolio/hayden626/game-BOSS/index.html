@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <title>隻狼：無盡之戰 - 音樂震動版</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+  <div id="game-container">
+    <div id="castle-bg"></div>
+    <div id="vignette"></div>
+    
+    <div id="death-screen">
+      <div class="centered-box">
+        <h1 class="death-kanji">死</h1>
+        <button id="retry-btn">AGAIN</button>
+      </div>
+    </div>
+
+    <div id="win-screen">
+      <div class="centered-box">
+        <h1 style="color: #bc002d; font-size: 80px; margin: 0;">勝利</h1>
+        <p style="font-size: 24px; letter-spacing: 15px; color: white;">「無盡」已斬</p>
+        <button class="retry-btn-win" onclick="location.reload()">AGAIN</button>
+      </div>
+    </div>
+
+    <div id="msg">無盡：覺醒</div>
+
+    <div class="ui-overlay">
+      <div class="boss-section">
+        <div id="boss-name" class="label">ASHINA GUARDIAN - 無盡</div>
+        <div class="hp-bar"><div id="boss-hp" class="fill red"></div></div>
+        <div class="stamina-bar boss"><div id="boss-stamina" class="fill gold"></div></div>
+      </div>
+      <div class="player-section">
+        <div class="stamina-bar"><div id="player-stamina" class="fill gold"></div></div>
+        <div class="hp-bar player"><div id="player-hp" class="fill red"></div></div>
+        <div class="label">WOLF (HP: <span id="hp-text">100</span>)</div>
+      </div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cool Synth thingy - Pro Edition</title>
+    <style>
+        :root {
+            --bg: #121214;
+            --panel: #1c1c22;
+            --accent: #ff0055; /* Hot Pink Default */
+            --text: #e0e0e0;
+            --knob-bg: #2a2a35;
+            --on: #00ff00;
+            --off: #555;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .synth {
+            background: var(--panel);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            border: 1px solid #333;
+            width: 950px; /* Widened slightly for the extra master controls */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* --- VISUALIZER --- */
+        .scope-container {
+            background: #000; /* Stays Black */
+            border: 1px solid #444;
+            border-radius: 6px;
+            height: 120px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px #000;
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+        .scope-overlay {
+            position: absolute; top: 5px; left: 8px;
+            font-family: monospace; font-size: 10px; color: var(--accent); opacity: 0.8;
+            pointer-events: none;
+        }
+
+        /* --- CONTROL PANEL --- */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+
+        .module {
+            background: #25252e;
+            border: 1px solid #363642;
+            border-radius: 5px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+        }
+
+        .module-title {
+            font-size: 10px;
+            color: var(--accent);
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .toggle-btn {
+            background: var(--off);
+            border: none;
+            color: white;
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .toggle-btn.active { background: var(--on); color: black; font-weight: bold; }
+        .toggle-btn.muted { background: red; color: white; }
+
+        .param { display: flex; flex-direction: column; gap: 2px; }
+        label { font-size: 8px; color: #aaa; text-transform: uppercase; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: var(--knob-bg);
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+            width: 100%;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+
+        select {
+            background: var(--knob-bg);
+            color: var(--text);
+            border: 1px solid #444;
+            font-size: 9px;
+            border-radius: 3px;
+            padding: 2px;
+        }
+
+        /* --- KEYBOARD --- */
+        .keyboard {
+            display: flex;
+            justify-content: center;
+            height: 140px;
+            position: relative;
+            margin-top: 5px;
+            background: #111;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .key {
+            flex: 1;
+            background: #fffff0;
+            border: 1px solid #999;
+            border-radius: 0 0 4px 4px;
+            margin: 0 1px;
+            cursor: pointer;
+            z-index: 1;
+            position: relative;
+        }
+
+        .key.black {
+            background: #000;
+            height: 60%;
+            width: 60%;
+            margin-left: -12px;
+            margin-right: -12px;
+            z-index: 2;
+            border: 1px solid #333;
+        }
+
+        .key:active, .key.active { background: var(--accent); transform: translateY(2px); border-color: var(--accent); }
+        .key.black:active, .key.black.active { background: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+<div class="synth">
+    
+    <div class="scope-container">
+        <div class="scope-overlay">REAL-TIME SIGNAL PATH</div>
+        <canvas id="scope"></canvas>
+    </div>
+
+    <div class="controls">
+        
+        <div class="module">
+            <div class="module-header"><span class="module-title">Oscillator</span></div>
+            <div class="param">
+                <label>Wave</label>
+                <select id="waveType">
+                    <option value="sawtooth">Sawtooth</option>
+                    <option value="square">Square</option>
+                    <option value="sine">Sine</option>
+                    <option value="triangle">Triangle</option>
+                </select>
+            </div>
+            <div class="param"><label>Octave</label><input type="range" id="octave" min="-2" max="2" step="1" value="0"></div>
+            <div class="param"><label>Semitone</label><input type="range" id="semitone" min="-12" max="12" step="1" value="0"></div>
+            <div class="param"><label>Pitch</label><input type="range" id="detune" min="-50" max="50" value="0"></div>
+        </div>
+
+        <div class="module">
+            <div class="module-header">
+                <span class="module-title">Noise</span>
+                <button id="noiseMute" class="toggle-btn active">ON</button>
+            </div>
+            <div class="param">
+                <label>Color</label>
+                <select id="noiseType">
+                    <option value="white">White</option>
+                    <option value="pink">Pink</option>
+                    <option value="brown">Brown</option>
+                </select>
+            </div>
+            <div class="param"><label>Mix Level</label><input type="range" id="noiseLvl" min="0" max="0.5" step="0.01" value="0.1"></div>
+        </div>
+
+        <div class="module">
+            <div class="module-header"><span class="module-title">LFO (Mod)</span></div>
+            <div class="param">
+                <label>Target</label>
+                <select id="lfoTarget">
+                    <option value="filter">Filter Cutoff</option>
+                    <option value="pitch">Osc Pitch</option>
+                </select>
+            </div>
+            <div class="param"><label>Speed (Hz)</label><input type="range" id="lfoSpeed" min="0.1" max="20" step="0.1" value="5"></div>
+            <div class="param"><label>Depth (Amt)</label><input type="range" id="lfoDepth" min="0" max="1000" step="10" value="0"></div>
+            <div class="param">
+                <label>Shape</label>
+                <select id="lfoShape"><option value="sine">Sine</option><option value="square">Square</option></select>
+            </div>
+        </div>
+
+        <div class="module">
+            <div class="module-header">
+                <span class="module-title">Filter</span>
+                <button id="filterBypass" class="toggle-btn active">ACTIVE</button>
+            </div>
+            <div class="param">
+                <label>Type</label>
+                <select id="filterType">
+                    <option value="lowpass">Lowpass</option>
+                    <option value="highpass">Highpass</option>
+                    <option value="bandpass">Bandpass</option>
+                    <option value="notch">Notch</option>
+                </select>
+            </div>
+            <div class="param"><label>Cutoff</label><input type="range" id="cutoff" min="20" max="10000" step="10" value="2000"></div>
+            <div class="param"><label>Resonance</label><input type="range" id="res" min="0" max="20" step="0.1" value="5"></div>
+        </div>
+
+        <div class="module">
+            <div class="module-header"><span class="module-title">ADSR</span></div>
+            <div class="param"><label>Attack</label><input type="range" id="attack" min="0.01" max="1" step="0.01" value="0.05"></div>
+            <div class="param"><label>Decay</label><input type="range" id="decay" min="0.01" max="1" step="0.01" value="0.3"></div>
+            <div class="param"><label>Sustain</label><input type="range" id="sustain" min="0" max="1" step="0.01" value="0.5"></div>
+            <div class="param"><label>Release</label><input type="range" id="release" min="0.1" max="3" step="0.1" value="0.8"></div>
+        </div>
+
+        <div class="module">
+            <div class="module-header"><span class="module-title">Master</span></div>
+            <div class="param">
+                <label>Color Theme</label>
+                <select id="themeSelect">
+                    <option value="#ff0055">Hot Pink</option>
+                    <option value="#00ff41">Matrix Green</option>
+                    <option value="#00f3ff">Cyber Blue</option>
+                    <option value="#ffb000">Retro Amber</option>
+                    <option value="#bc13fe">Neon Purple</option>
+                </select>
+            </div>
+            <div class="param"><label>Volume</label><input type="range" id="vol" min="0" max="1" step="0.01" value="0.6"></div>
+            <div class="param"><label>Echo Mix</label><input type="range" id="dMix" min="0" max="0.7" step="0.05" value="0.2"></div>
+        </div>
+
+    </div>
+
+    <div class="keyboard" id="keyboard"></div>
+</div>
+
+<script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // --- BUFFERS (Noise) ---
+    const bufferSize = audioCtx.sampleRate * 2; 
+    const buffers = {
+        white: audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate),
+        pink: audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate),
+        brown: audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate)
+    };
+
+    const wData = buffers.white.getChannelData(0);
+    for (let i=0; i<bufferSize; i++) wData[i] = Math.random() * 2 - 1;
+
+    const pData = buffers.pink.getChannelData(0);
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for (let i=0; i<bufferSize; i++) {
+        let white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168981;
+        pData[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+        b6 = white * 0.115926;
+    }
+
+    const brData = buffers.brown.getChannelData(0);
+    let lastOut = 0;
+    for (let i=0; i<bufferSize; i++) {
+        let white = Math.random() * 2 - 1;
+        lastOut = (lastOut + (0.02 * white)) / 1.02;
+        brData[i] = lastOut * 3.5;
+    }
+
+    // --- GLOBAL NODES ---
+    const masterGain = audioCtx.createGain();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+
+    const delayNode = audioCtx.createDelay(5.0);
+    const delayFeedback = audioCtx.createGain();
+    const delayWet = audioCtx.createGain();
+    
+    masterGain.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    delayNode.connect(delayFeedback);
+    delayFeedback.connect(delayNode);
+    delayNode.connect(delayWet);
+    delayWet.connect(masterGain);
+
+    // --- UI ELEMENTS ---
+    const ui = {
+        wave: document.getElementById('waveType'),
+        octave: document.getElementById('octave'),
+        semitone: document.getElementById('semitone'),
+        detune: document.getElementById('detune'),
+        noiseMute: document.getElementById('noiseMute'),
+        noiseType: document.getElementById('noiseType'),
+        noiseLvl: document.getElementById('noiseLvl'),
+        lfoTarget: document.getElementById('lfoTarget'),
+        lfoSpeed: document.getElementById('lfoSpeed'),
+        lfoDepth: document.getElementById('lfoDepth'),
+        lfoShape: document.getElementById('lfoShape'),
+        filterBypass: document.getElementById('filterBypass'),
+        filterType: document.getElementById('filterType'),
+        cutoff: document.getElementById('cutoff'),
+        res: document.getElementById('res'),
+        atk: document.getElementById('attack'),
+        dec: document.getElementById('decay'),
+        sus: document.getElementById('sustain'),
+        rel: document.getElementById('release'),
+        vol: document.getElementById('vol'),
+        dMix: document.getElementById('dMix'),
+        themeSelect: document.getElementById('themeSelect')
+    };
+
+    let activeNotes = {};
+    let isNoiseOn = true;
+    let isFilterOn = true;
+    let currentAccentColor = '#ff0055'; // Variable to track JS line color
+
+    // --- THEME LOGIC ---
+    ui.themeSelect.addEventListener('change', (e) => {
+        const newColor = e.target.value;
+        currentAccentColor = newColor;
+        // Update CSS Variables for buttons/sliders
+        document.documentElement.style.setProperty('--accent', newColor);
+    });
+
+    ui.noiseMute.addEventListener('click', () => {
+        isNoiseOn = !isNoiseOn;
+        ui.noiseMute.textContent = isNoiseOn ? "ON" : "MUTED";
+        ui.noiseMute.className = isNoiseOn ? "toggle-btn active" : "toggle-btn muted";
+    });
+
+    ui.filterBypass.addEventListener('click', () => {
+        isFilterOn = !isFilterOn;
+        ui.filterBypass.textContent = isFilterOn ? "ACTIVE" : "BYPASS";
+        ui.filterBypass.className = isFilterOn ? "toggle-btn active" : "toggle-btn muted";
+    });
+
+    // --- AUDIO ENGINE ---
+    function noteOn(baseFreq, keyElem) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (activeNotes[baseFreq]) return;
+
+        const now = audioCtx.currentTime;
+        keyElem.classList.add('active');
+
+        const octMult = Math.pow(2, parseInt(ui.octave.value));
+        const semiMult = Math.pow(2, parseInt(ui.semitone.value) / 12);
+        const finalFreq = (baseFreq * octMult * semiMult) + parseInt(ui.detune.value);
+
+        const osc = audioCtx.createOscillator();
+        osc.type = ui.wave.value;
+        osc.frequency.setValueAtTime(finalFreq, now);
+
+        const noiseSrc = audioCtx.createBufferSource();
+        noiseSrc.buffer = buffers[ui.noiseType.value];
+        noiseSrc.loop = true;
+        
+        const noiseGain = audioCtx.createGain();
+        const nVol = isNoiseOn ? parseFloat(ui.noiseLvl.value) : 0;
+        noiseGain.gain.setValueAtTime(nVol, now);
+
+        const filter = audioCtx.createBiquadFilter();
+        const useFilter = isFilterOn;
+        
+        if (useFilter) {
+            filter.type = ui.filterType.value;
+            filter.frequency.setValueAtTime(parseFloat(ui.cutoff.value), now);
+            filter.Q.setValueAtTime(parseFloat(ui.res.value), now);
+        }
+
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.type = ui.lfoShape.value;
+        lfo.frequency.setValueAtTime(parseFloat(ui.lfoSpeed.value), now);
+        lfoGain.gain.setValueAtTime(parseFloat(ui.lfoDepth.value), now);
+        
+        lfo.connect(lfoGain);
+        lfo.start();
+
+        const target = ui.lfoTarget.value;
+        if (target === 'filter' && useFilter) lfoGain.connect(filter.frequency);
+        else if (target === 'pitch') lfoGain.connect(osc.frequency);
+
+        const env = audioCtx.createGain();
+        const vol = parseFloat(ui.vol.value);
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(vol, now + parseFloat(ui.atk.value));
+        env.gain.exponentialRampToValueAtTime((vol * parseFloat(ui.sus.value)) + 0.001, now + parseFloat(ui.atk.value) + parseFloat(ui.dec.value));
+
+        if (useFilter) {
+            osc.connect(filter);
+            noiseSrc.connect(noiseGain);
+            noiseGain.connect(filter);
+            filter.connect(env);
+        } else {
+            osc.connect(env);
+            noiseSrc.connect(noiseGain);
+            noiseGain.connect(env);
+        }
+
+        env.connect(masterGain);
+        env.connect(delayNode);
+        delayFeedback.gain.value = 0.4; 
+        delayWet.gain.value = ui.dMix.value;
+
+        osc.start();
+        noiseSrc.start();
+        activeNotes[baseFreq] = { osc, noiseSrc, env, lfo, keyElem };
+    }
+
+    function noteOff(baseFreq) {
+        const n = activeNotes[baseFreq];
+        if (!n) return;
+        const now = audioCtx.currentTime;
+        const rel = parseFloat(ui.rel.value);
+        n.env.gain.cancelScheduledValues(now);
+        n.env.gain.setValueAtTime(n.env.gain.value, now);
+        n.env.gain.exponentialRampToValueAtTime(0.001, now + rel);
+        n.osc.stop(now + rel);
+        n.noiseSrc.stop(now + rel);
+        n.lfo.stop(now + rel);
+        n.keyElem.classList.remove('active');
+        delete activeNotes[baseFreq];
+    }
+
+    // --- KEYBOARD ---
+    const keysContainer = document.getElementById('keyboard');
+    const notes = [
+        {f: 130.8, t:'w'}, {f: 138.6, t:'b'}, {f: 146.8, t:'w'}, {f: 155.6, t:'b'},
+        {f: 164.8, t:'w'}, {f: 174.6, t:'w'}, {f: 185.0, t:'b'}, {f: 196.0, t:'w'},
+        {f: 207.7, t:'b'}, {f: 220.0, t:'w'}, {f: 233.1, t:'b'}, {f: 246.9, t:'w'},
+        {f: 261.6, t:'w'}, {f: 277.2, t:'b'}, {f: 293.7, t:'w'}, {f: 311.1, t:'b'},
+        {f: 329.6, t:'w'}, {f: 349.2, t:'w'}, {f: 370.0, t:'b'}, {f: 392.0, t:'w'},
+        {f: 415.3, t:'b'}, {f: 440.0, t:'w'}, {f: 466.2, t:'b'}, {f: 493.9, t:'w'}, {f: 523.3, t:'w'}
+    ];
+
+    notes.forEach(note => {
+        const key = document.createElement('div');
+        key.className = `key ${note.t === 'b' ? 'black' : ''}`;
+        key.addEventListener('mousedown', () => noteOn(note.f, key));
+        key.addEventListener('mouseup', () => noteOff(note.f));
+        key.addEventListener('mouseleave', () => noteOff(note.f));
+        keysContainer.appendChild(key);
+    });
+
+    // --- SCOPE LOOP ---
+    const canvas = document.getElementById('scope');
+    const ctx = canvas.getContext('2d');
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function draw() {
+        requestAnimationFrame(draw);
+        analyser.getByteTimeDomainData(dataArray);
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        
+        ctx.fillStyle = '#000'; // Hardcoded Black Background
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = currentAccentColor; // Dynamic line color
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = currentAccentColor;
+        
+        ctx.beginPath();
+        const sliceWidth = canvas.width / dataArray.length;
+        let x = 0;
+        for(let i=0; i < dataArray.length; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * (canvas.height/2);
+            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            x += sliceWidth;
+        }
+        ctx.lineTo(canvas.width, canvas.height/2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+    draw();
+</script>
+</body>
+</html>

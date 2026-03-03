@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Infinite Neon Pulse</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="visualizer"></canvas>
+
+    <div class="ui">
+      <div id="score">SCORE: 00000</div>
+      <div id="combo">COMBO x0</div>
+    </div>
+
+    <div id="startScreen" class="overlay">
+      <h1>INFINITE PULSE</h1>
+      <p>系統自動生成電音節奏</p>
+      <button id="startBtn" class="btn">START GAME</button>
+      <div class="keys-info">鍵盤：[A] [S] [D] [F]</div>
+    </div>
+
+    <div class="hit-bar">
+      <div class="lane-hint">A</div>
+      <div class="lane-hint">S</div>
+      <div class="lane-hint">D</div>
+      <div class="lane-hint">F</div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

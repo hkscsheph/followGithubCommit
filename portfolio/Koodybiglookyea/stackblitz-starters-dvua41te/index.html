@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Arcade | Play Now</title>
+    <style>
+        /* CSS: The Look and Feel */
+        :root {
+            --primary: #00f2ff;
+            --bg: #0a0a0c;
+            --card: #16161a;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Navigation */
+        nav {
+            width: 100%;
+            padding: 20px;
+            background: rgba(0,0,0,0.8);
+            border-bottom: 2px solid var(--primary);
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Layout Container */
+        .container {
+            max-width: 1000px;
+            width: 90%;
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Game on left, Sidebar on right */
+            gap: 20px;
+        }
+
+        /* Game Screen */
+        .game-wrapper {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+
+        /* Sidebar & UI */
+        .sidebar {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .stats-box {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-left: 4px solid var(--primary);
+            background: #1d1d23;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            filter: brightness(1.2);
+            transform: scale(1.02);
+        }
+
+        .controls-hint {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>NEON ARCADE</nav>
+
+    <div class="container">
+        <div class="game-wrapper">
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+            <h3>Cyber-Shooter v1.0</h3>
+            <p>Defend the core from incoming data fragments!</p>
+        </div>
+
+        <div class="sidebar">
+            <div class="stats-box">
+                Score: <span id="scoreVal">0</span><br>
+                Health: <span id="healthVal">100</span>%
+            </div>
+            
+            <button onclick="resetGame()">RESTART MISSION</button>
+
+            <div class="controls-hint">
+                <strong>How to Play:</strong><br>
+                - Mouse: Move ship<br>
+                - Click: Fire Laser<br>
+                - Don't let blocks reach the bottom!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /** JAVASCRIPT: The Game Engine **/
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisp = document.getElementById("scoreVal");
+        const healthDisp = document.getElementById("healthVal");
+
+        let score = 0;
+        let health = 100;
+        let bullets = [];
+        let enemies = [];
+        let mouseX = canvas.width / 2;
+
+        // Track Mouse Movement
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+        });
+
+        // Shooting
+        canvas.addEventListener('mousedown', () => {
+            if (health > 0) {
+                bullets.push({ x: mouseX - 2, y: 360, w: 4, h: 10 });
+            }
+        });
+
+        function spawnEnemy() {
+            if (Math.random() < 0.05) {
+                enemies.push({ 
+                    x: Math.random() * (canvas.width - 30), 
+                    y: -30, 
+                    w: 30, 
+                    h: 30, 
+                    speed: 2 + (score / 10) // Gets faster as score goes up
+                });
+            }
+        }
+
+        function update() {
+            if (health <= 0) return;
+
+            // Update Bullets
+            bullets.forEach((b, i) => {
+                b.y -= 8;
+                if (b.y < 0) bullets.splice(i, 1);
+            });
+
+            // Update Enemies
+            enemies.forEach((en, i) => {
+                en.y += en.speed;
+
+                // Check for Ground Hit
+                if (en.y > canvas.height) {
+                    enemies.splice(i, 1);
+                    health -= 10;
+                    healthDisp.innerText = health;
+                }
+
+                // Bullet Collision
+                bullets.forEach((b, bi) => {
+                    if (b.x < en.x + en.w && b.x + b.w > en.x && b.y < en.y + en.h) {
+                        enemies.splice(i, 1);
+                        bullets.splice(bi, 1);
+                        score += 1;
+                        scoreDisp.innerText = score;
+                    }
+                });
+            });
+
+            spawnEnemy();
+        }
+
+        function draw() {
+            // Clear Frame
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (health <= 0) {
+                ctx.fillStyle = "red";
+                ctx.font = "30px Arial";
+                ctx.fillText("SYSTEM CRITICAL: OVER", 140, 200);
+                return;
+            }
+
+            // Draw Player
+            ctx.fillStyle = "#00f2ff";
+            ctx.fillRect(mouseX - 20, 370, 40, 15);
+            ctx.fillRect(mouseX - 5, 360, 10, 10);
+
+            // Draw Bullets
+            ctx.fillStyle = "yellow";
+            bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+            // Draw Enemies
+            ctx.fillStyle = "#ff0055";
+            enemies.forEach(en => ctx.fillRect(en.x, en.y, en.w, en.h));
+
+            requestAnimationFrame(() => {
+                update();
+                draw();
+            });
+        }
+
+        function resetGame() {
+            score = 0;
+            health = 100;
+            enemies = [];
+            bullets = [];
+            scoreDisp.innerText = "0";
+            healthDisp.innerText = "100";
+            draw();
+        }
+
+        draw();
+    </script>
+</body>
+</htmla>

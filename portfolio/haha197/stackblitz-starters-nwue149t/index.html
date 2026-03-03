@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weekly Timetable</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+        background-color: #f4f4f9;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background-color: white;
+      }
+
+      /* Styling the headers */
+      th {
+        background-color: #009879;
+        color: white;
+        padding: 15px;
+        text-transform: uppercase;
+      }
+
+      /* Styling the rows */
+      td {
+        border: 1px solid #dddddd;
+        padding: 15px;
+        text-align: center;
+        height: 50px;
+        vertical-align: middle;
+      }
+
+      /* The "Purpose" columns/rows styling */
+      .row-header {
+        font-weight: bold;
+        background-color: #e2e2e2;
+        color: #333;
+        width: 100px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f3f3f3;
+      }
+
+      a:hover {
+        border: 7px outset #000;
+        color: #000;
+        background: linear-gradient(90deg,#999999, #666666);
+      }
+      
+      a{
+        margin-top: 40px;
+        display: flex;
+        justify-content: center;
+        color: #fff;
+        background: linear-gradient(90deg,#666666, #333333);
+        border: 7px outset #999999;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Weekly Schedule</h1>
+    <table id="displayTable"></table>
+
+    <a href="editor.html">Editor</a>
+    <script>
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      const periods = 10; // 10 Vertical slots
+
+      function loadTimetable() {
+        const table = document.getElementById('displayTable');
+        table.innerHTML = ''; // Clear existing
+
+        // 1. Create Header Row (Days)
+        const thead = document.createElement('tr');
+        thead.innerHTML = '<th>Time / Day</th>'; // Corner cell
+        days.forEach((day) => {
+          thead.innerHTML += `<th>${day}</th>`;
+        });
+        table.appendChild(thead);
+
+        // 2. Load Data from LocalStorage
+        const storedData =
+          JSON.parse(localStorage.getItem('timetableData')) || {};
+
+        // 3. Create Rows (Periods)
+        for (let i = 1; i <= periods; i++) {
+          const tr = document.createElement('tr');
+
+          // The "Purpose" column for the row (Period Number)
+          tr.innerHTML = `<td class="row-header">Period ${i}</td>`;
+
+          // The Data Cells
+          days.forEach((day) => {
+            const cellId = `${day}-${i}`;
+            const content = storedData[cellId] || '-';
+            tr.innerHTML += `<td>${content}</td>`;
+          });
+
+          table.appendChild(tr);
+        }
+      }
+
+      // Listen for changes from the other tab
+      window.addEventListener('storage', () => {
+        loadTimetable();
+      });
+
+      // Initial Load
+      loadTimetable();
+    </script>
+  </body>
+</html>

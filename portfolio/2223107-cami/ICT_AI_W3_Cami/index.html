@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人作品集 | My Portfolio</title>
+    <style>
+        /* 全域變數設定 */
+        :root {
+            --primary-purple: #6c5ce7;
+            --light-purple: #a29bfe;
+            --dark-purple: #4834d4;
+            --bg-white: #ffffff;
+            --soft-gray: #f8f9fa;
+            --text-dark: #2d3436;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-white);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* 導覽列 */
+        nav {
+            background: var(--bg-white);
+            padding: 1.5rem 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(108, 92, 231, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-purple);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+        }
+
+        .nav-links li {
+            margin-left: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-purple);
+        }
+
+        /* 英雄區塊 (Hero Section) */
+        header {
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary-purple), var(--light-purple));
+            color: white;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* 作品集區塊 */
+        .container {
+            padding: 4rem 10%;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--dark-purple);
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        /* 作品卡片 */
+        .card {
+            background: var(--bg-white);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid #eee;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.2);
+        }
+
+        .card-img {
+            height: 200px;
+            background-color: var(--soft-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--light-purple);
+            font-weight: bold;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .card-tag {
+            background: var(--soft-gray);
+            color: var(--primary-purple);
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title {
+            margin-bottom: 0.5rem;
+            color: var(--dark-purple);
+        }
+
+        /* 頁尾 */
+        footer {
+            background: var(--soft-gray);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+            color: #777;
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            .nav-links { display: none; } /* 簡化手機版 */
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">PORTFOLIO.</div>
+        <ul class="nav-links">
+            <li><a href="#">首頁</a></li>
+            <li><a href="#">關於我</a></li>
+            <li><a href="#">作品展示</a></li>
+            <li><a href="#">聯絡資訊</a></li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>你好，我是 [你的名字]</h1>
+        <p>專注於視覺設計與網頁開發的創作者</p>
+    </header>
+
+    <section class="container">
+        <h2 class="section-title">我的作品 Portfolio</h2>
+        
+        <div class="portfolio-grid">
+            <div class="card">
+                <div class="card-img" style="background: #efecfd;">Project 1 Image</div>
+                <div class="card-content">
+                    <span class="card-tag">UI/UX Design</span>
+                    <h3 class="card-title">品牌官方網站設計</h3>
+                    <p>這是一個關於企業形象提升的網頁設計專案。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-img" style="background: #e8e4fb;">Project 2 Image</div>
+                <div class="card-content">
+                    <span class="card-tag">Branding</span>
+                    <h3 class="card-title">標誌與視覺識別</h3>
+                    <p>為初創科技公司量身打造的視覺識別系統。</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-img" style="background: #e1dbfa;">Project 3 Image</div>
+                <div class="card-content">
+                    <span class="card-tag">Web Dev</span>
+                    <h3 class="card-title">電子商務平台</h3>
+                    <p>使用 HTML5/CSS3 開發的響應式線上購物網頁。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 Your Name. 內心充滿紫色的設計魂。</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Supabase 即時聊天室</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: 20px auto;
+      }
+      #chat-box {
+        border: 1px solid #ccc;
+        height: 400px;
+        overflow-y: scroll;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+      }
+      .message {
+        margin-bottom: 8px;
+      }
+      .username {
+        font-weight: bold;
+        color: #2c3e50;
+      }
+      .input-area {
+        display: flex;
+        gap: 5px;
+      }
+      input {
+        padding: 8px;
+        flex-grow: 1;
+      }
+      button {
+        padding: 8px 15px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>即時聊天室</h2>
+    <div id="chat-box"></div>
+
+    <div class="input-area">
+      <input
+        type="text"
+        id="username"
+        placeholder="暱稱"
+        style="width: 80px; flex-grow: 0"
+      />
+      <input type="text" id="message-input" placeholder="輸入訊息..." />
+      <button id="send-btn">發送</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日生活記錄 - Daily Life Journal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container" id="app">
+        <header>
+            <h1>每日生活記錄</h1>
+            <div class="date" id="currentDate">YYYY年MM月DD日 - Day X</div>
+        </header>
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="today">今日</button>
+            <button class="tab-btn" data-tab="notes">筆記</button>
+            <button class="tab-btn" data-tab="tasks">任務</button>
+        </nav>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number" id="achieved">0</div>
+                <div class="stat-label">目標達成</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="mood">0</div>
+                <div class="stat-label">心情分數</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="streak">Day 1</div>
+                <div class="stat-label">連續天數</div>
+            </div>
+        </div>
+        <div class="tab-content active" id="today">
+            <div class="log-entry">
+                <h2 class="log-title">今日摘要</h2>
+                <div id="todayLogs">今日做了什麼？記錄重要時刻。</div>
+            </div>
+        </div>
+        <div class="tab-content" id="notes">
+            <div class="log-entry">
+                <h2 class="log-title">隨手筆記</h2>
+                <div id="noteLogs">快速記低想法。</div>
+            </div>
+        </div>
+        <div class="tab-content" id="tasks">
+            <div class="log-entry">
+                <h2 class="log-title">今日任務</h2>
+                <ul class="gear-list" id="taskList">
+                    <li class="gear-item">任務1</li>
+                </ul>
+            </div>
+        </div>
+        <form class="add-log">
+            <input type="text" id="logTitle" placeholder="活動/心情 (e.g. 工作進度)">
+            <textarea id="logContent" placeholder="詳細筆記..." rows="4"></textarea>
+            <div class="form-actions">
+                <button type="submit">新增記錄</button>
+                <button type="button" id="clearData">清空所有數據</button>
+            </div>
+        </form>
+        <footer>
+            <p>&copy; 2026 進階生活記錄模板。localStorage儲存，免費分享。</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

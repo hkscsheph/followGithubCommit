@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora Cyber Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="aurora-bg"></div>
+    
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="status">●</div>
+            <div class="title">CYBER_NETWORK_V3</div>
+        </header>
+
+        <main id="chat-box"></main>
+
+        <footer class="input-area">
+            <input type="text" id="username" placeholder="ID" value="User">
+            <input type="text" id="content" placeholder="Type a message..." autocomplete="off">
+            <input type="file" id="file-input" accept="image/*" style="display: none;">
+            <button id="btn-upload">📎</button>
+            <button id="btn-send">SEND</button>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

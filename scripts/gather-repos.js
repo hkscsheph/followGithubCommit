@@ -86,6 +86,12 @@ async function gatherAllRepos() {
   const results = [];
   
   for (const user of targetUsers) {
+    // Skip blacklisted students
+    if (BLACKLIST.students.includes(user)) {
+      console.log(`⊘ ${user}: Skipped (blacklisted student)`);
+      continue;
+    }
+    
     try {
       const result = await fetchUserRepos(user);
       

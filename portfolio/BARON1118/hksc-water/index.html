@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Realistic River Run</title>
+    <style>
+        body { 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background: #1a1a1a; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas { 
+            /* River blue gradient background */
+            background: linear-gradient(to bottom, #1d4e89, #00b4d8, #1d4e89);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 2px solid #ffffff22;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="500" height="700"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let gameActive = true;
+        let distance = 0;
+        let rippleOffset = 0;
+
+        const player = { x: 250, y: 600, w: 30, h: 50 };
+        const obstacles = [];
+        const keys = {};
+
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        function drawFish(x, y) {
+            ctx.save();
+            ctx.translate(x + 15, y + 25);
+            
+            // Fish Body (Teardrop shape)
+            ctx.fillStyle = '#ff8c42'; // Vibrant orange
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 12, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tail
+            ctx.beginPath();
+            ctx.moveTo(0, 20);
+            ctx.lineTo(-12, 35);
+            ctx.lineTo(12, 35);
+            ctx.closePath();
+            ctx.fill();
+
+            // Eye
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(0, -12, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(0, -13, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawRiverEffects() {
+            rippleOffset += 3; // Speed of the current
+            if (rippleOffset > 100) rippleOffset = 0;
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 2;
+            for (let i = -100; i < canvas.height; i += 100) {
+                ctx.beginPath();
+                ctx.moveTo(0, i + rippleOffset);
+                ctx.bezierCurveTo(150, i + rippleOffset - 50, 350, i + rippleOffset + 50, 500, i + rippleOffset);
+                ctx.stroke();
+            }
+        }
+
+        function drawRock(obs) {
+            ctx.fillStyle = '#4a4a4a';
+            ctx.beginPath();
+            ctx.moveTo(obs.x, obs.y + obs.h);
+            ctx.lineTo(obs.x + obs.w / 2, obs.y);
+            ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+            ctx.closePath();
+            ctx.fill();
+            // Highlight for "3D" look
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.moveTo(obs.x + obs.w / 2, obs.y);
+            ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+            ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
+            ctx.fill();
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            if (keys['ArrowLeft'] && player.x > 0) player.x -= 4;
+            if (keys['ArrowRight'] && player.x < canvas.width - player.w) player.x += 4;
+            if (keys['ArrowUp'] && player.y > 0) player.y -= 4;
+            if (keys['ArrowDown'] && player.y < canvas.height - player.h) player.y += 4;
+
+            if (Math.random() < 0.03) {
+                obstacles.push({ 
+                    x: Math.random() * (canvas.width - 60), 
+                    y: -100, 
+                    w: 50 + Math.random() * 40, 
+                    h: 40 
+                });
+            }
+
+            obstacles.forEach((obs, i) => {
+                obs.y += 5; // The speed of the river current
+                
+                // Collision check
+                if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
+                    player.y < obs.y + obs.h && player.y + player.h > obs.y) {
+                    gameActive = false;
+                    setTimeout(() => { alert("Caught in the rocks! Distance: " + Math.floor(distance) + "m"); location.reload(); }, 10);
+                }
+                if (obs.y > canvas.height) obstacles.splice(i, 1);
+            });
+            distance += 0.1;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawRiverEffects();
+            drawFish(player.x, player.y);
+            obstacles.forEach(drawRock);
+
+            // UI
+            ctx.fillStyle = "white";
+            ctx.font = "bold 20px sans-serif";
+            ctx.fillText(`UPSTREAM: ${Math.floor(distance)}m`, 20, 40);
+
+            requestAnimationFrame(() => { update(); draw(); });
+        }
+
+        draw();
+    </script>
+</body>
+</html>

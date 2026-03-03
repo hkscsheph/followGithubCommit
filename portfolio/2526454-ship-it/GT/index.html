@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>School Gaming Tournament Registration 2026</title>
+    <style>
+      /* General Reset and Body Styling */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #1a1a2e;
+        color: #e0e0e0;
+        line-height: 1.6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      /* Container Styling */
+      .container {
+        background-color: #16213e;
+        width: 100%;
+        max-width: 600px;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+        border: 1px solid #0f3460;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      header h1 {
+        color: #00ffcc; /* Neon Teal */
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+      }
+
+      header p {
+        color: #a0a0a0;
+      }
+
+      /* Form Elements */
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      fieldset {
+        border: 1px solid #0f3460;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #1a1a2e;
+      }
+
+      legend {
+        padding: 0 10px;
+        color: #e94560; /* Neon Red/Pink */
+        font-weight: bold;
+        font-size: 1.1em;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+      }
+
+      input[type='text'],
+      input[type='email'],
+      input[type='number'],
+      select {
+        width: 100%;
+        padding: 10px;
+        background-color: #0f3460;
+        border: 1px solid #533483;
+        border-radius: 5px;
+        color: #fff;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #00ffcc;
+      }
+
+      /* Radio and Checkbox Styling */
+      .radio-group,
+      .checkbox-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      input[type='radio'],
+      input[type='checkbox'] {
+        accent-color: #e94560;
+        transform: scale(1.2);
+      }
+
+      /* Button Styling */
+      button {
+        padding: 15px;
+        background-color: #e94560;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: background 0.3s ease, transform 0.1s;
+      }
+
+      button:hover {
+        background-color: #c0354e;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      /* Small Helper Text */
+      .hint {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: -15px;
+        margin-bottom: 15px;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Level Up 2026</h1>
+        <p>Spring Semester Gaming Tournament Registration</p>
+      </header>
+
+      <form action="/submit-registration" method="POST">
+        <fieldset>
+          <legend>Player Profile</legend>
+
+          <label for="fullname">Full Name:</label>
+          <input
+            type="text"
+            id="fullname"
+            name="fullname"
+            placeholder="Enter your full name"
+            required
+          />
+
+          <label for="studentid">Student ID:</label>
+          <input
+            type="text"
+            id="studentid"
+            name="studentid"
+            placeholder="e.g., 123456"
+            required
+          />
+
+          <label for="email">School Email:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="you@school.edu"
+            required
+          />
+
+          <label for="grade">Grade Level:</label>
+          <select id="grade" name="grade" required>
+            <option value="" disabled selected>Select your grade</option>
+            <option value="9">Freshman (9th)</option>
+            <option value="10">Sophomore (10th)</option>
+            <option value="11">Junior (11th)</option>
+            <option value="12">Senior (12th)</option>
+          </select>
+        </fieldset>
+
+        <fieldset>
+          <legend>Tournament Selection</legend>
+
+          <label for="game">Select Game:</label>
+          <select id="game" name="game" required>
+            <option value="" disabled selected>Choose a game</option>
+            <option value="cs2">Counter-Strike 2</option>
+            <option value="smash">Super Smash Bros. Ultimate</option>
+            <option value="rocket">Rocket League</option>
+            <option value="valorant">Valorant</option>
+            <option value="minecraft">Minecraft (Bedwars)</option>
+            <option value="chess">Online Chess</option>
+          </select>
+
+          <label>Entry Type:</label>
+          <div class="radio-group">
+            <input
+              type="radio"
+              id="solo"
+              name="entry_type"
+              value="solo"
+              checked
+            />
+            <label for="solo" style="margin-bottom: 0">Solo Entry</label>
+
+            <input type="radio" id="team" name="entry_type" value="team" />
+            <label for="team" style="margin-bottom: 0">Team Entry</label>
+          </div>
+
+          <label for="gamertag">Gamer Tag / Username:</label>
+          <input
+            type="text"
+            id="gamertag"
+            name="gamertag"
+            placeholder="e.g., ProGamer123"
+            required
+          />
+
+          <label for="teammates">Teammate Names (If Team Entry):</label>
+          <input
+            type="text"
+            id="teammates"
+            name="teammates"
+            placeholder="Leave blank if Solo"
+          />
+          <span class="hint">Separate names with commas.</span>
+        </fieldset>
+
+        <fieldset>
+          <legend>Rules & Conduct</legend>
+          <div class="checkbox-group">
+            <input type="checkbox" id="rules" name="rules" required />
+            <label for="rules" style="margin-bottom: 0"
+              >I agree to the School Code of Conduct and Fair Play Rules.</label
+            >
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="equipment" name="equipment" />
+            <label for="equipment" style="margin-bottom: 0"
+              >I will bring my own controller/peripherals (optional).</label
+            >
+          </div>
+        </fieldset>
+
+        <button type="submit">Register Now</button>
+      </form>
+    </div>
+  </body>
+</html>

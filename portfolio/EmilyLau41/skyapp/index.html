@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日天空紀錄 | Sky Diary</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --primary-blue: #4a90e2;
+            --sky-gradient: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            --glass: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: var(--sky-gradient);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            padding: 50px 20px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 2px; }
+        header p { opacity: 0.9; margin-top: 10px; }
+
+        .upload-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            margin: -30px auto 40px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            padding: 12px 30px;
+            cursor: pointer;
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        }
+
+        .custom-file-upload:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4); }
+
+        #fileInput { display: none; }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 0 20px 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .sky-item {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: 0.3s;
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .sky-item:hover { transform: scale(1.03); }
+
+        .sky-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .sky-info {
+            padding: 15px;
+            background: white;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .date-tag { color: #888; }
+        
+        #loading { font-size: 0.9rem; color: var(--primary-blue); margin-top: 15px; display: none; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SKY</h1>
+        <p>收集每一天的雲彩與心情</p>
+    </header>
+
+    <div class="upload-card">
+        <label for="fileInput" class="custom-file-upload">
+            捕捉今天的天空 ☁️
+        </label>
+        <input type="file" id="fileInput" accept="image/*" onchange="uploadSky()">
+        <div id="loading">🚀 正在同步到雲端...</div>
+    </div>
+
+    <div class="gallery" id="gallery">
+        </div>
+
+    <script>
+        // --- 1. Supabase 配置 ---
+        const SUPABASE_URL = 'https://dhypkutxhcfjpzmlufxr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoeXBrdXR4aGNmanB6bWx1ZnhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwOTA0OTQsImV4cCI6MjA4NTY2NjQ5NH0.0wlQw1SlkDoThRgemcyhHIg-PnsSjf50vG0Osb8kbWU';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const BUCKET_NAME = 'sky_images';
+        const TABLE_NAME = 'daily_skies';
+
+        // --- 2. 上傳功能 ---
+        async function uploadSky() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const loadingText = document.getElementById('loading');
+
+            if (!file) return;
+
+            loadingText.style.display = 'block';
+
+            try {
+                // 產生唯一檔名避免衝突
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+
+                // A. 上傳到 Storage
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from(BUCKET_NAME)
+                    .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                // B. 取得公開連結
+                const { data: publicUrlData } = supabaseClient.storage
+                    .from(BUCKET_NAME)
+                    .getPublicUrl(fileName);
+
+                const imageUrl = publicUrlData.publicUrl;
+
+                // C. 寫入資料庫
+                const { error: dbError } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .insert([{ image_url: imageUrl }]);
+
+                if (dbError) throw dbError;
+
+                alert("上傳成功！");
+                fetchSkies(); // 重新整理
+            } catch (error) {
+                console.error('Error:', error.message);
+                alert("上傳失敗，請檢查 Supabase 設定與權限。");
+            } finally {
+                loadingText.style.display = 'none';
+                fileInput.value = ""; // 重設上傳鈕
+            }
+        }
+
+        // --- 3. 獲取資料功能 ---
+        async function fetchSkies() {
+            const { data, error } = await supabaseClient
+                .from(TABLE_NAME)
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Fetch error:', error);
+                return;
+            }
+
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = data.map(item => {
+                const dateStr = new Date(item.created_at).toLocaleDateString('zh-TW', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                return `
+                    <div class="sky-item">
+                        <img src="${item.image_url}" alt="Sky Photo" loading="lazy">
+                        <div class="sky-info">
+                            <span class="date-tag">🗓️ ${dateStr}</span>
+                            <span>✨</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 頁面開啟時自動載入
+        window.onload = fetchSkies;
+    </script>
+</body>
+</html>

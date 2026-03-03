@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HKSC - Teacher Tracker</title>
+    <style>
+        :root {
+            --primary-color: #004aad; /* School Blue */
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-dark: #333;
+            --text-light: #666;
+            
+            /* Status Colors */
+            --status-staffroom: #2ecc71; /* Green */
+            --status-absent: #e74c3c;    /* Red */
+            --status-holiday: #f1c40f;   /* Yellow */
+            --status-class: #95a5a6;     /* Grey */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            padding: 20px;
+        }
+
+        /* Header Section */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Controls Section */
+        .controls {
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Grid Layout */
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Teacher Card */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background-color: #eee;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .info {
+            flex: 1;
+        }
+
+        .name {
+            font-weight: bold;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .dept {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Status Modifiers */
+        .status-staffroom { background-color: var(--status-staffroom); }
+        .status-absent { background-color: var(--status-absent); }
+        .status-holiday { background-color: var(--status-holiday); color: #333; }
+        .status-class { background-color: var(--status-class); }
+
+        /* Animation for live feel */
+        .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            background-color: white;
+            animation: pulse-animation 2s infinite;
+        }
+        
+        @keyframes pulse-animation {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        @media (min-width: 600px) {
+            .controls {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>HKSC Teacher Tracker</h1>
+        <p class="subtitle">Real-time Faculty Availability Dashboard</p>
+    </header>
+
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search teacher name or subject...">
+        <div class="filter-buttons">
+            <button class="btn active" onclick="filterData('all')">All</button>
+            <button class="btn" onclick="filterData('Staff Room')">In Staff Room</button>
+            <button class="btn" onclick="filterData('Absent')">Absent</button>
+        </div>
+    </div>
+
+    <div id="teacherGrid" class="teacher-grid">
+        </div>
+
+    <script>
+        // --- 1. MOCK DATA (Simulating a Database) ---
+        // In a real app, this would be fetched from a server API.
+        const teachers = [
+            { id: 1, name: "Mr. John Smith", dept: "Mathematics", status: "Staff Room" },
+            { id: 2, name: "Ms. Sarah Lee", dept: "English", status: "In Class (Rm 301)" },
+            { id: 3, name: "Mr. David Wong", dept: "Physics", status: "Absent" },
+            { id: 4, name: "Mrs. Emily Chen", dept: "Chemistry", status: "Holiday" },
+            { id: 5, name: "Mr. Alan Turing", dept: "Computer Science", status: "Staff Room" },
+            { id: 6, name: "Ms. Marie Curie", dept: "Science", status: "Staff Room" },
+            { id: 7, name: "Mr. Shakespeare", dept: "Drama", status: "In Class (Hall)" },
+            { id: 8, name: "Ms. Frida Kahlo", dept: "Art", status: "Absent" }
+        ];
+
+        // --- 2. RENDER FUNCTION ---
+        const grid = document.getElementById('teacherGrid');
+        const btns = document.querySelectorAll('.btn');
+
+        function renderTeachers(data) {
+            grid.innerHTML = ""; // Clear existing
+
+            if (data.length === 0) {
+                grid.innerHTML = "<p style='text-align:center; grid-column: 1/-1; color:#666;'>No teachers found matching criteria.</p>";
+                return;
+            }
+
+            data.forEach(teacher => {
+                // Determine CSS class based on status
+                let statusClass = "status-class";
+                let statusIcon = "";
+                
+                if (teacher.status === "Staff Room") {
+                    statusClass = "status-staffroom";
+                    statusIcon = "<span class='pulse'></span>"; // Add pulse animation for availability
+                } else if (teacher.status === "Absent") {
+                    statusClass = "status-absent";
+                } else if (teacher.status === "Holiday") {
+                    statusClass = "status-holiday";
+                }
+
+                // Create Card HTML
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="avatar">${teacher.name.charAt(4)}</div>
+                    <div class="info">
+                        <div class="name">${teacher.name}</div>
+                        <div class="dept">${teacher.dept}</div>
+                        <div class="status-badge ${statusClass}">
+                            ${statusIcon}${teacher.status}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // --- 3. FILTER & SEARCH LOGIC ---
+        function filterData(filterType) {
+            // Update button styles
+            btns.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = teachers.filter(t => {
+                // 1. Check Search Text
+                const matchesSearch = t.name.toLowerCase().includes(searchTerm) || 
+                                      t.dept.toLowerCase().includes(searchTerm);
+                
+                // 2. Check Status Category
+                let matchesStatus = true;
+                if (filterType === 'Staff Room') matchesStatus = t.status === 'Staff Room';
+                if (filterType === 'Absent') matchesStatus = t.status === 'Absent' || t.status === 'Holiday';
+                
+                return matchesSearch && matchesStatus;
+            });
+
+            renderTeachers(filtered);
+        }
+
+        // Search Input Listener
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            // Re-trigger the click on the currently active button to maintain category filter
+            const activeBtn = document.querySelector('.btn.active');
+            activeBtn.click();
+        });
+
+        // Initial Render
+        renderTeachers(teachers);
+
+    </script>
+</body>
+</html>

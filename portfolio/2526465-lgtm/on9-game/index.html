@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Paint.io Clone</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #222;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        h1 { margin-bottom: 10px; font-size: 24px; }
+        
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            background-color: #333; /* The Neutral Territory */
+            display: block;
+            border-radius: 4px;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            pointer-events: none;
+        }
+
+        .stat {
+            background: rgba(0,0,0,0.6);
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px 40px;
+            text-align: center;
+            border-radius: 8px;
+            display: none;
+        }
+
+        button {
+            background: #00d2ff;
+            border: none;
+            padding: 10px 20px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        button:hover { background: #fff; }
+    </style>
+</head>
+<body>
+
+    <h1>Paper/Paint.io Prototype</h1>
+    
+    <div id="game-container">
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+        
+        <div id="ui-layer">
+            <div class="stat" style="color:#00d2ff">Score: <span id="score">0.0</span>%</div>
+        </div>
+
+        <div id="game-over">
+            <h2 style="color: #ff4444">GAME OVER</h2>
+            <p>You hit the wall or your own trail!</p>
+            <button onclick="resetGame()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const gameOverEl = document.getElementById('game-over');
+
+        // --- Configuration ---
+        const TILE_SIZE = 20;
+        const COLS = canvas.width / TILE_SIZE;
+        const ROWS = canvas.height / TILE_SIZE;
+        const SPEED = 5; // Lower is faster (frames per move)
+
+        // --- Game State ---
+        let grid = []; // 0 = neutral, 1 = player owned
+        let player = {
+            x: 0, y: 0,
+            dx: 1, dy: 0, // Direction
+            trail: [],    // Tiles currently being drawn
+            color: '#00d2ff',
+            trailColor: 'rgba(0, 210, 255, 0.5)'
+        };
+        
+        let frameCount = 0;
+        let isGameOver = false;
+        let nextDir = { dx: 1, dy: 0 }; // Buffer input to prevent self-collision
+
+        // --- Initialization ---
+        function initGrid() {
+            grid = [];
+            for (let x = 0; x < COLS; x++) {
+                grid[x] = [];
+                for (let y = 0; y < ROWS; y++) {
+                    grid[x][y] = 0;
+                }
+            }
+            // Starting safe zone (3x3)
+            const startX = Math.floor(COLS/2);
+            const startY = Math.floor(ROWS/2);
+            player.x = startX; 
+            player.y = startY;
+            
+            for(let i=-1; i<=1; i++){
+                for(let j=-1; j<=1; j++){
+                    grid[startX+i][startY+j] = 1;
+                }
+            }
+        }
+
+        function resetGame() {
+            initGrid();
+            player.dx = 1; player.dy = 0;
+            nextDir = { dx: 1, dy: 0 };
+            player.trail = [];
+            isGameOver = false;
+            gameOverEl.style.display = 'none';
+            loop();
+        }
+
+        // --- Core Logic ---
+
+        // A simple "Bounding Box" fill algorithm for simplicity.
+        // A real production game uses "Scanline Flood Fill".
+        function fillTerritory() {
+            // 1. Identify bounds of the trail
+            let minX = COLS, maxX = 0, minY = ROWS, maxY = 0;
+            
+            // Add trail to bounds
+            player.trail.forEach(p => {
+                grid[p.x][p.y] = 1; // Turn trail to land
+                minX = Math.min(minX, p.x);
+                maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y);
+                maxY = Math.max(maxY, p.y);
+            });
+
+            // Add current pos to bounds
+            minX = Math.min(minX, player.x);
+            maxX = Math.max(maxX, player.x);
+            minY = Math.min(minY, player.y);
+            maxY = Math.max(maxY, player.y);
+
+            // 2. Simple Rectangular Fill (The "Pro" version uses flood fill)
+            // We iterate the box defined by the trail. If a point is roughly inside, fill it.
+            // *Note: This is a simplified mechanic for this code snippet.*
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    grid[x][y] = 1;
+                }
+            }
+
+            player.trail = [];
+        }
+
+        function update() {
+            if (isGameOver) return;
+
+            // Apply buffered input
+            if (player.dx !== -nextDir.dx && player.dy !== -nextDir.dy) {
+                 // Prevent 180 degree turns
+            }
+            player.dx = nextDir.dx;
+            player.dy = nextDir.dy;
+
+            // Move Player
+            player.x += player.dx;
+            player.y += player.dy;
+
+            // 1. Check Wall Collision
+            if (player.x < 0 || player.x >= COLS || player.y < 0 || player.y >= ROWS) {
+                return endGame();
+            }
+
+            // 2. Check Trail Collision (Self-kill)
+            // We only die if we hit our trail, NOT our own safe territory
+            for (let t of player.trail) {
+                if (t.x === player.x && t.y === player.y) {
+                    return endGame();
+                }
+            }
+
+            const currentTileOwner = grid[player.x][player.y];
+
+            // 3. Logic: On Neutral Ground
+            if (currentTileOwner === 0) {
+                // Add to trail
+                player.trail.push({ x: player.x, y: player.y });
+            } 
+            // 4. Logic: Returned to Own Territory
+            else if (currentTileOwner === 1) {
+                if (player.trail.length > 0) {
+                    fillTerritory();
+                    updateScore();
+                }
+            }
+        }
+
+        function updateScore() {
+            let owned = 0;
+            for(let x=0; x<COLS; x++) {
+                for(let y=0; y<ROWS; y++) {
+                    if(grid[x][y] === 1) owned++;
+                }
+            }
+            const percent = (owned / (COLS * ROWS)) * 100;
+            scoreEl.innerText = percent.toFixed(2);
+        }
+
+        function endGame() {
+            isGameOver = true;
+            gameOverEl.style.display = 'block';
+        }
+
+        // --- Rendering ---
+        function draw() {
+            // Clear
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Owned Territory
+            ctx.fillStyle = player.color;
+            for (let x = 0; x < COLS; x++) {
+                for (let y = 0; y < ROWS; y++) {
+                    if (grid[x][y] === 1) {
+                        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    }
+                }
+            }
+
+            // 2. Draw Trail
+            ctx.fillStyle = player.trailColor;
+            for (let t of player.trail) {
+                ctx.fillRect(t.x * TILE_SIZE, t.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+
+            // 3. Draw Player Head
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(player.x * TILE_SIZE, player.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+
+        function loop() {
+            if (isGameOver) return;
+            
+            requestAnimationFrame(loop);
+
+            // Slow down the game loop to make it playable
+            if (++frameCount < SPEED) return;
+            frameCount = 0;
+
+            update();
+            draw();
+        }
+
+        // --- Input Handling ---
+        document.addEventListener('keydown', (e) => {
+            // Prevent default scrolling for arrow keys
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+
+            switch(e.key) {
+                case 'ArrowUp': 
+                    if(player.dy !== 1) nextDir = { dx: 0, dy: -1 }; break;
+                case 'ArrowDown': 
+                    if(player.dy !== -1) nextDir = { dx: 0, dy: 1 }; break;
+                case 'ArrowLeft': 
+                    if(player.dx !== 1) nextDir = { dx: -1, dy: 0 }; break;
+                case 'ArrowRight': 
+                    if(player.dx !== -1) nextDir = { dx: 1, dy: 0 }; break;
+            }
+        });
+
+        // Start
+        resetGame();
+
+    </script>
+</body>
+</html>

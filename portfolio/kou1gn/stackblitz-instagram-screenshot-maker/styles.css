@@ -1,0 +1,25 @@
+img { 
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 0px;
+  height: 900px; width: auto;
+  z-index: 2;
+opacity: 50%;
+}
+
+.comment-box {
+  position: relative;
+}
+
+.comment-section, img { 
+  position: absolute; margin-left: auto; margin-right: auto
+}
+
+.comment-section {
+height: 300px;
+background-color: red;
+z-index: 1;
+}
+
+

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velocity | Automotive Photography</title>
+    <style>
+        /* --- RESET & BASIC STYLES --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f0f0f; /* Dark background */
+            color: #f0f0f0; /* Light text */
+            line-height: 1.6;
+        }
+
+        a { text-decoration: none; color: white; transition: 0.3s; }
+        a:hover { color: #e74c3c; } /* Red accent on hover */
+
+        /* --- NAVIGATION --- */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            background-color: #1a1a1a;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #e74c3c; /* Red Accent */
+            text-transform: uppercase;
+        }
+
+        .nav-links ul {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-links li { margin-left: 30px; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 80vh;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn:hover { background-color: #c0392b; }
+
+        /* --- GALLERY SECTION --- */
+        .gallery {
+            padding: 80px 5%;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+
+        .card:hover { transform: translateY(-5px); }
+
+        .card-img {
+            height: 250px;
+            background-color: #333;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card-info { padding: 20px; }
+        .card-info h3 { margin-bottom: 10px; }
+        .card-info p { font-size: 0.9rem; color: #888; }
+
+        /* Placeholder images using Unsplash Source */
+        .img-1 { background-image: url('https://images.unsplash.com/photo-1503376763036-066120622c74?auto=format&fit=crop&w=800&q=80'); }
+        .img-2 { background-image: url('https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80'); }
+        .img-3 { background-image: url('https://www.vividracing.com/blog/top-24-best-jdm-cars-to-import-in-2024/?srsltid=AfmBOoo-9scoDpP6j9GqUcT40E9lu4bNKO1u_L5TkfuaYlbJWZvFYHbX'); }
+
+        /* --- ABOUT SECTION --- */
+        .about {
+            background-color: #1a1a1a;
+            padding: 80px 5%;
+            text-align: center;
+        }
+
+        .about p {
+            max-width: 700px;
+            margin: 0 auto;
+            color: #ccc;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            padding: 20px;
+            text-align: center;
+            background-color: #0f0f0f;
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">Velocity</div>
+        <div class="nav-links">
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#gallery">Gallery</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <h1>Chasing Horizon</h1>
+        <p>Capturing the art of automotive engineering.</p>
+        <a href="#gallery"><button class="btn">View Gallery</button></a>
+    </section>
+
+    <section id="gallery" class="gallery">
+        <div class="section-title">
+            <h2>Featured Machines</h2>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <div class="card-img img-1"></div>
+                <div class="card-info">
+                    <h3>Supercars</h3>
+                    <p>High performance engineering captured on the track.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img img-2"></div>
+                <div class="card-info">
+                    <h3>Classics</h3>
+                    <p>Timeless designs from the golden era of motoring.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img img-3"></div>
+                <div class="card-info">
+                    <h3>Modded / JDM</h3>
+                    <p>Street culture and aftermarket customization.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="about">
+        <div class="section-title">
+            <h2>The Driver</h2>
+        </div>
+        <p>
+            Welcome to Velocity. This is a collection of my favorite automotive shots. 
+            Whether it is the raw power of a V12 or the smooth lines of a 90s classic, 
+            I am dedicated to showcasing cars in their best light.
+        </p>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 Velocity Automotive. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

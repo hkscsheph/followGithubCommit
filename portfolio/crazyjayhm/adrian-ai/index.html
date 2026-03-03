@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Real-time Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <div class="status-dot"></div>
+            <div class="header-info">
+                <span class="title">AI 實時聊天室</span>
+                <span class="subtitle">在線中</span>
+            </div>
+        </header>
+
+        <div id="chat-container">
+            </div>
+
+        <div class="input-area">
+            <input type="text" id="username" placeholder="暱稱" maxlength="10">
+            <div class="input-wrapper">
+                <input type="text" id="messageInput" placeholder="輸入訊息...">
+                <button id="sendBtn" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

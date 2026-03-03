@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript 互动学习中心</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* CSS 样式变量 - 方便统一修改主题 */
+      :root {
+          --primary-color: #f7df1e; /* JS 的标志性黄色 */
+          --text-dark: #333;
+          --code-bg: #2d2d2d;
+          --code-text: #f8f8f2;
+          --accent: #323330;
+      }
+
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          margin: 0;
+          color: var(--text-dark);
+          background-color: #f4f4f4;
+      }
+
+      /* HTML5 语义化标签：Header */
+      header {
+          background: var(--accent);
+          color: white;
+          padding: 1.5rem 0;
+          text-align: center;
+          border-bottom: 5px solid var(--primary-color);
+      }
+
+      header h1 { margin: 0; }
+      header p { color: #ccc; margin-top: 5px;}
+
+      /* 主容器 */
+      .container {
+          max-width: 800px;
+          margin: 2rem auto;
+          padding: 0 1rem;
+      }
+
+      /* 卡片式课程设计 */
+      section.lesson {
+          background: white;
+          margin-bottom: 2rem;
+          padding: 1.5rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          transition: transform 0.2s;
+      }
+
+      section.lesson:hover {
+          transform: translateY(-2px);
+      }
+
+      h2 { 
+          border-left: 5px solid var(--primary-color); 
+          padding-left: 10px; 
+          color: var(--accent);
+      }
+
+      /* 代码块样式 */
+      pre {
+          background: var(--code-bg);
+          color: var(--code-text);
+          padding: 1rem;
+          border-radius: 5px;
+          overflow-x: auto;
+          font-family: 'Consolas', 'Courier New', monospace;
+      }
+
+      /* 互动区域样式 */
+      .playground {
+          border: 1px solid #ddd;
+          padding: 1rem;
+          background: #fafafa;
+          margin-top: 1rem;
+          border-radius: 5px;
+      }
+
+      button {
+          background: var(--accent);
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          cursor: pointer;
+          border-radius: 4px;
+          font-size: 1rem;
+          transition: background 0.3s;
+      }
+
+      button:hover { background: #555; }
+
+      .output-box {
+          margin-top: 10px;
+          padding: 10px;
+          background: #eef;
+          border-left: 4px solid #4caf50;
+          display: none; /* 默认隐藏 */
+      }
+
+      footer {
+          text-align: center;
+          padding: 2rem;
+          background: var(--accent);
+          color: white;
+          margin-top: 3rem;
+      }
+  </style>
+<body>
+
+    <header>
+        <h1>JavaScript 基础入门</h1>
+        <p>基于 HTML5 构建的互动教程</p>
+      </header>
+      <nav>
+        <a href="index.html">首页</a>
+        <a href="logic.html">课程：逻辑判断</a>
+        <a href="quiz.html">挑战：测验题</a>
+      </nav>
+
+    <main class="container">
+        <section class="lesson" id="lesson1">
+            <h2>1. 变量 (Variables)</h2>
+            <p>JavaScript 使用变量来存储数据。我们可以通过简单的代码将文字拼接起来。</p>
+            
+            <pre><code>
+function sayHello() {
+    let name = "开发者";
+    let message = "你好, " + name + "!";
+    alert(message);
+}
+            </code></pre>
+
+            <div class="playground">
+                <p>点击下方按钮运行上面的代码：</p>
+                <button onclick="runLesson1()">运行代码</button>
+                <div id="output1" class="output-box"></div>
+            </div>
+        </section>
+
+        <section class="lesson" id="lesson2">
+            <h2>2. DOM 操作 (修改网页)</h2>
+            <p>JavaScript 最强大的功能之一是能够实时修改 HTML 内容和 CSS 样式。</p>
+            
+            <pre><code>
+document.getElementById("demo-text").style.color = "red";
+document.getElementById("demo-text").innerText = "内容已被修改！";
+            </code></pre>
+
+            <div class="playground">
+                <p id="demo-text" style="font-weight:bold; font-size: 1.2rem;">我是普通的黑色文字。</p>
+                <button onclick="runLesson2()">点击修改我</button>
+            </div>
+        </section>
+
+        <section class="lesson" id="lesson3">
+            <h2>3. 数据处理 (简单计算器)</h2>
+            <p>我们可以获取用户输入的值，进行数学计算，然后返回结果。</p>
+            
+            <div class="playground">
+                <label for="userNum">输入一个数字：</label>
+                <input type="number" id="userNum" placeholder="例如: 5">
+                <button onclick="calculateSquare()">计算平方</button>
+                <div id="output3" class="output-box"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2024 JS 学习中心. Built with HTML5.</p>
+    </footer>
+
+    <script>
+        // 第 1 课逻辑
+        function runLesson1() {
+            let name = "未来的全栈工程师";
+            let greeting = "你好，" + name + "！欢迎来到 JavaScript 世界。";
+            
+            // 将结果显示在页面上而不是弹窗，体验更好
+            const output = document.getElementById('output1');
+            output.innerText = greeting;
+            output.style.display = 'block';
+        }
+
+        // 第 2 课逻辑
+        function runLesson2() {
+            const textElement = document.getElementById('demo-text');
+            
+            // 添加一个简单的切换逻辑
+            if (textElement.style.color === 'red') {
+                textElement.style.color = 'black';
+                textElement.innerText = "我是普通的黑色文字。";
+            } else {
+                textElement.style.color = 'red';
+                textElement.innerText = "JavaScript 刚刚修改了这个元素！";
+            }
+        }
+
+        // 第 3 课逻辑
+        function calculateSquare() {
+            // 获取输入框的值
+            const inputVal = document.getElementById('userNum').value;
+            const output = document.getElementById('output3');
+            
+            // 简单的验证
+            if(inputVal === "") {
+                output.innerText = "请先输入一个数字。";
+                output.style.borderLeftColor = "red"; // 错误提示色
+            } else {
+                const result = inputVal * inputVal;
+                output.innerText = inputVal + " 的平方是 " + result;
+                output.style.borderLeftColor = "#4caf50"; // 成功提示色
+            }
+            output.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

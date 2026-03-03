@@ -1,0 +1,167 @@
+HTML
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 活力跑報名表</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif, "Microsoft JhengHei";
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            background: #fff;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box; /* 確保 padding 唔會撐開闊度 */
+            font-size: 16px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            padding-top: 5px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #d35400;
+        }
+        .required {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🏃‍♂️ 2026 活力跑報名表</h2>
+    <p class="subtitle">請填妥以下資料以完成報名</p>
+
+    <form id="registrationForm">
+        <div class="form-group">
+            <label for="name">中文姓名 <span class="required">*</span></label>
+            <input type="text" id="name" name="name" placeholder="例如：陳大文" required>
+        </div>
+
+        <div class="form-group">
+            <label>性別 <span class="required">*</span></label>
+            <div class="radio-group">
+                <label style="font-weight: normal;"><input type="radio" name="gender" value="male" required> 男</label>
+                <label style="font-weight: normal;"><input type="radio" name="gender" value="female"> 女</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="dob">出生日期 <span class="required">*</span></label>
+            <input type="date" id="dob" name="dob" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">電郵地址 <span class="required">*</span></label>
+            <input type="email" id="email" name="email" placeholder="example@mail.com" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">聯絡電話 <span class="required">*</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="9000 0000" required>
+        </div>
+
+        <div class="form-group">
+            <label for="category">參賽組別 <span class="required">*</span></label>
+            <select id="category" name="category" required>
+                <option value="">請選擇組別</option>
+                <option value="3km">3公里 親子歡樂跑</option>
+                <option value="10km">10公里 個人挑戰賽</option>
+                <option value="half-marathon">21公里 半馬拉松</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tshirt">T-Shirt 尺碼</label>
+            <select id="tshirt" name="tshirt">
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="emergency_contact">緊急聯絡人姓名及電話 <span class="required">*</span></label>
+            <input type="text" id="emergency_contact" name="emergency_contact" placeholder="例如：王小明 91234567" required>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="terms" name="terms" required>
+            <label for="terms" style="font-weight: normal;">
+                本人聲明身體健康狀況良好，足以參加此賽事。並同意遵守大會所有比賽規例及安排。
+            </label>
+        </div>
+
+        <button type="submit">提交報名</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('registrationForm').onsubmit = function(e) {
+        e.preventDefault();
+        alert('感謝報名！我們會盡快電郵確認資料。');
+        // 呢度可以加入將資料傳送到後台嘅程式碼 (AJAX/Fetch)
+    };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,612 @@
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NBA 傳奇對決：專業版</title>
+    <style>
+      /* --- 全局設定 --- */
+      :root {
+        --court-color: #d18b47;
+        --line-color: #fff;
+        --red-team: #ff3b30;
+        --blue-team: #007aff;
+        --bg-dark: #1c1c1e;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        user-select: none;
+      }
+
+      /* --- 頂部記分板 (Scoreboard) --- */
+      .scoreboard-container {
+        width: 100%;
+        background: linear-gradient(180deg, #333, #000);
+        border-bottom: 5px solid gold;
+        padding: 10px 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8);
+        z-index: 10;
+      }
+
+      .score-card {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        font-weight: 900;
+      }
+
+      .score {
+        font-size: 60px;
+        text-shadow: 0 0 15px currentColor;
+        min-width: 80px;
+        text-align: center;
+      }
+      .red-score {
+        color: var(--red-team);
+      }
+      .blue-score {
+        color: var(--blue-team);
+      }
+
+      .game-info {
+        text-align: center;
+      }
+      .timer {
+        font-family: 'Courier New', monospace;
+        font-size: 45px;
+        background: #222;
+        padding: 5px 20px;
+        border: 2px solid #555;
+        border-radius: 5px;
+        color: #f00;
+      }
+      .quarter {
+        color: #888;
+        font-size: 14px;
+        margin-top: 5px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      /* --- 球場與直播區 (Main Stage) --- */
+      .main-stage {
+        display: flex;
+        width: 100%;
+        flex: 1;
+        position: relative;
+      }
+
+      /* 球場背景紋路 */
+      .court-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, #e0a66c 0%, #d18b47 80%);
+        opacity: 0.2;
+        z-index: -1;
+        /* 簡單的 CSS 線條模擬禁區 */
+        background-image: linear-gradient(white 2px, transparent 2px),
+          linear-gradient(90deg, white 2px, transparent 2px);
+        background-size: 100% 100%, 100px 100px;
+      }
+
+      /* --- 玩家控制面板 --- */
+      .player-panel {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: background 0.3s;
+      }
+
+      .player-panel.red {
+        border-right: 2px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .avatar {
+        font-size: 80px;
+        margin-bottom: 10px;
+        filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+        transition: transform 0.2s;
+      }
+
+      /* 火熱狀態特效 */
+      .on-fire {
+        animation: burn 0.8s infinite alternate;
+      }
+      @keyframes burn {
+        from {
+          filter: drop-shadow(0 0 10px orange);
+          transform: scale(1);
+        }
+        to {
+          filter: drop-shadow(0 0 25px red);
+          transform: scale(1.1);
+        }
+      }
+
+      /* 體力條 */
+      .stamina-container {
+        width: 80%;
+        height: 15px;
+        background: #444;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        border: 1px solid #666;
+      }
+      .stamina-bar {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #00ff00, #ffff00);
+        transition: width 0.3s ease-out;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 24px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* 操作按鈕 */
+      .actions {
+        width: 80%;
+        display: grid;
+        gap: 10px;
+      }
+
+      button {
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        color: white;
+        font-family: inherit;
+        transition: all 0.1s;
+        box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+      button:active {
+        transform: translateY(4px);
+        box-shadow: none;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(1);
+      }
+
+      .btn-dunk {
+        background: #e02424;
+      }
+      .btn-3pt {
+        background: #0984e3;
+      }
+      .btn-rest {
+        background: #00b894;
+        margin-top: 10px;
+      } /* 休息按鈕 */
+
+      /* --- 直播字幕條 (Ticker) --- */
+      .broadcast-ticker {
+        position: absolute;
+        bottom: 20px;
+        width: 90%;
+        left: 5%;
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid #555;
+        border-radius: 10px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .ticker-label {
+        background: #d63031;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 15px;
+        animation: blink 2s infinite;
+      }
+
+      .ticker-text {
+        font-size: 20px;
+        white-space: nowrap;
+        color: #f1f2f6;
+      }
+
+      /* 震動特效 class */
+      .shake {
+        animation: shake 0.5s;
+      }
+      @keyframes shake {
+        0% {
+          transform: translate(1px, 1px) rotate(0deg);
+        }
+        10% {
+          transform: translate(-1px, -2px) rotate(-1deg);
+        }
+        20% {
+          transform: translate(-3px, 0px) rotate(1deg);
+        }
+        30% {
+          transform: translate(3px, 2px) rotate(0deg);
+        }
+        40% {
+          transform: translate(1px, -1px) rotate(1deg);
+        }
+        50% {
+          transform: translate(-1px, 2px) rotate(-1deg);
+        }
+        60% {
+          transform: translate(-3px, 1px) rotate(0deg);
+        }
+        70% {
+          transform: translate(3px, 1px) rotate(-1deg);
+        }
+        80% {
+          transform: translate(-1px, -1px) rotate(1deg);
+        }
+        90% {
+          transform: translate(1px, 2px) rotate(0deg);
+        }
+        100% {
+          transform: translate(1px, -2px) rotate(-1deg);
+        }
+      }
+
+      /* 遊戲結束 */
+      #modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 100;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .winner-text {
+        font-size: 80px;
+        color: gold;
+        text-shadow: 0 0 30px orange;
+        margin-bottom: 20px;
+      }
+      .restart-btn {
+        padding: 20px 50px;
+        font-size: 30px;
+        background: white;
+        color: black;
+        border-radius: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scoreboard-container">
+      <div class="score-card">
+        <div class="score red-score" id="scoreRed">0</div>
+        <div class="game-info">
+          <div class="timer" id="timer">48</div>
+          <div class="quarter">4TH QUARTER</div>
+        </div>
+        <div class="score blue-score" id="scoreBlue">0</div>
+      </div>
+    </div>
+
+    <div class="main-stage" id="stage">
+      <div class="court-bg"></div>
+
+      <div class="player-panel red">
+        <h2 style="color: var(--red-team)">HOME</h2>
+        <div class="avatar" id="avatarRed">👹</div>
+
+        <div class="stamina-container">
+          <div class="stamina-bar" id="staminaRed" style="width: 100%"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-dunk" onclick="action('red', 'dunk')">
+            🏀 暴力灌籃 (耗體力)
+          </button>
+          <button class="btn-3pt" onclick="action('red', '3pt')">
+            🎯 Logo Shot (高風險)
+          </button>
+          <button class="btn-rest" onclick="rest('red')">
+            🥤 喝水休息 (+體力)
+          </button>
+        </div>
+      </div>
+
+      <div class="player-panel blue">
+        <h2 style="color: var(--blue-team)">AWAY</h2>
+        <div class="avatar" id="avatarBlue">🤖</div>
+
+        <div class="stamina-container">
+          <div class="stamina-bar" id="staminaBlue" style="width: 100%"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-dunk" onclick="action('blue', 'dunk')">
+            🏀 暴力灌籃 (耗體力)
+          </button>
+          <button class="btn-3pt" onclick="action('blue', '3pt')">
+            🎯 Logo Shot (高風險)
+          </button>
+          <button class="btn-rest" onclick="rest('blue')">
+            🥤 喝水休息 (+體力)
+          </button>
+        </div>
+      </div>
+
+      <div class="broadcast-ticker">
+        <span class="ticker-label">LIVE</span>
+        <span class="ticker-text" id="tickerText"
+          >比賽開始！Finals G7 決戰時刻！</span
+        >
+      </div>
+    </div>
+
+    <div id="modal">
+      <div class="winner-text" id="winnerText">RED WINS</div>
+      <button class="restart-btn" onclick="resetGame()">REMATCH</button>
+    </div>
+
+    <script>
+      // --- 遊戲參數設定 ---
+      const GAME_DURATION = 48;
+      const STAMINA_COST_DUNK = 25;
+      const STAMINA_COST_3PT = 15;
+      const STAMINA_REGEN = 40;
+
+      let state = {
+        time: GAME_DURATION,
+        active: true,
+        red: { score: 0, stamina: 100, streak: 0 },
+        blue: { score: 0, stamina: 100, streak: 0 },
+      };
+
+      let timerInterval;
+
+      // --- 講評資料庫 ---
+      const commentary = {
+        dunk: [
+          '轟炸籃框！這是一記戰斧式扣籃！',
+          '起飛了！空中漫步無視地心引力！',
+          '太殘暴了！防守者直接被撞飛！',
+          '強行切入！單手劈扣得分！',
+        ],
+        three: [
+          'Logo Shot！這距離太不講理了！',
+          '手起刀落！三分冷箭穿心！',
+          'Curry 附體！這球空心入網！',
+          '大心臟！關鍵時刻的三分球！',
+        ],
+        miss: [
+          '大麵包！這球偏得離譜！',
+          '打鐵了！籃框發出巨響！',
+          '體力不支！投籃動作變形了！',
+          '被籃框蓋了火鍋！太尷尬了！',
+        ],
+        fatigue: [
+          '球員氣喘吁吁，需要休息了！',
+          '雙腿發軟，跳不起來了！',
+          '體力透支！這球投得軟弱無力！',
+        ],
+        rest: [
+          '暫停回來，球員喝了能量飲料！',
+          '重新調整呼吸，準備再戰！',
+          '教練在場邊精神喊話！',
+        ],
+      };
+
+      // --- 核心功能 ---
+
+      function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          if (state.time > 0) {
+            state.time--;
+            document.getElementById('timer').innerText = state.time;
+
+            // 隨機環境音效文字
+            if (Math.random() < 0.05)
+              updateTicker('🏟️ 觀眾開始鼓譟！全場沸騰！');
+          } else {
+            endGame();
+          }
+        }, 1000);
+      }
+
+      function action(team, type) {
+        if (!state.active) return;
+
+        let player = state[team];
+        let opponent = team === 'red' ? state.blue : state.red;
+        let cost = type === 'dunk' ? STAMINA_COST_DUNK : STAMINA_COST_3PT;
+
+        // 1. 檢查體力
+        if (player.stamina < cost) {
+          updateTicker(
+            `⛔ ${team === 'red' ? '主場' : '客場'}球員體力透支！請按休息！`
+          );
+          playSound('miss');
+          return;
+        }
+
+        // 2. 扣除體力
+        player.stamina -= cost;
+        updateStaminaUI(team);
+
+        // 3. 計算命中率 (體力越低，命中率越低)
+        // 基礎命中率：灌籃 70%，三分 40%
+        // 火熱加成：streak * 5%
+        let baseChance = type === 'dunk' ? 0.7 : 0.4;
+        let staminaFactor = player.stamina / 100; // 1.0 = 滿體力, 0.5 = 半體力
+        let streakBonus = player.streak * 0.1;
+
+        let finalChance = baseChance * staminaFactor + streakBonus;
+        let rng = Math.random();
+
+        // 4. 判定結果
+        if (rng < finalChance) {
+          // --- 得分 ---
+          let points = type === 'dunk' ? 2 : 3;
+          player.score += points;
+          player.streak++;
+
+          // 更新分數
+          updateScoreUI(team);
+
+          // 視覺特效：螢幕震動
+          if (type === 'dunk') triggerShake();
+
+          // 火熱狀態檢查
+          if (player.streak >= 3) {
+            document
+              .getElementById(team === 'red' ? 'avatarRed' : 'avatarBlue')
+              .classList.add('on-fire');
+            updateTicker(`🔥 ${team.toUpperCase()} 手感發燙！無人能擋！`);
+          } else {
+            updateTicker(
+              `✅ ${getRandom(commentary[type === 'dunk' ? 'dunk' : 'three'])}`
+            );
+          }
+        } else {
+          // --- 放槍 ---
+          player.streak = 0; // 中斷連勝
+          document
+            .getElementById(team === 'red' ? 'avatarRed' : 'avatarBlue')
+            .classList.remove('on-fire');
+
+          if (player.stamina < 30) {
+            updateTicker(`😫 ${getRandom(commentary.fatigue)}`);
+          } else {
+            updateTicker(`❌ ${getRandom(commentary.miss)}`);
+          }
+        }
+      }
+
+      function rest(team) {
+        if (!state.active) return;
+        let player = state[team];
+
+        player.stamina = Math.min(100, player.stamina + STAMINA_REGEN);
+        updateStaminaUI(team);
+        updateTicker(
+          `🔋 ${team === 'red' ? '主場' : '客場'} ${getRandom(commentary.rest)}`
+        );
+      }
+
+      // --- UI 更新函數 ---
+
+      function updateScoreUI(team) {
+        let el = document.getElementById(
+          team === 'red' ? 'scoreRed' : 'scoreBlue'
+        );
+        el.innerText = state[team].score;
+        // 分數跳動效果
+        el.style.transform = 'scale(1.5)';
+        setTimeout(() => (el.style.transform = 'scale(1)'), 200);
+      }
+
+      function updateStaminaUI(team) {
+        let bar = document.getElementById(
+          team === 'red' ? 'staminaRed' : 'staminaBlue'
+        );
+        let val = state[team].stamina;
+        bar.style.width = val + '%';
+
+        // 變色警告
+        if (val > 50)
+          bar.style.background = 'linear-gradient(90deg, #00ff00, #ffff00)';
+        else if (val > 20) bar.style.background = 'orange';
+        else bar.style.background = 'red';
+      }
+
+      function updateTicker(text) {
+        let ticker = document.getElementById('tickerText');
+        ticker.style.opacity = 0;
+        setTimeout(() => {
+          ticker.innerText = text;
+          ticker.style.opacity = 1;
+        }, 100);
+      }
+
+      function triggerShake() {
+        let stage = document.body;
+        stage.classList.add('shake');
+        setTimeout(() => stage.classList.remove('shake'), 500);
+      }
+
+      function getRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function endGame() {
+        state.active = false;
+        clearInterval(timerInterval);
+        document.getElementById('modal').style.display = 'flex';
+
+        let winner = '';
+        if (state.red.score > state.blue.score) winner = '🏆 主場獲勝！';
+        else if (state.blue.score > state.red.score) winner = '🏆 客場獲勝！';
+        else winner = '🤝 平手加班！';
+
+        document.getElementById('winnerText').innerText = winner;
+      }
+
+      function resetGame() {
+        state = {
+          time: GAME_DURATION,
+          active: true,
+          red: { score: 0, stamina: 100, streak: 0 },
+          blue: { score: 0, stamina: 100, streak: 0 },
+        };
+
+        document.getElementById('scoreRed').innerText = '0';
+        document.getElementById('scoreBlue').innerText = '0';
+        document.getElementById('timer').innerText = GAME_DURATION;
+        document.getElementById('modal').style.display = 'none';
+
+        updateStaminaUI('red');
+        updateStaminaUI('blue');
+        document.getElementById('avatarRed').classList.remove('on-fire');
+        document.getElementById('avatarBlue').classList.remove('on-fire');
+
+        updateTicker('🏀 比賽重新開始！跳球！');
+        startTimer();
+      }
+
+      // 啟動遊戲
+      startTimer();
+    </script>
+  </body>
+</html>

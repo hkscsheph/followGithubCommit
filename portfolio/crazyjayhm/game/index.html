@@ -1,0 +1,21 @@
+<!DOCTYPE name="追怪物進階版">
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>追怪物進階版</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="ui">
+        <p>分數: <span id="score">0</span> | 生命: <span id="lives">3</span> | 時間: <span id="timer">0</span>s</p>
+    </div>
+    <canvas id="gameCanvas" width="512" height="480" tabindex="0"></canvas>
+    <div id="gameOver" style="display:none;">
+        <h1>Game Over!</h1>
+        <p>最終分數: <span id="finalScore">0</span></p>
+        <button onclick="location.reload()">再玩</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

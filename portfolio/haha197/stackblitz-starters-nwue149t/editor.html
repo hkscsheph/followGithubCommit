@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timetable Editor</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+        background-color: #333;
+        color: white;
+      }
+      h1 {
+        text-align: center;
+      }
+
+      .controls {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #444;
+        border-radius: 8px;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+
+      .editor-grid {
+        display: grid;
+        /* 1 column for labels + 5 columns for days */
+        grid-template-columns: 100px repeat(5, 1fr);
+        gap: 5px;
+      }
+
+      .header-cell {
+        background: #555;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+      }
+
+      /* Status message styling */
+      #status {
+        margin-left: 10px;
+        color: #ffff00;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Timetable Editor</h1>
+
+    <div class="controls">
+      <p>
+        Edit the fields below and click save. The main page will update
+        instantly.
+      </p>
+      <button onclick="saveData()">Save Changes</button>
+      <button onclick="clearData()" style="background-color: #dc3545">
+        Clear All
+      </button>
+      <span id="status"></span>
+    </div>
+
+    <div id="editorGrid" class="editor-grid"></div>
+
+    <script>
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      const periods = 10;
+      let tableData = {};
+
+      function initEditor() {
+        const grid = document.getElementById('editorGrid');
+
+        // Load existing data
+        tableData = JSON.parse(localStorage.getItem('timetableData')) || {};
+
+        // 1. Render Top Headers
+        grid.innerHTML += `<div class="header-cell">Per / Day</div>`;
+        days.forEach((day) => {
+          grid.innerHTML += `<div class="header-cell">${day}</div>`;
+        });
+
+        // 2. Render Rows
+        for (let i = 1; i <= periods; i++) {
+          // Row Label
+          grid.innerHTML += `<div class="header-cell">Period ${i}</div>`;
+
+          // Inputs for each day
+          days.forEach((day) => {
+            const cellId = `${day}-${i}`;
+            const val = tableData[cellId] || '';
+
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = cellId;
+            input.value = val;
+            input.placeholder = 'Empty';
+
+            // Add to grid
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(input);
+            grid.appendChild(wrapper);
+          });
+        }
+      }
+
+      function saveData() {
+        // Loop through all inputs and update the data object
+        for (let i = 1; i <= periods; i++) {
+          days.forEach((day) => {
+            const cellId = `${day}-${i}`;
+            const input = document.getElementById(cellId);
+            if (input) {
+              tableData[cellId] = input.value;
+            }
+          });
+        }
+
+        // Save to LocalStorage
+        localStorage.setItem('timetableData', JSON.stringify(tableData));
+
+        // User Feedback
+        const status = document.getElementById('status');
+        status.innerText = 'Saved successfully!';
+        setTimeout(() => (status.innerText = ''), 2000);
+        location.href = 'index.html';
+      }
+
+      function clearData() {
+        if (confirm('Are you sure you want to clear the whole timetable?')) {
+          localStorage.removeItem('timetableData');
+          location.reload();
+        }
+      }
+
+      initEditor();
+    </script>
+  </body>
+</html>

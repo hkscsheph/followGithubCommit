@@ -1,0 +1,746 @@
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NBA 洛杉磯大戰：彈力球版</title>
+    <style>
+      /* --- CSS 樣式 --- */
+      body {
+        margin: 0;
+        background-color: #121212;
+        color: white;
+        font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+        user-select: none;
+      }
+
+      /* 轉播介面 */
+      .tv-header {
+        width: 1000px;
+        background: linear-gradient(90deg, #552583 0%, #000 50%, #1d428a 100%);
+        border-bottom: 4px solid #fdb927;
+        padding: 15px 0;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        border-radius: 0 0 10px 10px;
+        z-index: 10;
+      }
+
+      .team-box {
+        text-align: center;
+        width: 200px;
+      }
+      .team-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+      .score {
+        font-size: 60px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .lakers-txt {
+        color: #fdb927;
+        text-shadow: 2px 2px 0px #552583;
+      }
+      .clippers-txt {
+        color: #fff;
+        text-shadow: 2px 2px 0px #1d428a;
+      }
+
+      .timer-box {
+        background: #000;
+        border: 2px solid #333;
+        padding: 5px 25px;
+        border-radius: 5px;
+        text-align: center;
+      }
+      .timer {
+        font-family: 'Courier New', monospace;
+        font-size: 45px;
+        color: #ff3b30;
+      }
+      .live-badge {
+        font-size: 12px;
+        color: #fff;
+        background: red;
+        padding: 2px 6px;
+        border-radius: 3px;
+        animation: blink 1s infinite;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* 遊戲畫布 */
+      canvas {
+        background: radial-gradient(circle, #e0a66c 0%, #d18b47 80%);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        cursor: none;
+        border-left: 5px solid #552583;
+        border-right: 5px solid #1d428a;
+        /* 加入邊框讓反彈感覺更真實 */
+        border-top: 5px solid #333;
+        border-bottom: 5px solid #333;
+      }
+
+      /* 跑馬燈 */
+      .ticker-container {
+        width: 1000px;
+        background: #111;
+        color: #fdb927;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border: 1px solid #333;
+        position: relative;
+        font-size: 20px;
+      }
+
+      .ticker-text {
+        position: absolute;
+        white-space: nowrap;
+        font-weight: bold;
+        animation: scrollText 12s linear infinite;
+      }
+
+      @keyframes scrollText {
+        0% {
+          left: 100%;
+        }
+        100% {
+          left: -100%;
+        }
+      }
+
+      /* 提示 */
+      .controls {
+        margin-top: 10px;
+        color: #888;
+        font-size: 14px;
+      }
+      .key {
+        background: #333;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: white;
+        border: 1px solid #555;
+      }
+      .turbo-key {
+        background: #d63031;
+        border-color: #ff7675;
+        font-weight: bold;
+      }
+
+      /* 結算 */
+      #overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.92);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+      }
+      #winMsg {
+        font-size: 70px;
+        margin-bottom: 20px;
+        font-weight: bold;
+      }
+      button {
+        padding: 15px 40px;
+        font-size: 24px;
+        cursor: pointer;
+        background: gold;
+        border: none;
+        font-weight: bold;
+        border-radius: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tv-header">
+      <div class="team-box">
+        <div class="team-name lakers-txt">LAKERS (P1)</div>
+        <div class="score lakers-txt" id="scoreLakers">0</div>
+      </div>
+
+      <div class="timer-box">
+        <div class="live-badge">LIVE</div>
+        <div class="timer" id="timer">48</div>
+        <div style="font-size: 12px; color: #aaa">Q4</div>
+      </div>
+
+      <div class="team-box">
+        <div class="team-name clippers-txt">CLIPPERS (P2)</div>
+        <div class="score clippers-txt" id="scoreClippers">0</div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="1000" height="500"></canvas>
+
+    <div class="ticker-container">
+      <div class="ticker-text" id="ticker">
+        🔥 物理引擎升級：球現在會從邊緣彈回來！試試看「反彈傳球」！LeBron
+        磁力手準備就緒！
+      </div>
+    </div>
+
+    <div class="controls">
+      🟣 <b>湖人 (P1):</b> <span class="key">W</span><span class="key">A</span
+      ><span class="key">S</span><span class="key">D</span> 移動 /
+      <span class="key">Space</span> 跳投&搶籃板 /
+      <span class="key turbo-key">Shift</span> 衝刺 <br />
+      🔵 <b>快艇 (P2):</b> <span class="key">方向鍵</span> 移動 /
+      <span class="key">Enter</span> 跳投&搶籃板 /
+      <span class="key turbo-key">Shift (右)</span> 衝刺
+    </div>
+
+    <div id="overlay">
+      <div id="winMsg" style="color: white">WINNER</div>
+      <button onclick="resetGame()">REMATCH (再來一場)</button>
+    </div>
+
+    <script>
+      // --- 遊戲核心設定 ---
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // 物理參數
+      const GRAVITY = 0.5;
+      const FRICTION = 0.94;
+      const JUMP_FORCE = -13;
+      const BOUNCE = 0.9; // 彈力係數 (0.9 代表反彈 90% 的力道，很彈！)
+      const NORMAL_SPEED = 1.4;
+      const TURBO_SPEED = 3.0;
+      const STAMINA_DRAIN = 2.0;
+      const STAMINA_REGEN = 0.5;
+
+      // 狀態
+      let gameActive = true;
+      let time = 48;
+      let scores = { lakers: 0, clippers: 0 };
+      let timerInterval;
+      let particles = []; // 特效粒子 (用於撞牆文字)
+
+      // --- 球員資料庫 ---
+      const ROSTER = {
+        lakers: [
+          { name: 'LeBron', emoji: '👑', role: 'P1', rebound: 130 },
+          { name: 'A.Davis', emoji: '〰️', role: 'BOT', rebound: 90 },
+          { name: 'D-Lo', emoji: '🧊', role: 'BOT', rebound: 60 },
+          { name: 'Reaves', emoji: '🏃', role: 'BOT', rebound: 60 },
+          { name: 'Rui', emoji: '⚔️', role: 'BOT', rebound: 70 },
+        ],
+        clippers: [
+          { name: 'Kawhi', emoji: '🖐️', role: 'P2', rebound: 80 },
+          { name: 'Harden', emoji: '🧔', role: 'BOT', rebound: 60 },
+          { name: 'Zubac', emoji: '🏢', role: 'BOT', rebound: 100 },
+          { name: 'Mann', emoji: '⚡', role: 'BOT', rebound: 60 },
+          { name: 'Powell', emoji: '🏹', role: 'BOT', rebound: 60 },
+        ],
+      };
+
+      // --- 類別定義 ---
+
+      // 特效文字類別 (BANG! BOING!)
+      class EffectText {
+        constructor(x, y, text) {
+          this.x = x;
+          this.y = y;
+          this.text = text;
+          this.life = 30; // 存在 30 幀
+          this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+          this.size = 20;
+        }
+        update() {
+          this.life--;
+          this.y -= 1; // 慢慢往上飄
+          this.size += 0.5; // 變大
+        }
+        draw(ctx) {
+          ctx.fillStyle = this.color;
+          ctx.font = `bold ${this.size}px Arial`;
+          ctx.fillText(this.text, this.x, this.y);
+        }
+      }
+
+      class Player {
+        constructor(x, y, teamData, playerData) {
+          this.x = x;
+          this.y = y;
+          this.w = 40;
+          this.h = 60;
+          this.vx = 0;
+          this.vy = 0;
+          this.team = teamData;
+          this.name = playerData.name;
+          this.emoji = playerData.emoji;
+          this.role = playerData.role;
+          this.reboundRange = playerData.rebound;
+          this.grounded = false;
+
+          this.stamina = 100;
+          this.isSprinting = false;
+
+          this.statusText = '';
+          this.statusTimer = 0;
+
+          this.color = teamData === 'lakers' ? '#FDB927' : '#1D428A';
+          this.stroke = teamData === 'lakers' ? '#552583' : '#fff';
+          this.baseSpeed =
+            this.role === 'BOT' ? Math.random() * 0.5 + 0.5 : NORMAL_SPEED;
+          this.trail = [];
+        }
+
+        update() {
+          let currentSpeed = this.baseSpeed;
+          this.isSprinting = false;
+          let attemptJump = false;
+
+          if (this.role === 'P1') {
+            if (keys['Shift'] && this.stamina > 0) {
+              currentSpeed = TURBO_SPEED;
+              this.stamina -= STAMINA_DRAIN;
+              this.isSprinting = true;
+            } else if (this.stamina < 100) this.stamina += STAMINA_REGEN;
+
+            if (keys['w'] || keys['W'] || keys[' ']) attemptJump = true;
+          } else if (this.role === 'P2') {
+            if ((keys['ShiftRight'] || keys['Control']) && this.stamina > 0) {
+              currentSpeed = TURBO_SPEED;
+              this.stamina -= STAMINA_DRAIN;
+              this.isSprinting = true;
+            } else if (this.stamina < 100) this.stamina += STAMINA_REGEN;
+
+            if (keys['ArrowUp'] || keys['Enter']) attemptJump = true;
+          } else {
+            // BOT
+            if (this.stamina < 100) this.stamina += STAMINA_REGEN;
+          }
+
+          // 移動
+          if (this.role === 'P1') {
+            if (keys['a'] || keys['A']) this.vx -= 1.0;
+            if (keys['d'] || keys['D']) this.vx += 1.0;
+          } else if (this.role === 'P2') {
+            if (keys['ArrowLeft']) this.vx -= 1.0;
+            if (keys['ArrowRight']) this.vx += 1.0;
+          } else {
+            this.botBehavior(currentSpeed);
+          }
+
+          if (this.vx > currentSpeed) this.vx = currentSpeed;
+          if (this.vx < -currentSpeed) this.vx = -currentSpeed;
+
+          // 跳躍/籃板
+          if (attemptJump && this.grounded) {
+            this.vy = JUMP_FORCE;
+            this.grounded = false;
+            this.tryRebound();
+          }
+
+          // 物理
+          this.vy += GRAVITY;
+          this.vx *= FRICTION;
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // 邊界
+          if (this.y + this.h > canvas.height) {
+            this.y = canvas.height - this.h;
+            this.vy = 0;
+            this.grounded = true;
+          }
+          if (this.x < 0) {
+            this.x = 0;
+            this.vx *= -0.5;
+          }
+          if (this.x + this.w > canvas.width) {
+            this.x = canvas.width - this.w;
+            this.vx *= -0.5;
+          }
+
+          // 殘影
+          if (this.isSprinting) {
+            this.trail.push({ x: this.x, y: this.y, alpha: 0.6 });
+            if (this.trail.length > 5) this.trail.shift();
+          } else {
+            this.trail = [];
+          }
+
+          if (this.statusTimer > 0) this.statusTimer--;
+        }
+
+        botBehavior(spd) {
+          let dx = ball.x - (this.x + this.w / 2);
+          let dist = Math.abs(dx);
+
+          if (dx > 20) this.vx += 0.5;
+          if (dx < -20) this.vx -= 0.5;
+
+          // BOT 籃板
+          if (
+            this.grounded &&
+            ball.y < this.y &&
+            ball.vy > 0 &&
+            dist < this.reboundRange
+          ) {
+            if (Math.random() < 0.1) {
+              this.vy = JUMP_FORCE;
+              this.grounded = false;
+              this.tryRebound();
+            }
+          }
+        }
+
+        tryRebound() {
+          let dx = this.x + this.w / 2 - ball.x;
+          let dy = this.y + this.h / 2 - ball.y;
+          let dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (ball.vy > 0 && dist < this.reboundRange) {
+            ball.vx = (this.x + this.w / 2 - ball.x) * 0.2;
+            ball.vy = (this.y - ball.y) * 0.2;
+            this.showStatus('REBOUND!');
+            if (this.role !== 'BOT') {
+              updateTicker(`💪 ${this.name} 抓下了籃板！`);
+            }
+          }
+        }
+
+        showStatus(text) {
+          this.statusText = text;
+          this.statusTimer = 60;
+        }
+      }
+
+      // --- 初始化 ---
+      let players = [];
+      let p1, p2;
+
+      const ball = {
+        x: 500,
+        y: 100,
+        r: 16,
+        vx: 0,
+        vy: 5,
+        color: '#ff6b6b',
+      };
+
+      function initGame() {
+        players = [];
+        ROSTER.lakers.forEach((data, index) => {
+          let p = new Player(100 + index * 30, 300, 'lakers', data);
+          players.push(p);
+          if (data.role === 'P1') p1 = p;
+        });
+        ROSTER.clippers.forEach((data, index) => {
+          let p = new Player(800 - index * 30, 300, 'clippers', data);
+          players.push(p);
+          if (data.role === 'P2') p2 = p;
+        });
+      }
+
+      const keys = {};
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Shift') {
+          if (e.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT)
+            keys['ShiftRight'] = true;
+          else keys['Shift'] = true;
+        } else keys[e.key] = true;
+      });
+      window.addEventListener('keyup', (e) => {
+        if (e.key === 'Shift') {
+          if (e.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT)
+            keys['ShiftRight'] = false;
+          else keys['Shift'] = false;
+        } else keys[e.key] = false;
+      });
+
+      // --- 遊戲循環 ---
+      function update() {
+        if (!gameActive) return;
+
+        // 更新特效
+        for (let i = particles.length - 1; i >= 0; i--) {
+          particles[i].update();
+          if (particles[i].life <= 0) particles.splice(i, 1);
+        }
+
+        players.forEach((p) => p.update());
+        updateBall();
+        players.forEach((p) => checkCollision(p));
+        checkScore();
+      }
+
+      function updateBall() {
+        ball.vy += GRAVITY;
+        ball.vx *= 0.99; // 空氣阻力
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        // --- 邊界反彈邏輯 (Wall Bounce Logic) ---
+
+        // 左牆
+        if (ball.x < ball.r) {
+          ball.x = ball.r;
+          ball.vx *= -BOUNCE;
+          triggerWallEffect(ball.x, ball.y, 'BANG!');
+        }
+        // 右牆
+        if (ball.x > canvas.width - ball.r) {
+          ball.x = canvas.width - ball.r;
+          ball.vx *= -BOUNCE;
+          triggerWallEffect(ball.x, ball.y, 'BANG!');
+        }
+
+        // 地板 (有摩擦力)
+        if (ball.y > canvas.height - ball.r) {
+          ball.y = canvas.height - ball.r;
+          ball.vy *= -BOUNCE;
+          if (Math.abs(ball.vy) < 2) ball.vy = 0; // 停止微小彈跳
+          else if (Math.abs(ball.vy) > 10)
+            triggerWallEffect(ball.x, ball.y, 'BOOM!'); // 用力砸地
+        }
+
+        // 天花板
+        if (ball.y < ball.r) {
+          ball.y = ball.r;
+          ball.vy *= -BOUNCE;
+          triggerWallEffect(ball.x, ball.y, 'BOING!');
+        }
+      }
+
+      function triggerWallEffect(x, y, text) {
+        // 只有球速夠快才觸發特效
+        if (Math.abs(ball.vx) > 5 || Math.abs(ball.vy) > 5) {
+          particles.push(new EffectText(x, y, text));
+        }
+      }
+
+      function checkCollision(p) {
+        let dx = p.x + p.w / 2 - ball.x;
+        let dy = p.y + p.h / 2 - ball.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 50) {
+          let angle = Math.atan2(dy, dx);
+          let force = p.isSprinting ? 25 : 12;
+
+          ball.vx = -Math.cos(angle) * force;
+          ball.vy = -Math.sin(angle) * force;
+          ball.vy -= 2;
+
+          if (p.isSprinting && Math.random() < 0.3) {
+            p.showStatus('SMASH!');
+          }
+        }
+      }
+
+      function checkScore() {
+        if (ball.x < 50 && ball.y > 200 && ball.y < 300) {
+          scores.clippers += 2;
+          scoreEffect('clippers');
+          updateTicker(`🏀 快艇隊得分！`);
+          resetBall();
+        } else if (ball.x > 950 && ball.y > 200 && ball.y < 300) {
+          scores.lakers += 2;
+          scoreEffect('lakers');
+          updateTicker(`🏀 湖人隊得分！`);
+          resetBall();
+        }
+        document.getElementById('scoreLakers').innerText = scores.lakers;
+        document.getElementById('scoreClippers').innerText = scores.clippers;
+      }
+
+      function scoreEffect(team) {
+        canvas.style.backgroundColor =
+          team === 'lakers' ? '#552583' : '#1D428A';
+        setTimeout(
+          () =>
+            (canvas.style.background =
+              'radial-gradient(circle, #e0a66c 0%, #d18b47 80%)'),
+          150
+        );
+      }
+
+      function resetBall() {
+        ball.x = canvas.width / 2;
+        ball.y = 100;
+        ball.vx = 0;
+        ball.vy = 5;
+      }
+
+      function updateTicker(msg) {
+        const el = document.getElementById('ticker');
+        el.innerText = msg;
+        el.style.animation = 'none';
+        el.offsetHeight;
+        el.style.animation = 'scrollText 10s linear infinite';
+      }
+
+      // --- 繪圖 ---
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 地板與籃框
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 70, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 200, 10, 100);
+        ctx.fillRect(canvas.width - 10, 200, 10, 100);
+        ctx.strokeStyle = 'orange';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(35, 280, 25, 0, Math.PI, false);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(canvas.width - 35, 280, 25, 0, Math.PI, false);
+        ctx.stroke();
+
+        players.forEach((p) => drawPlayer(p));
+
+        // 畫球
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fillStyle = ball.color;
+        ctx.fill();
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 畫特效
+        particles.forEach((p) => p.draw(ctx));
+      }
+
+      function drawPlayer(p) {
+        if (p.isSprinting) {
+          p.trail.forEach((t) => {
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(t.x, t.y, p.w, p.h);
+          });
+          ctx.globalAlpha = 1.0;
+        }
+
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.strokeStyle = p.stroke;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+        if (p.role === 'P1' || p.role === 'P2') {
+          ctx.fillStyle = '#333';
+          ctx.fillRect(p.x, p.y - 15, p.w, 6);
+          let barColor =
+            p.stamina < 30 ? '#e74c3c' : p.stamina < 60 ? '#f1c40f' : '#2ecc71';
+          ctx.fillStyle = barColor;
+          ctx.fillRect(p.x, p.y - 15, p.w * (p.stamina / 100), 6);
+        }
+
+        if (p.statusTimer > 0) {
+          ctx.fillStyle = '#00e676';
+          ctx.font = 'bold 16px Arial';
+          ctx.fillText(p.statusText, p.x + p.w / 2, p.y - 40);
+        }
+
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.emoji, p.x + p.w / 2, p.y + p.h / 2 + 5);
+        ctx.font = 'bold 12px Arial';
+        let nameTxt = p.name + (p.isSprinting ? '⚡' : '');
+        ctx.fillText(nameTxt, p.x + p.w / 2, p.y - 20);
+
+        if (p.role !== 'BOT') {
+          ctx.fillStyle = p.role === 'P1' ? '#FDB927' : '#fff';
+          ctx.beginPath();
+          ctx.moveTo(p.x + p.w / 2, p.y - 35);
+          ctx.lineTo(p.x + p.w / 2 - 5, p.y - 45);
+          ctx.lineTo(p.x + p.w / 2 + 5, p.y - 45);
+          ctx.fill();
+        }
+      }
+
+      // --- 循環 ---
+      function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      function startTimer() {
+        timerInterval = setInterval(() => {
+          if (time > 0 && gameActive) {
+            time--;
+            document.getElementById('timer').innerText = time;
+            if (Math.random() < 0.05) updateTicker('LeBron 正在指揮隊友跑位！');
+          } else if (time === 0) endGame();
+        }, 1000);
+      }
+
+      function endGame() {
+        gameActive = false;
+        clearInterval(timerInterval);
+        document.getElementById('overlay').style.display = 'flex';
+        let msg =
+          scores.lakers > scores.clippers
+            ? 'LAKERS WIN!'
+            : scores.clippers > scores.lakers
+            ? 'CLIPPERS WIN!'
+            : 'OVERTIME!';
+        let col =
+          scores.lakers > scores.clippers
+            ? '#FDB927'
+            : scores.clippers > scores.lakers
+            ? '#1D428A'
+            : 'white';
+        let winEl = document.getElementById('winMsg');
+        winEl.innerText = msg;
+        winEl.style.color = col;
+      }
+
+      function resetGame() {
+        gameActive = true;
+        time = 48;
+        scores = { lakers: 0, clippers: 0 };
+        document.getElementById('scoreLakers').innerText = 0;
+        document.getElementById('scoreClippers').innerText = 0;
+        document.getElementById('overlay').style.display = 'none';
+        initGame();
+        resetBall();
+        startTimer();
+      }
+
+      initGame();
+      loop();
+      startTimer();
+    </script>
+  </body>
+</html>

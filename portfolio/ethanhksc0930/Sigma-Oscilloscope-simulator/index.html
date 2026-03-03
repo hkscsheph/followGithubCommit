@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pro-Visualizer v6.0 - The Laboratory</title>
+    <style>
+      :root {
+        --primary-color: #00ff41;
+        --bg-color: #000000;
+        --panel-bg: rgba(15, 15, 15, 0.9);
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--bg-color);
+        color: var(--primary-color);
+        font-family: 'Courier New', Courier, monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* CRT Scanline & Grain Overlay */
+      body::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), 
+                    repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgba(0,0,0,0.1) 2px);
+        z-index: 10;
+        background-size: 100% 4px, 100% 2px;
+        pointer-events: none;
+      }
+
+      #file-info {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 15;
+        text-shadow: 0 0 10px var(--primary-color);
+      }
+
+      #drop-zone {
+        position: absolute;
+        width: 100%; height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        filter: contrast(1.2) brightness(1.2) saturate(1.5);
+      }
+
+      .controls {
+        position: absolute;
+        bottom: 20px;
+        z-index: 20;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        background: var(--panel-bg);
+        padding: 15px;
+        border: 2px solid #333;
+        border-top: 2px solid var(--primary-color);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        max-width: 95vw;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 9px;
+        border-left: 1px solid #333;
+        padding-left: 10px;
+      }
+
+      .control-group:first-child { border: none; }
+
+      label { font-weight: bold; letter-spacing: 1px; color: #888; }
+
+      button, select, input {
+        background: #111;
+        color: var(--primary-color);
+        border: 1px solid #444;
+        padding: 5px 8px;
+        cursor: pointer;
+        font-family: inherit;
+        text-transform: uppercase;
+        font-size: 10px;
+      }
+
+      button:hover {
+        border-color: var(--primary-color);
+        background: #1a1a1a;
+      }
+
+      button.active {
+        background: var(--primary-color);
+        color: #000;
+      }
+
+      input[type="range"] {
+        height: 4px;
+        appearance: none;
+        background: #333;
+        outline: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        background: var(--primary-color);
+        cursor: pointer;
+      }
+
+      #rec-status {
+        color: #ff0000;
+        animation: blink 1s infinite;
+        font-weight: bold;
+      }
+
+      @keyframes blink { 50% { opacity: 0; } }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="file-info" class="hidden">
+      <div id="rec-status" class="hidden">REC [●]</div>
+      <small>INPUT: <span id="file-name-display">---</span></small>
+    </div>
+
+    <div id="drop-zone">
+      <div id="instructions" style="text-align: center;">
+        <h1 style="letter-spacing: 10px;">LAB-SCOPE v6.0</h1>
+        <p style="opacity: 0.4;">DRAG MP3 FILES TO BEGIN</p>
+      </div>
+    </div>
+
+    <canvas id="scope"></canvas>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>POWER</label>
+        <button id="btn-play">Pause</button>
+      </div>
+      
+      <div class="control-group">
+        <label>SIGNAL</label>
+        <button id="btn-mode">Linear</button>
+        <button id="btn-freeze">Freeze</button>
+      </div>
+
+      <div class="control-group">
+        <label>POS (H/V)</label>
+        <input type="range" id="input-hpos" min="-200" max="200" value="0">
+        <input type="range" id="input-vpos" min="-200" max="200" value="0">
+      </div>
+
+      <div class="control-group">
+        <label>GAIN/GLOW</label>
+        <input type="range" id="input-gain" min="0.5" max="8" step="0.1" value="1.5">
+        <input type="range" id="input-glow" min="0" max="50" value="25">
+      </div>
+
+      <div class="control-group">
+        <label>THEME</label>
+        <select id="theme-select">
+          <option value="#00ff41">P1 PHOSPHOR</option>
+          <option value="#00d4ff">CYAN RAY</option>
+          <option value="#ff3300">WAR ROOM</option>
+          <option value="#ffffff">MONO WHITE</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>EXPORT</label>
+        <button id="btn-record">Record</button>
+        <button id="btn-snapshot">Snapshot</button>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById('scope');
+      const ctx = canvas.getContext('2d');
+      const dropZone = document.getElementById('drop-zone');
+      const playBtn = document.getElementById('btn-play');
+      const modeBtn = document.getElementById('btn-mode');
+      const freezeBtn = document.getElementById('btn-freeze');
+      const themeSelect = document.getElementById('theme-select');
+      const gainInput = document.getElementById('input-gain');
+      const glowInput = document.getElementById('input-glow');
+      const hPosInput = document.getElementById('input-hpos');
+      const vPosInput = document.getElementById('input-vpos');
+      const recordBtn = document.getElementById('btn-record');
+      const snapshotBtn = document.getElementById('btn-snapshot');
+      const fileNameDisplay = document.getElementById('file-name-display');
+
+      let audioCtx, analyser, source, dataArray, streamDest;
+      let isCircular = false, isFrozen = false;
+      let frozenArray = null;
+      let activeColor = '#00ff41';
+      let mediaRecorder, recordedChunks = [];
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      themeSelect.addEventListener('change', (e) => {
+        activeColor = e.target.value;
+        document.documentElement.style.setProperty('--primary-color', activeColor);
+      });
+
+      playBtn.addEventListener('click', () => {
+        if (!audioCtx) return;
+        audioCtx.state === 'running' ? audioCtx.suspend() : audioCtx.resume();
+        playBtn.innerText = audioCtx.state === 'running' ? 'Resume' : 'Pause';
+      });
+
+      modeBtn.addEventListener('click', () => {
+        isCircular = !isCircular;
+        modeBtn.innerText = isCircular ? 'Circular' : 'Linear';
+      });
+
+      freezeBtn.addEventListener('click', () => {
+        isFrozen = !isFrozen;
+        freezeBtn.classList.toggle('active');
+        if (isFrozen && dataArray) frozenArray = new Uint8Array(dataArray);
+      });
+
+      snapshotBtn.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = `Scope_Capture_${Date.now()}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+
+      recordBtn.addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+          recordBtn.innerText = "Record";
+          recordBtn.classList.remove('active');
+          document.getElementById('rec-status').classList.add('hidden');
+        } else {
+          startRecording();
+        }
+      });
+
+      function startRecording() {
+        recordedChunks = [];
+        const canvasStream = canvas.captureStream(60);
+        if (streamDest) canvasStream.addTrack(streamDest.stream.getAudioTracks()[0]);
+
+        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm;codecs=vp9' });
+        mediaRecorder.ondataavailable = (e) => e.data.size > 0 && recordedChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Scope_Export_${Date.now()}.webm`;
+          a.click();
+        };
+        mediaRecorder.start();
+        recordBtn.innerText = "Stop";
+        recordBtn.classList.add('active');
+        document.getElementById('rec-status').classList.remove('hidden');
+      }
+
+      dropZone.addEventListener('dragover', (e) => e.preventDefault());
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file?.type.startsWith('audio/')) {
+          fileNameDisplay.innerText = file.name.toUpperCase();
+          document.getElementById('file-info').classList.remove('hidden');
+          document.getElementById('instructions').classList.add('hidden');
+          handleFile(file);
+        }
+      });
+
+      async function handleFile(file) {
+        if (audioCtx) audioCtx.close();
+        audioCtx = new AudioContext();
+        streamDest = audioCtx.createMediaStreamDestination();
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        analyser.connect(streamDest);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        source.start();
+        draw();
+      }
+
+      function draw() {
+        requestAnimationFrame(draw);
+        if (!isFrozen) analyser.getByteTimeDomainData(dataArray);
+        const activeArray = isFrozen ? frozenArray : dataArray;
+
+        // Phosphor Persistence Effect
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const gain = parseFloat(gainInput.value);
+        const glow = parseFloat(glowInput.value);
+        const hPos = parseFloat(hPosInput.value);
+        const vPos = parseFloat(vPosInput.value);
+
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // Offset passes for Chromatic Jitter
+        renderPass(activeArray, gain, glow, hPos, vPos, activeColor, 1.0);
+        renderPass(activeArray, gain, 0, hPos + 2, vPos, '#fff', 0.8); // White core
+      }
+
+      function renderPass(data, gain, glow, hOff, vOff, color, alpha) {
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.shadowBlur = glow;
+        ctx.shadowColor = color;
+        ctx.lineWidth = alpha > 0.8 ? 2 : 4;
+
+        if (isCircular) {
+          drawCircular(data, gain, hOff, vOff);
+        } else {
+          drawLinear(data, gain, hOff, vOff);
+        }
+      }
+
+      function drawLinear(data, gain, hOff, vOff) {
+        // Simple Rising-Edge Trigger
+        let trigger = 0;
+        for (let i = 0; i < data.length/2; i++) {
+          if (data[i] < 128 && data[i+1] >= 128) { trigger = i; break; }
+        }
+
+        ctx.beginPath();
+        const sliceWidth = canvas.width / (data.length / 2);
+        let x = 0;
+        for (let i = trigger; i < trigger + (data.length / 2); i++) {
+          const v = ((data[i] - 128) * gain + 128) / 128.0;
+          const y = (v * canvas.height) / 2 + vOff;
+          i === trigger ? ctx.moveTo(x + hOff, y) : ctx.lineTo(x + hOff, y);
+          x += sliceWidth;
+        }
+        ctx.stroke();
+      }
+
+      function drawCircular(data, gain, hOff, vOff) {
+        const centerX = canvas.width / 2 + hOff;
+        const centerY = canvas.height / 2 + vOff;
+        const radius = Math.min(canvas.width, canvas.height) * 0.25;
+
+        ctx.beginPath();
+        for (let i = 0; i < data.length; i++) {
+          const angle = (i / data.length) * Math.PI * 2;
+          const amp = ((data[i] - 128) * gain + 128) / 128.0;
+          const r = radius * (0.8 + (amp * 0.4));
+          const x = centerX + r * Math.cos(angle);
+          const y = centerY + r * Math.sin(angle);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+    </script>
+  </body>
+</html>

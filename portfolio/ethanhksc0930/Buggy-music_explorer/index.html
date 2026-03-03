@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Domain Gems</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Open Music Explorer</h1>
+        <p>Exploring the "Underrated" sounds of the Public Domain.</p>
+        
+        <div class="controls">
+            <select id="genreSelect">
+                <option value="blues">Vintage Blues</option>
+                <option value="jazz">Early Jazz</option>
+                <option value="country">Old-Time Country</option>
+                <option value="dance">Early Dance Bands</option>
+                <option value="instrumental">Instrumental Curiosities</option>
+            </select>
+            <button onclick="searchArchive()">Explore Archive</button>
+        </div>
+    </header>
+
+    <main id="displayArea">
+        <div id="introMessage">
+            <p>Select a genre to find recordings from the 1920s and beyond via <strong>Open Music Archive</strong>.</p>
+        </div>
+        <div id="resultsGrid" class="grid-container"></div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

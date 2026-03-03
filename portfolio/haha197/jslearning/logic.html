@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>JS 课程：逻辑判断</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>课程：逻辑判断 (If/Else)</h1>
+    </header>
+
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="logic.html">课程：逻辑判断</a>
+      <a href="quiz.html">挑战：测验题</a>
+    </nav>
+
+    <main class="container">
+      <section>
+        <h2>什么是条件判断？</h2>
+        <p>
+          代码通常需要根据不同的情况做不同的事。比如：<b>如果</b>分数大于60，<b>就</b>显示“及格”，<b>否则</b>显示“不及格”。
+        </p>
+        <h3>实战：年龄检查器</h3>
+        <p>输入你的年龄，JS 会判断你处于哪个生命阶段。</p>
+        <div style="border: 1px solid #ccc; padding: 20px; border-radius: 5px">
+          <label>请输入年龄：</label>
+          <input type="number" id="ageInput" placeholder="例如: 18" />
+          <button onclick="checkAge()">检查</button>
+          <div
+            id="ageResult"
+            class="feedback"
+            style="display: block; margin-top: 10px; color: #555">
+            等待输入...
+          </div>
+        </div>
+      </section>
+    </main>
+    <script>
+      function checkAge() {
+        let age = document.getElementById('ageInput').value;
+        let resultBox = document.getElementById('ageResult');
+        let message = '';
+
+        // 逻辑判断核心
+        if (age === '') {
+          message = '请输入一个数字！';
+        } else if (age < 0) {
+          message = '你还没出生吗？请输入正数。';
+        } else if (age < 18) {
+          message = '👶 你是未成年人。';
+        } else if (age >= 18 && age < 60) {
+          message = '🧑 你是成年人，努力工作吧！';
+        } else {
+          message = '👴 您可以享受退休生活了。';
+        }
+
+        resultBox.innerText = message;
+        resultBox.style.fontWeight = 'bold';
+      }
+    </script>
+  </body>
+</html>

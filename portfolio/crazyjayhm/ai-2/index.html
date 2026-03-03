@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI聊天室</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <div class="chat-wrapper">
+        <div class="chat-header">
+          <div class="bot-avatar">🤖</div>
+          <div class="header-info">
+            <h1>AI助手</h1>
+            <span class="status online"></span>
+          </div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+          <div class="input-wrapper">
+            <textarea
+              id="messageInput"
+              placeholder="輸入訊息... /img 生成圖片"
+              rows="1"
+            ></textarea>
+            <button class="send-btn" id="sendBtn">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

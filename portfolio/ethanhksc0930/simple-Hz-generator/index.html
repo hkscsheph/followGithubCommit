@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML5 Square Wave Gen</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #121212; color: white; }
+        .controls { background: #222; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        input { width: 300px; cursor: pointer; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; border: none; color: white; border-radius: 4px; transition: 0.2s; }
+        button:hover { background: #0056b3; }
+        .freq-display { font-size: 24px; margin-bottom: 10px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div class="freq-display"><span id="freqVal">440</span> Hz</div>
+        <input type="range" id="frequency" min="20" max="2000" value="440">
+        <br><br>
+        <button id="toggle">Start Audio</button>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        let oscillator = null;
+        let isPlaying = false;
+
+        const toggleBtn = document.getElementById('toggle');
+        const freqSlider = document.getElementById('frequency');
+        const freqDisplay = document.getElementById('freqVal');
+
+        function startAudio() {
+            // Initialize Context (required by browsers to be triggered by user gesture)
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create Square Wave Oscillator
+            oscillator = audioCtx.createOscillator();
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(freqSlider.value, audioCtx.currentTime);
+
+            // Create Gain Node (to control volume and prevent clipping)
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Keep it quiet!
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            isPlaying = true;
+            toggleBtn.textContent = "Stop Audio";
+        }
+
+        function stopAudio() {
+            oscillator.stop();
+            oscillator.disconnect();
+            isPlaying = false;
+            toggleBtn.textContent = "Start Audio";
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                startAudio();
+            } else {
+                stopAudio();
+            }
+        });
+
+        freqSlider.addEventListener('input', (e) => {
+            const freq = e.target.value;
+            freqDisplay.textContent = freq;
+            if (oscillator) {
+                oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
+            }
+        });
+    </script>
+</body>
+</html>

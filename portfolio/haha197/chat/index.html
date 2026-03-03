@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase 即時聊天室</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* 簡單的 CSS 美化 */
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; height: 100vh; margin: 0; }
+        .chat-container { width: 100%; max-width: 600px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; height: 90vh; margin-top: 20px; }
+        
+        /* 聊天訊息顯示區 */
+        #message-list { flex: 1; padding: 20px; overflow-y: auto; background-color: #fff; border-bottom: 1px solid #ddd; }
+        .message-item { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .meta { font-size: 0.85em; color: #888; margin-bottom: 4px; }
+        .user { font-weight: bold; color: #333; }
+        .text { font-size: 1.1em; color: #222; }
+
+        /* 輸入區 */
+        .input-area { padding: 20px; background-color: #fafafa; display: flex; gap: 10px; flex-direction: column; }
+        .row { display: flex; gap: 10px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        #username { width: 30%; }
+        #content { flex: 1; }
+        button { padding: 10px 20px; background-color: #3ECF8E; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #34b379; }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div id="message-list">
+            <p style="color:gray; text-align:center;">載入訊息中...</p>
+        </div>
+        
+        <div class="input-area">
+            <div class="row">
+                <input type="text" id="username" placeholder="輸入暱稱 (Username)" value="訪客">
+            </div>
+            <div class="row">
+                <input type="text" id="content" placeholder="輸入訊息..." onkeydown="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">傳送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 2. 設定 Supabase 客戶端
+        // TODO: 請在這裡填入你的 Supabase URL 和 Anon Key
+        const SUPABASE_URL = 'https://yjgctujlqebbnsbkguke.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_C_plJVbYzHqhFsag6HSmiA_8gaA-IFo';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const messageList = document.getElementById('message-list');
+
+        // 3. 讀取歷史訊息 (一開始載入時)
+        async function fetchMessages() {
+            const { data, error } = await supabase
+                .from('messages') // 確認資料表名稱是 messages
+                .select('*')
+                .order('created_at', { ascending: true }); // 依照時間排序
+
+            if (error) {
+                console.error('讀取錯誤:', error);
+                messageList.innerHTML = '<p style="color:red">讀取失敗，請檢查 Console</p>';
+            } else {
+                messageList.innerHTML = ''; // 清空載入中文字
+                data.forEach(msg => appendMessage(msg));
+                scrollToBottom();
+            }
+        }
+
+        // 4. 監聽即時訊息 (Realtime Subscription)
+        const channel = supabase
+            .channel('room1')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'messages' },
+                (payload) => {
+                    console.log('收到新訊息:', payload);
+                    appendMessage(payload.new); // 將新資料加入畫面
+                    scrollToBottom();
+                }
+            )
+            .subscribe();
+
+        // 5. 發送訊息功能
+        async function sendMessage() {
+            const usernameInput = document.getElementById('username');
+            const contentInput = document.getElementById('content');
+            
+            const username = usernameInput.value || '匿名';
+            const content = contentInput.value;
+
+            if (!content.trim()) return; // 防止空訊息
+
+            // 寫入資料庫
+            const { error } = await supabase
+                .from('messages')
+                .insert({ username: username, content: content });
+
+            if (error) {
+                alert('發送失敗: ' + error.message);
+            } else {
+                contentInput.value = ''; // 清空輸入框
+            }
+        }
+
+        // 輔助函式：將訊息加入 HTML
+        function appendMessage(msg) {
+            const div = document.createElement('div');
+            div.className = 'message-item';
+            
+            // 格式化時間 (只顯示時:分)
+            const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            div.innerHTML = `
+                <div class="meta">
+                    <span class="user">${escapeHtml(msg.username)}</span> • ${time}
+                </div>
+                <div class="text">${escapeHtml(msg.content)}</div>
+            `;
+            messageList.appendChild(div);
+        }
+
+        // 輔助函式：自動捲動到底部
+        function scrollToBottom() {
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        // 輔助函式：防止 XSS 攻擊 (簡單版)
+        function escapeHtml(text) {
+            if(!text) return "";
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 程式進入點
+        fetchMessages();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Fighter | 文字格鬥場</title>
+    <style>
+        :root { --p1-color: #ff4757; --p2-color: #2f3542; }
+        body { font-family: sans-serif; background: #f1f2f6; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+        
+        /* 戰鬥狀態欄 */
+        .battle-stage { display: flex; justify-content: space-around; padding: 20px; background: #fff; border-bottom: 3px solid #dfe4ea; }
+        .hp-bar { width: 200px; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
+        .hp-fill { height: 100%; transition: width 0.3s; }
+        #p1-hp { background: var(--p1-color); width: 100%; }
+        #p2-hp { background: #2ecc71; width: 100%; }
+
+        /* 聊天顯示區 */
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px 15px; border-radius: 15px; max-width: 70%; animation: pop 0.3s ease; }
+        .msg.p1 { align-self: flex-start; background: #fff; border: 2px solid var(--p1-color); }
+        .msg.p2 { align-self: flex-end; background: var(--p2-color); color: white; }
+        .system-msg { align-self: center; font-size: 0.8rem; color: #a4b0be; }
+
+        /* 輸入區 */
+        .input-area { padding: 20px; background: #fff; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border: 2px solid #dfe4ea; border-radius: 25px; outline: none; }
+        button { padding: 10px 25px; border: none; border-radius: 25px; background: var(--p1-color); color: white; cursor: pointer; }
+        
+        @keyframes pop { from { opacity: 0; transform: translateY(10px); } }
+    </style>
+</head>
+<body>
+
+<div class="battle-stage">
+    <div>
+        <strong>玩家 (You)</strong>
+        <div class="hp-bar"><div id="p1-hp" class="hp-fill"></div></div>
+    </div>
+    <div style="font-size: 2rem;">VS</div>
+    <div>
+        <strong>對手 (Enemy)</strong>
+        <div class="hp-bar"><div id="p2-hp" class="hp-fill"></div></div>
+    </div>
+</div>
+
+<div id="chat-box">
+    <div class="system-msg">戰鬥開始！輸入 "sword" 發動攻擊，或 "heal" 回復生命。</div>
+</div>
+
+<div class="input-area">
+    <input type="text" id="msgInput" placeholder="輸入訊息以發動攻擊..." autofocus>
+    <button onclick="sendMsg()">發送</button>
+</div>
+
+<script>
+    let p1HP = 100;
+    let p2HP = 100;
+
+    const chatBox = document.getElementById('chat-box');
+    const msgInput = document.getElementById('msgInput');
+
+    function sendMsg() {
+        const text = msgInput.value.trim().toLowerCase();
+        if (!text) return;
+
+        // 1. 顯示你的訊息
+        appendMsg(text, 'p1');
+        msgInput.value = '';
+
+        // 2. 判斷攻擊邏輯
+        if (text.includes('sword')) {
+            attack('p2', 20, "🗡️ 劍擊！對手受到 20 點傷害");
+        } else if (text.includes('heal')) {
+            heal('p1', 15, "✨ 治療！你回復了 15 點生命");
+        }
+
+        // 3. 模擬對手自動回擊 (在真正連線版中，這會由另一個玩家執行)
+        setTimeout(enemyTurn, 1000);
+    }
+
+    function attack(target, damage, log) {
+        if (target === 'p2') {
+            p2HP = Math.max(0, p2HP - damage);
+            document.getElementById('p2-hp').style.width = p2HP + '%';
+        } else {
+            p1HP = Math.max(0, p1HP - damage);
+            document.getElementById('p1-hp').style.width = p1HP + '%';
+        }
+        appendMsg(log, 'system-msg');
+        checkGameOver();
+    }
+
+    function heal(player, amount, log) {
+        if (player === 'p1') {
+            p1HP = Math.min(100, p1HP + amount);
+            document.getElementById('p1-hp').style.width = p1HP + '%';
+        }
+        appendMsg(log, 'system-msg');
+    }
+
+    function enemyTurn() {
+        if (p2HP <= 0) return;
+        const moves = ['sword', 'hello', 'fire ball'];
+        const randomMove = moves[Math.floor(Math.random() * moves.length)];
+        
+        appendMsg(randomMove, 'p2');
+        if (randomMove === 'sword') {
+            attack('p1', 10, "💥 對手反擊！你受到 10 點傷害");
+        }
+    }
+
+    function appendMsg(text, type) {
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerText = text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function checkGameOver() {
+        if (p1HP <= 0) alert("你輸了！");
+        else if (p2HP <= 0) alert("你贏了！");
+    }
+
+    // 支援 Enter 鍵
+    msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMsg(); });
+</script>
+
+</body>
+</html>

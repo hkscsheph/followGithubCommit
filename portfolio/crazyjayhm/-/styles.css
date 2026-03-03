@@ -1,0 +1,47 @@
+body {
+  background: linear-gradient(135deg, #1e1e1e 0%, #333 100%); /* 深色背景 */
+  color: #fff;
+  padding: 40px 20px;
+}
+
+.container {
+  background: #000;
+  border-top: 5px solid #ccff00; /* 螢光黃/綠色線條 */
+  padding: 40px;
+  border-radius: 0; /* 運動風常用硬朗直角 */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+h2 {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #ccff00;
+}
+
+input,
+select {
+  background: #222;
+  border: 1px solid #444;
+  color: white;
+  padding: 15px;
+}
+
+input:focus {
+  border-color: #ccff00;
+  outline: none;
+}
+
+button {
+  background-color: #ccff00;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 20px;
+  border-radius: 0;
+  transition: transform 0.2s;
+}
+
+button:hover {
+  background-color: #e6ff80;
+  transform: scale(1.02); /* 微微放大效果 */
+}

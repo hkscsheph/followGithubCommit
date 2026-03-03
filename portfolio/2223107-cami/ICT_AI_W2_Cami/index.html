@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全方位行程管理系統</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --accent: #50e3c2;
+            --bg: #f4f7f6;
+            --text: #333;
+        }
+
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; display: flex; }
+
+        /* 側邊導覽 */
+        .sidebar { width: 220px; background: #2c3e50; color: white; height: 100vh; position: fixed; padding: 20px; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; color: var(--accent); }
+        .nav-item { padding: 12px; cursor: pointer; border-radius: 5px; margin-bottom: 10px; transition: 0.3s; }
+        .nav-item:hover, .nav-item.active { background: var(--primary); }
+
+        /* 主要內容區 */
+        .main-content { margin-left: 260px; padding: 30px; width: calc(100% - 300px); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+        /* 時間表結構 */
+        .schedule-container { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
+        .view-title { padding: 15px 25px; background: #eee; font-weight: bold; border-bottom: 1px solid #ddd; }
+
+        /* 日/週 視圖的 Grid 排版 */
+        .time-grid { display: grid; grid-template-columns: 80px 1fr; border-top: 1px solid #eee; }
+        .time-label { padding: 15px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; text-align: center; color: #888; font-size: 0.9rem; }
+        .slot { padding: 15px; border-bottom: 1px solid #eee; min-height: 50px; cursor: pointer; transition: 0.2s; position: relative; }
+        .slot:hover { background: #f9f9f9; }
+
+        /* 行程標籤 */
+        .event-tag { background: var(--primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin-bottom: 5px; }
+
+        /* 彈窗 */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border-radius: 10px; z-index: 100; width: 300px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99; }
+        
+        input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>📅時間表</h2>
+    <div class="nav-item" onclick="switchView('year')">年度計畫</div>
+    <div class="nav-item" onclick="switchView('month')">每月計畫</div>
+    <div class="nav-item active" onclick="switchView('week')">每週行程</div>
+    <div class="nav-item" onclick="switchView('day')">每日行程</div>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1 id="currentDisplay">2026年 1月 27日</h1>
+        <button style="width: auto;" onclick="openModal()">+ 新增行程</button>
+    </div>
+
+    <div class="schedule-container">
+        <div class="view-title" id="viewTitle">每日行程表</div>
+        <div id="scheduleBody">
+            </div>
+    </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeModal()"></div>
+<div class="modal" id="modal">
+    <h3>新增行程</h3>
+    <input type="text" id="eventInput" placeholder="要做什麼呢？">
+    <button onclick="saveEvent()">確認儲存</button>
+</div>
+
+<script>
+    let currentView = 'day';
+
+    function switchView(view) {
+        currentView = view;
+        // 更新 UI 狀態
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+        renderView();
+    }
+
+    function renderView() {
+        const body = document.getElementById('scheduleBody');
+        const title = document.getElementById('viewTitle');
+        body.innerHTML = '';
+
+        if (currentView === 'day' || currentView === 'week') {
+            title.innerText = currentView === 'day' ? "今日 24 小時行程" : "本週重點行程";
+            // 生成 08:00 到 22:00 的時間格
+            for (let i = 8; i <= 22; i++) {
+                const row = document.createElement('div');
+                row.className = 'time-grid';
+                row.innerHTML = `
+                    <div class="time-label">${i}:00</div>
+                    <div class="slot" onclick="openModal()">${i === 10 ? '<div class="event-tag">範例：晨間會議</div>' : ''}</div>
+                `;
+                body.appendChild(row);
+            }
+        } else if (currentView === 'month') {
+            title.innerText = "2026年 1月";
+            body.innerHTML = '<div style="padding: 50px; text-align: center;">這裡可以放置 7x5 的日曆表格...</div>';
+        } else {
+            title.innerText = "2026 年度目標";
+            body.innerHTML = '<div style="padding: 50px; text-align: center;">年度重要里程碑概覽...</div>';
+        }
+    }
+
+    // 彈窗邏輯
+    function openModal() {
+        document.getElementById('modal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+    }
+
+    function saveEvent() {
+        const text = document.getElementById('eventInput').value;
+        if(text) alert("已儲存行程：" + text);
+        closeModal();
+    }
+
+    // 初始化
+    renderView();
+</script>
+
+</body>
+</html>
