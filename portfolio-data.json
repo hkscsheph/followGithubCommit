@@ -6,11 +6,6 @@
       "repoUrl": "https://github.com/2223179/chatroom"
     },
     {
-      "name": "photo-to-pdf",
-      "type": "directory",
-      "repoUrl": "https://github.com/2223179/photo-to-pdf"
-    },
-    {
       "name": "photo2pdf",
       "type": "directory",
       "repoUrl": "https://github.com/2223179/photo2pdf"
@@ -62,11 +57,6 @@
   ],
   "2223176-tech": [
     {
-      "name": "KJMRF-OAJFGPOAND",
-      "type": "directory",
-      "repoUrl": "https://github.com/2223176-tech/KJMRF-OAJFGPOAND"
-    },
-    {
       "name": "KJMRF-OAJFGPOANDfgbwsrfgbwrebvswdfb",
       "type": "directory",
       "repoUrl": "https://github.com/2223176-tech/KJMRF-OAJFGPOANDfgbwsrfgbwrebvswdfb"
@@ -100,11 +90,6 @@
       "name": "stackblitz-starters-6xsn86o2nbanbanbanba",
       "type": "directory",
       "repoUrl": "https://github.com/2223176-tech/stackblitz-starters-6xsn86o2nbanbanbanba"
-    },
-    {
-      "name": "stackblitz-starters-h8hbppuz-uno-game",
-      "type": "directory",
-      "repoUrl": "https://github.com/2223176-tech/stackblitz-starters-h8hbppuz-uno-game"
     },
     {
       "name": "uno-game",

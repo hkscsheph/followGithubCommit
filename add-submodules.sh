@@ -1,5 +1,4 @@
 git submodule add https://github.com/2223179/photo2pdf.git portfolio/2223179/photo2pdf
-git submodule add https://github.com/2223179/photo-to-pdf.git portfolio/2223179/photo-to-pdf
 git submodule add https://github.com/2223179/chatroom.git portfolio/2223179/chatroom
 git submodule add https://github.com/2223107-cami/ICT_AI2.0_Cami.git portfolio/2223107-cami/ICT_AI2.0_Cami
 git submodule add https://github.com/2223107-cami/ICT_AI_W3_Cami.git portfolio/2223107-cami/ICT_AI_W3_Cami
@@ -53,9 +52,7 @@ git submodule add https://github.com/ethanhksc0930/simple-Hz-generator.git portf
 git submodule add https://github.com/ethanhksc0930/piano-hehehehehhahhahhahahhahaaahhahahaha.git portfolio/ethanhksc0930/piano-hehehehehhahhahhahahhahaaahhahahaha
 git submodule add https://github.com/2526465-lgtm/on9-game.git portfolio/2526465-lgtm/on9-game
 git submodule add https://github.com/2223176-tech/uno-game.git portfolio/2223176-tech/uno-game
-git submodule add https://github.com/2223176-tech/stackblitz-starters-h8hbppuz-uno-game.git portfolio/2223176-tech/stackblitz-starters-h8hbppuz-uno-game
 git submodule add https://github.com/2223176-tech/KJMRF-OAJFGPOANDfgbwsrfgbwrebvswdfb.git portfolio/2223176-tech/KJMRF-OAJFGPOANDfgbwsrfgbwrebvswdfb
-git submodule add https://github.com/2223176-tech/KJMRF-OAJFGPOAND.git portfolio/2223176-tech/KJMRF-OAJFGPOAND
 git submodule add https://github.com/2223176-tech/racr-track-daniel-wong-.git portfolio/2223176-tech/racr-track-daniel-wong-
 git submodule add https://github.com/2223176-tech/nba-daniel.git portfolio/2223176-tech/nba-daniel
 git submodule add https://github.com/2223176-tech/stackblitz-starters-6xsn86o2nbanbanbanba.git portfolio/2223176-tech/stackblitz-starters-6xsn86o2nbanbanbanba
