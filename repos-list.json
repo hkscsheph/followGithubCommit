@@ -157,13 +157,13 @@
     "user": "EmilyLau41",
     "repos": [
       {
-        "name": "skyapp",
-        "url": "https://github.com/EmilyLau41/skyapp.git",
+        "name": "CHAT-ROOM",
+        "url": "https://github.com/EmilyLau41/CHAT-ROOM.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "CHAT-ROOM",
-        "url": "https://github.com/EmilyLau41/CHAT-ROOM.git",
+        "name": "skyapp",
+        "url": "https://github.com/EmilyLau41/skyapp.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
@@ -391,6 +391,11 @@
     "user": "2526470-collab",
     "repos": [
       {
+        "name": "-messages",
+        "url": "https://github.com/2526470-collab/-messages.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "GAME",
         "url": "https://github.com/2526470-collab/GAME.git",
         "description": "Created with StackBlitz ⚡️"
@@ -398,11 +403,6 @@
       {
         "name": "stackblitz-starters-8lhyu1m1",
         "url": "https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1.git",
-        "description": "Created with StackBlitz ⚡️"
-      },
-      {
-        "name": "-messages",
-        "url": "https://github.com/2526470-collab/-messages.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {

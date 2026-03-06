@@ -40,7 +40,18 @@
     </style>
 </head>
 <body>
-
+    <div id="auth-container">
+        <div class="auth-card">
+            <h2>即時聊天室</h2>
+            <p>輸入 Email 接收魔術連結登入</p>
+            <input type="email" id="email-input" placeholder="example@email.com">
+            <button id="login-btn">發送登入連結</button>
+            <div id="auth-msg"></div>
+        </div>
+    </div>
+    <div id="main-chat" style="display: none; flex-direction: column; height: 100vh;">
+        <div id="chat-window"></div>
+        </div>
 <div id="chat-window"></div>
 <div id="status-bar">正在處理...</div>
 
@@ -72,6 +83,31 @@
     const sendBtn = document.getElementById('send-btn');
     const statusBar = document.getElementById('status-bar');
 
+            // 發送 Magic Link
+            loginBtn.onclick = async () => {
+        const email = emailInput.value.trim();
+        if (!email) return alert('請輸入 Email');
+
+        loginBtn.disabled = true;
+        authMsg.innerText = '郵件傳送中...';
+
+        const { error } = await _supabase.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.href }
+        });
+
+        if (error) {
+            authMsg.innerText = '錯誤: ' + error.message;
+            loginBtn.disabled = false;
+        } else {
+            authMsg.innerText = '✅ 連結已寄出！請至信箱查看並點擊。';
+        }
+    };
+
+    // 登出
+    logoutBtn.onclick = async () => {
+        await _supabase.auth.signOut();
+    };
     // 2. 渲染訊息函式
     function renderMessage(msg) {
         const isMine = msg.sender === userInput.value && userInput.value !== '';

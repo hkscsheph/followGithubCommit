@@ -21,8 +21,8 @@ git submodule add https://github.com/BARON1118/stackblitz-hksc-daily.git portfol
 git submodule add https://github.com/BARON1118/liftCounter.git portfolio/BARON1118/liftCounter
 git submodule add https://github.com/BARON1118/cotd.git portfolio/BARON1118/cotd
 git submodule add https://github.com/v1ann/1.git portfolio/v1ann/1
-git submodule add https://github.com/EmilyLau41/skyapp.git portfolio/EmilyLau41/skyapp
 git submodule add https://github.com/EmilyLau41/CHAT-ROOM.git portfolio/EmilyLau41/CHAT-ROOM
+git submodule add https://github.com/EmilyLau41/skyapp.git portfolio/EmilyLau41/skyapp
 git submodule add https://github.com/EmilyLau41/cheat-room.git portfolio/EmilyLau41/cheat-room
 git submodule add https://github.com/EmilyLau41/-.git portfolio/EmilyLau41/-
 git submodule add https://github.com/EmilyLau41/emotionapp.git portfolio/EmilyLau41/emotionapp
@@ -59,9 +59,9 @@ git submodule add https://github.com/2223176-tech/stackblitz-starters-6xsn86o2nb
 git submodule add https://github.com/2223176-tech/one-game.git portfolio/2223176-tech/one-game
 git submodule add https://github.com/2223176-tech/nba-marks-scot.git portfolio/2223176-tech/nba-marks-scot
 git submodule add https://github.com/2223176-tech/nba-marks-sc.git portfolio/2223176-tech/nba-marks-sc
+git submodule add https://github.com/2526470-collab/-messages.git portfolio/2526470-collab/-messages
 git submodule add https://github.com/2526470-collab/GAME.git portfolio/2526470-collab/GAME
 git submodule add https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1.git portfolio/2526470-collab/stackblitz-starters-8lhyu1m1
-git submodule add https://github.com/2526470-collab/-messages.git portfolio/2526470-collab/-messages
 git submodule add https://github.com/2526470-collab/hksc-woman-toilet.git portfolio/2526470-collab/hksc-woman-toilet
 git submodule add https://github.com/2526470-collab/Krystal.git portfolio/2526470-collab/Krystal
 git submodule add https://github.com/crazyjayhm/Game-1.git portfolio/crazyjayhm/Game-1

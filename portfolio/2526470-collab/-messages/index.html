@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purple Chat | Supabase</title>
+    <title>Purple Chat | Magic Link Auth</title>
     <style>
         :root {
             --primary: #6d28d9;
             --primary-light: #a78bfa;
             --bg-gradient: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
-            --glass: rgba(255, 255, 255, 0.95);
+            --glass: rgba(255, 255, 255, 0.98);
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: var(--bg-gradient);
             height: 100vh;
             margin: 0;
@@ -32,127 +32,81 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
 
-        /* 標題欄 */
+        /* 登入遮罩層 */
+        #auth-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--glass);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
         .chat-header {
             background: var(--primary);
             color: white;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             font-weight: bold;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-        }
-
-        /* 對話區域 */
-        #chat-box {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: #f3f0ff;
-        }
-
-        /* 訊息氣泡 */
-        .msg {
-            max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-        }
-
-        .msg.mine {
-            align-self: flex-end;
-            background: var(--primary-light);
-            color: white;
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 2px;
-        }
-
-        .msg b { display: block; font-size: 0.75rem; margin-bottom: 4px; opacity: 0.8; }
-
-        .chat-img {
-            max-width: 100%;
-            border-radius: 10px;
-            margin-top: 8px;
-            transition: transform 0.2s;
-        }
-
-        .chat-img:hover { transform: scale(1.02); cursor: pointer; }
-
-        /* 輸入區域 */
-        .input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #ddd;
-        }
-
-        .preview-box {
-            display: none;
-            padding: 10px;
-            border-top: 1px solid #eee;
-        }
-        #img-preview { height: 60px; border-radius: 5px; }
-
-        .controls { display: flex; gap: 8px; align-items: center; }
-
-        input[type="text"] {
-            border: 2px solid #eee;
-            border-radius: 25px;
-            padding: 10px 15px;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        input[type="text"]:focus { border-color: var(--primary-light); }
-        #username { width: 70px; }
-        #content { flex-grow: 1; }
-
-        .upload-label { cursor: pointer; color: var(--primary); font-size: 1.5rem; }
-        
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
         }
 
-        button:hover { background: #4c1d95; transform: rotate(10deg); }
+        #chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; background: #f3f0ff; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* 訊息樣式 */
+        .msg { max-width: 80%; padding: 10px 15px; border-radius: 15px; background: white; align-self: flex-start; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .msg.mine { align-self: flex-end; background: var(--primary-light); color: white; }
+        .msg b { display: block; font-size: 0.7rem; margin-bottom: 3px; opacity: 0.7; }
+        .chat-img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+
+        /* 輸入區 */
+        .input-area { padding: 15px; background: white; border-top: 1px solid #ddd; }
+        .controls { display: flex; gap: 8px; }
+        input { border: 2px solid #eee; border-radius: 20px; padding: 10px; outline: none; }
+        #content { flex-grow: 1; }
+        
+        button { background: var(--primary); color: white; border: none; border-radius: 20px; padding: 10px 20px; cursor: pointer; transition: 0.3s; }
+        button:hover { opacity: 0.9; }
+        .logout-btn { background: transparent; border: 1px solid white; font-size: 12px; padding: 5px 10px; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div class="chat-container">
-    <div class="chat-header">PURPLE CHAT</div>
+    <div id="auth-overlay">
+        <h2 style="color: var(--primary)">歡迎來到紫色聊天室</h2>
+        <p>輸入 Email 以接收登入連結 (Magic Link)</p>
+        <input type="email" id="auth-email" placeholder="example@email.com" style="width: 80%; margin-bottom: 15px;">
+        <button onclick="handleLogin()" id="login-btn">發送登入連結</button>
+        <p id="auth-status" style="margin-top: 15px; font-size: 14px; color: #666;"></p>
+    </div>
+
+    <div class="chat-header">
+        <span>PURPLE CHAT</span>
+        <button class="logout-btn" onclick="handleLogout()">登出</button>
+    </div>
     
     <div id="chat-box">載入中...</div>
 
-    <div class="preview-box" id="preview-box">
-        <img id="img-preview" src="">
-        <span style="font-size: 12px; color: #666; cursor: pointer;" onclick="clearFile()">✕ 移除</span>
-    </div>
-
     <div class="input-area">
+        <div id="preview-area" class="hidden" style="margin-bottom: 5px;">
+            <img id="img-preview" style="height: 50px; border-radius: 5px;">
+        </div>
         <div class="controls">
-            <input type="text" id="username" placeholder="暱稱">
-            <input type="text" id="content" placeholder="說點什麼...">
-            
-            <label class="upload-label" for="imageInput">📷</label>
-            <input type="file" id="imageInput" accept="image/*" style="display: none;">
-            
+            <input type="text" id="content" placeholder="輸入訊息...">
+            <label for="imageInput" style="cursor:pointer; font-size: 20px;">📷</label>
+            <input type="file" id="imageInput" accept="image/*" class="hidden">
             <button id="sendBtn">➤</button>
         </div>
     </div>
@@ -164,38 +118,79 @@
     const SUPABASE_KEY = 'sb_publishable_yC_R-ypFm--0z-yhpevwRA_8jRXudiG';
     const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    const authOverlay = document.getElementById('auth-overlay');
     const chatBox = document.getElementById('chat-box');
     const contentInput = document.getElementById('content');
-    const usernameInput = document.getElementById('username');
     const imageInput = document.getElementById('imageInput');
     const sendBtn = document.getElementById('sendBtn');
-    const previewBox = document.getElementById('preview-box');
-    const imgPreview = document.getElementById('img-preview');
+    
+    let currentUser = null;
 
-    // 處理圖片預覽
-    imageInput.onchange = () => {
-        const [file] = imageInput.files;
-        if (file) {
-            imgPreview.src = URL.createObjectURL(file);
-            previewBox.style.display = 'block';
-        }
-    };
+    // --- 1. 身份驗證邏輯 ---
 
-    function clearFile() {
-        imageInput.value = '';
-        previewBox.style.display = 'none';
+    // 檢查目前是否已登入
+    async function checkUser() {
+        const { data: { session } } = await _client.auth.getSession();
+        updateUI(session?.user ?? null);
     }
 
+    // 發送 Magic Link
+    async function handleLogin() {
+        const email = document.getElementById('auth-email').value;
+        const btn = document.getElementById('login-btn');
+        const status = document.getElementById('auth-status');
+
+        if (!email) return alert('請輸入 Email');
+
+        btn.disabled = true;
+        status.innerText = '正在發送郵件...';
+
+        const { error } = await _client.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.href }
+        });
+
+        if (error) {
+            status.innerText = '錯誤: ' + error.message;
+            btn.disabled = false;
+        } else {
+            status.innerText = '驗證信已寄出！請至信箱點擊連結登入。';
+        }
+    }
+
+    async function handleLogout() {
+        await _client.auth.signOut();
+        window.location.reload();
+    }
+
+    // 根據登入狀態切換介面
+    function updateUI(user) {
+        currentUser = user;
+        if (user) {
+            authOverlay.classList.add('hidden');
+            fetchMessages();
+        } else {
+            authOverlay.classList.remove('hidden');
+        }
+    }
+
+    // 監聽 Auth 狀態變動 (例如點擊連結回來時)
+    _client.auth.onAuthStateChange((event, session) => {
+        updateUI(session?.user ?? null);
+    });
+
+    // --- 2. 聊天功能邏輯 ---
+
     function appendMessage(msg) {
-        const isMine = usernameInput.value === msg.username;
+        const isMine = currentUser && msg.username === currentUser.email;
         const div = document.createElement('div');
         div.className = `msg ${isMine ? 'mine' : ''}`;
         
-        let html = `<b>${msg.username || '匿名'}</b>`;
-        if (msg.content) html += `<span>${msg.content}</span>`;
-        if (msg.image_url) html += `<img src="${msg.image_url}" class="chat-img" onclick="window.open(this.src)">`;
-        
-        div.innerHTML = html;
+        div.innerHTML = `
+            <b>${msg.username.split('@')[0]}</b>
+            ${msg.content ? `<span>${msg.content}</span>` : ''}
+            ${msg.image_url ? `<img src="${msg.image_url}" class="chat-img">` : ''}
+        `;
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -207,8 +202,8 @@
     }
 
     async function sendMessage() {
+        if (!currentUser) return;
         const content = contentInput.value.trim();
-        const username = usernameInput.value.trim() || '匿名';
         const file = imageInput.files[0];
         if (!content && !file) return;
 
@@ -224,19 +219,24 @@
             }
         }
 
-        await _client.from('messages').insert([{ content, username, image_url }]);
+        await _client.from('messages').insert([{ 
+            content, 
+            username: currentUser.email, // 使用登入者的 Email
+            image_url 
+        }]);
         
         contentInput.value = '';
-        clearFile();
+        imageInput.value = '';
         sendBtn.disabled = false;
     }
 
+    // 事件與初始化
     sendBtn.onclick = sendMessage;
     contentInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
-
+    
     _client.channel('public:messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => appendMessage(p.new)).subscribe();
 
-    fetchMessages();
+    checkUser();
 </script>
 </body>
 </html>
