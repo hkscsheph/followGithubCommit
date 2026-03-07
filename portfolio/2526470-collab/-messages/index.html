@@ -136,27 +136,31 @@
 
     // 發送 Magic Link
     async function handleLogin() {
-        const email = document.getElementById('auth-email').value;
-        const btn = document.getElementById('login-btn');
-        const status = document.getElementById('auth-status');
+    const email = document.getElementById('auth-email').value;
+    const btn = document.getElementById('login-btn');
+    const status = document.getElementById('auth-status');
 
-        if (!email) return alert('請輸入 Email');
+    if (!email) return alert('請輸入 Email');
 
-        btn.disabled = true;
-        status.innerText = '正在發送郵件...';
+    btn.disabled = true;
+    status.innerText = '正在發送郵件...';
 
-        const { error } = await _client.auth.signInWithOtp({
-            email: email,
-            options: { emailRedirectTo: window.location.href }
-        });
-
-        if (error) {
-            status.innerText = '錯誤: ' + error.message;
-            btn.disabled = false;
-        } else {
-            status.innerText = '驗證信已寄出！請至信箱點擊連結登入。';
+    const { error } = await _client.auth.signInWithOtp({
+        email: email,
+        options: {
+            // 嘗試將跳轉網址改為當前頁面，
+            // 如果環境持續報錯，請嘗試將此行註解掉
+            emailRedirectTo: window.location.origin 
         }
+    });
+
+    if (error) {
+        status.innerText = '錯誤: ' + error.message;
+        btn.disabled = false;
+    } else {
+        status.innerText = '驗證信已寄出！請至信箱點擊連結登入。';
     }
+}
 
     async function handleLogout() {
         await _client.auth.signOut();

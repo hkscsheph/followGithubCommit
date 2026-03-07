@@ -309,7 +309,7 @@
           document.getElementById('username').value || '不明物體';
         const { error } = await _supabase
           .from('messages')
-          .insert([{ content: content, username: username, msg_type: type }]);
+          .insert([{ content: content, username: username }]);
 
         if (error) {
           console.error(error);

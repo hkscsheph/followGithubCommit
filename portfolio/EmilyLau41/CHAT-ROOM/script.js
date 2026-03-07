@@ -1,3 +1,58 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const SUPABASE_URL = 'https://dhypkutxhcfjpzmlufxr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_1k3-mNqoqErdRgxC0P11zA_fXVopcwJ';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 獲取所有按鈕與輸入框
+    const magicBtn = document.getElementById('magic-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const authMsg = document.getElementById('auth-msg');
+
+    // --- 功能 A: 魔術連結 (Magic Link) ---
+    magicBtn.onclick = async () => {
+        const email = emailInput.value.trim();
+        if (!email) return alert("請輸入 Email");
+        
+        authMsg.innerText = "傳送連結中...";
+        const { error } = await _supabase.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: window.location.href }
+        });
+        
+        if (error) authMsg.innerText = "❌ 錯誤: " + error.message;
+        else authMsg.innerText = "✅ 連結已寄出！請查看信箱。";
+    };
+
+    // --- 功能 B: 密碼登入 ---
+    loginBtn.onclick = async () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        if (!email || !password) return alert("請輸入帳號與密碼");
+
+        authMsg.innerText = "正在登入...";
+        const { error } = await _supabase.auth.signInWithPassword({ email, password });
+        
+        if (error) authMsg.innerText = "❌ 登入失敗: " + error.message;
+    };
+
+    // --- 功能 C: 帳號註冊 ---
+    signupBtn.onclick = async () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        if (password.length < 6) return alert("密碼至少需要 6 位數");
+
+        authMsg.innerText = "正在註冊...";
+        const { error } = await _supabase.auth.signUp({ email, password });
+        
+        if (error) authMsg.innerText = "❌ 註冊失敗: " + error.message;
+        else authMsg.innerText = "✅ 註冊成功！若有開啟驗證請先收信。";
+    };
+
+    // ... 其餘的狀態監聽 (onAuthStateChange) 與聊天邏輯保持不變 ...
+});
 const emailInput = document.getElementById('email-input');
 const loginBtn = document.getElementById('login-btn');
 const authMsg = document.getElementById('auth-msg');

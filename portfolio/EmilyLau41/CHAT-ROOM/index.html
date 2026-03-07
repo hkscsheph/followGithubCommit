@@ -3,93 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>原生 JS 即時聊天室</title>
+    <title>Modern Chat | 雙重登入版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 基本排版 */
-        body { font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #e5ddd5; }
-        
-        /* 訊息顯示區 */
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        
-        /* 訊息氣泡樣式 */
-        .msg { background: white; padding: 8px 12px; border-radius: 8px; max-width: 75%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; position: relative; }
-        .msg.mine { align-self: flex-end; background: #dcf8c6; }
-        .sender { font-size: 0.7rem; color: #888; font-weight: bold; margin-bottom: 4px; display: block; }
-        .chat-img { max-width: 100%; border-radius: 6px; margin-top: 8px; display: block; cursor: pointer; }
-
-        /* 下方輸入區 */
-        .input-area { background: #f0f0f0; padding: 12px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #ccc; position: relative; z-index: 100; }
-        
-        /* 修正 input 無法輸入的問題：確保沒有被遮擋且寬度正確 */
-        input[type="text"] { 
-            flex: 1; 
-            padding: 10px 15px; 
-            border: 1px solid #ddd; 
-            border-radius: 20px; 
-            outline: none; 
-            font-size: 16px; /* 防止 iOS 自動放大 */
-            background: white;
+        :root {
+            --primary: #128c7e;
+            --primary-dark: #075e54;
+            --bg-chat: #efeae2;
+            --msg-mine: #dcf8c6;
+            --msg-other: #ffffff;
         }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; margin: 0; background: #d1d7db; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        /* 登入介面樣式 */
+        #auth-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #075e54, #128c7e); }
+        .auth-card { background: white; padding: 30px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .auth-card input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .btn-row { display: flex; gap: 10px; }
+        
+        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; }
+        .btn-magic { background: #34b7f1; color: white; width: 100%; }
+        .btn-login { background: var(--primary); color: white; flex: 1; }
+        .btn-signup { background: #555; color: white; flex: 1; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
 
-        .icon-btn { cursor: pointer; font-size: 1.5rem; user-select: none; }
-        #send-btn { background: #128c7e; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        #send-btn:disabled { background: #bbb; }
-
-        /* 上傳狀態 */
-        #status-bar { font-size: 0.8rem; color: #555; padding: 2px 15px; background: #eee; display: none; }
+        /* 聊天介面樣式 */
+        #main-chat { display: none; width: 100%; height: 100vh; flex-direction: column; background: white; }
+        .header { background: #ededed; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg-chat); display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 8px 12px; border-radius: 10px; max-width: 75%; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg.mine { align-self: flex-end; background: var(--msg-mine); }
+        .msg.other { align-self: flex-start; background: var(--msg-other); }
+        
+        .input-area { background: #f0f2f5; padding: 10px; display: flex; gap: 10px; }
+        #msg-input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
     </style>
 </head>
 <body>
-    <div id="auth-container">
-        <div class="auth-card">
-            <h2>即時聊天室</h2>
-            <p>輸入 Email 接收魔術連結登入</p>
-            <input type="email" id="email-input" placeholder="example@email.com">
-            <button id="login-btn">發送登入連結</button>
-            <div id="auth-msg"></div>
-        </div>
-    </div>
-    <div id="main-chat" style="display: none; flex-direction: column; height: 100vh;">
-        <div id="chat-window"></div>
-        </div>
-<div id="chat-window"></div>
-<div id="status-bar">正在處理...</div>
 
-<div class="input-area">
-    <input type="text" id="username" placeholder="暱稱" style="flex: 0 0 70px;">
-    
-    <label class="icon-btn" title="上傳圖片">
-        📷
-        <input type="file" id="image-input" hidden accept="image/*">
-    </label>
-    
-    <input type="text" id="msg-input" placeholder="輸入訊息..." autocomplete="off">
-    
-    <button id="send-btn">➤</button>
+<div id="auth-container">
+    <div class="auth-card">
+        <h2 style="color:var(--primary-dark)">聊天室登入</h2>
+        <input type="email" id="email-input" placeholder="電子郵件">
+        <input type="password" id="password-input" placeholder="密碼 (註冊或密碼登入用)">
+        
+        <div class="btn-stack">
+            <button id="magic-btn" class="btn-magic">傳送魔術連結 (免密碼)</button>
+            <div class="btn-row">
+                <button id="login-btn" class="btn-login">密碼登入</button>
+                <button id="signup-btn" class="btn-signup">註冊帳號</button>
+            </div>
+        </div>
+        <p id="auth-msg" style="font-size: 13px; margin-top: 15px; color: #d66100; min-height: 1.5em;"></p>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div id="main-chat">
+    <div class="header">
+        <span id="user-display">使用者</span>
+        <button onclick="handleLogout()" style="cursor:pointer; background:none; border:1px solid #888; border-radius:4px; padding:2px 8px;">登出</button>
+    </div>
+    <div id="chat-window"></div>
+    <div class="input-area">
+        <input type="text" id="msg-input" placeholder="輸入訊息...">
+        <button id="send-btn" style="background:var(--primary); color:white; border-radius:50%; width:40px; height:40px;">➤</button>
+    </div>
+</div>
 
 <script>
-    // 1. 初始化 Supabase (請替換為你的資訊)
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. 初始化 Supabase
     const SUPABASE_URL = 'https://dhypkutxhcfjpzmlufxr.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_1k3-mNqoqErdRgxC0P11zA_fXVopcwJ';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // 2. 獲取 UI 元素
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const authMsg = document.getElementById('auth-msg');
+    
+    // 按鈕
+    const magicBtn = document.getElementById('magic-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const sendBtn = document.getElementById('send-btn');
+    
+    // 容器
+    const authContainer = document.getElementById('auth-container');
+    const mainChat = document.getElementById('main-chat');
+    const userDisplay = document.getElementById('user-display');
     const chatWindow = document.getElementById('chat-window');
     const msgInput = document.getElementById('msg-input');
-    const userInput = document.getElementById('username');
-    const imageInput = document.getElementById('image-input');
-    const sendBtn = document.getElementById('send-btn');
-    const statusBar = document.getElementById('status-bar');
 
-            // 發送 Magic Link
-            loginBtn.onclick = async () => {
+    let currentUserEmail = "";
+
+    // --- A. 註冊功能 ---
+    signupBtn.onclick = async () => {
         const email = emailInput.value.trim();
-        if (!email) return alert('請輸入 Email');
+        const password = passwordInput.value.trim();
+        
+        if (!email || !password) return alert("註冊請填寫帳號與密碼");
+        if (password.length < 6) return alert("密碼至少需要 6 位");
+
+        signupBtn.disabled = true;
+        authMsg.innerText = "正在處理註冊...";
+
+        const { data, error } = await _supabase.auth.signUp({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            authMsg.innerText = "❌ 註冊失敗: " + error.message;
+            signupBtn.disabled = false;
+        } else {
+            authMsg.innerText = "✅ 註冊成功！現在請點擊「密碼登入」。";
+            signupBtn.disabled = false;
+        }
+    };
+
+    // --- B. 密碼登入 ---
+    loginBtn.onclick = async () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        
+        if (!email || !password) return alert("請輸入帳號與密碼");
 
         loginBtn.disabled = true;
-        authMsg.innerText = '郵件傳送中...';
+        authMsg.innerText = "正在登入...";
+
+        const { error } = await _supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            authMsg.innerText = "❌ 登入失敗: " + error.message;
+            loginBtn.disabled = false;
+        }
+    };
+
+    // --- C. 魔術連結 ---
+    magicBtn.onclick = async () => {
+        const email = emailInput.value.trim();
+        if (!email) return alert("請輸入 Email");
+
+        magicBtn.disabled = true;
+        authMsg.innerText = "正在發送魔術連結...";
 
         const { error } = await _supabase.auth.signInWithOtp({
             email: email,
@@ -97,122 +158,59 @@
         });
 
         if (error) {
-            authMsg.innerText = '錯誤: ' + error.message;
-            loginBtn.disabled = false;
+            authMsg.innerText = "❌ 錯誤: " + error.message;
+            magicBtn.disabled = false;
         } else {
-            authMsg.innerText = '✅ 連結已寄出！請至信箱查看並點擊。';
+            authMsg.innerText = "✅ 連結已發送，請檢查信箱。";
         }
     };
 
-    // 登出
-    logoutBtn.onclick = async () => {
-        await _supabase.auth.signOut();
-    };
-    // 2. 渲染訊息函式
-    function renderMessage(msg) {
-        const isMine = msg.sender === userInput.value && userInput.value !== '';
-        const div = document.createElement('div');
-        div.className = `msg ${isMine ? 'mine' : ''}`;
-        
-        let contentHtml = `<span class="sender">${msg.sender || '匿名'}</span>`;
-        if (msg.content) contentHtml += `<div>${msg.content}</div>`;
-        if (msg.image_url) {
-            contentHtml += `<a href="${msg.image_url}" target="_blank"><img src="${msg.image_url}" class="chat-img"></a>`;
+    // 監聽身份狀態變更
+    _supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+            currentUserEmail = session.user.email;
+            userDisplay.innerText = `👤 ${currentUserEmail}`;
+            authContainer.style.display = 'none';
+            mainChat.style.display = 'flex';
+            loadHistory();
+            subscribe();
+        } else {
+            authContainer.style.display = 'flex';
+            mainChat.style.display = 'none';
         }
-        
-        div.innerHTML = contentHtml;
+    });
+
+    // 聊天邏輯
+    async function handleSend() {
+        const content = msgInput.value.trim();
+        if (!content) return;
+        await _supabase.from('messages').insert([{ sender: currentUserEmail, content }]);
+        msgInput.value = '';
+    }
+
+    sendBtn.onclick = handleSend;
+    msgInput.onkeydown = (e) => { if (e.key === 'Enter') handleSend(); };
+
+    async function loadHistory() {
+        const { data } = await _supabase.from('messages').select('*').order('created_at', { ascending: true });
+        chatWindow.innerHTML = '';
+        if (data) data.forEach(msg => render(msg));
+    }
+
+    function render(msg) {
+        const div = document.createElement('div');
+        div.className = `msg ${msg.sender === currentUserEmail ? 'mine' : 'other'}`;
+        div.innerHTML = `<small style="display:block; font-size:10px; color:#888;">${msg.sender.split('@')[0]}</small>${msg.content}`;
         chatWindow.appendChild(div);
-        
-        // 滾動到底部
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    // 3. 發送訊息與上傳圖片邏輯
-    async function handleSend() {
-        const sender = userInput.value.trim() || '匿名者';
-        const content = msgInput.value.trim();
-        const imageFile = imageInput.files[0];
-
-        if (!content && !imageFile) return;
-
-        // 鎖定 UI
-        sendBtn.disabled = true;
-        msgInput.disabled = true;
-        let imageUrl = null;
-
-        try {
-            // A. 處理圖片上傳
-            if (imageFile) {
-                statusBar.style.display = 'block';
-                statusBar.innerText = '正在上傳圖片...';
-                
-                const fileExt = imageFile.name.split('.').pop();
-                const fileName = `${Date.now()}.${fileExt}`;
-                
-                const { data: uploadData, error: uploadError } = await _supabase.storage
-                    .from('chat_images')
-                    .upload(fileName, imageFile);
-
-                if (uploadError) throw uploadError;
-
-                // 取得圖片公開網址
-                const { data: { publicUrl } } = _supabase.storage
-                    .from('chat_images')
-                    .getPublicUrl(fileName);
-                
-                imageUrl = publicUrl;
-            }
-
-            // B. 寫入資料庫
-            const { error: dbError } = await _supabase
-                .from('messages')
-                .insert([{ sender, content, image_url: imageUrl }]);
-
-            if (dbError) throw dbError;
-
-            // C. 成功後清空
-            msgInput.value = '';
-            imageInput.value = '';
-            statusBar.style.display = 'none';
-
-        } catch (err) {
-            console.error('Error:', err);
-            alert('錯誤: ' + err.message);
-        } finally {
-            sendBtn.disabled = false;
-            msgInput.disabled = false;
-            msgInput.focus();
-        }
+    function subscribe() {
+        _supabase.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => render(p.new)).subscribe();
     }
 
-    // 4. 初始化：載入歷史與監聽即時更新
-    async function init() {
-        // 載入最近 50 條訊息
-        const { data, error } = await _supabase
-            .from('messages')
-            .select('*')
-            .order('created_at', { ascending: true })
-            .limit(50);
-        
-        if (data) data.forEach(renderMessage);
-
-        // 開啟 Realtime 監聽
-        _supabase
-            .channel('public:messages')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                renderMessage(payload.new);
-            })
-            .subscribe();
-    }
-
-    // 事件監聽
-    sendBtn.onclick = handleSend;
-    msgInput.onkeydown = (e) => {
-        if (e.key === 'Enter') handleSend();
-    };
-
-    // 啟動
-    init();
+    window.handleLogout = () => _supabase.auth.signOut();
+});
 </script>
 </body>
 </html>

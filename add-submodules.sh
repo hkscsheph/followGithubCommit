@@ -15,8 +15,8 @@ git submodule add https://github.com/haha197/chat.git portfolio/haha197/chat
 git submodule add https://github.com/kou1gn/stackblitz-instagram-screenshot-maker.git portfolio/kou1gn/stackblitz-instagram-screenshot-maker
 git submodule add https://github.com/kou1gn/stackblitz-starters-chatroom.git portfolio/kou1gn/stackblitz-starters-chatroom
 git submodule add https://github.com/kou1gn/20250912-1st-repo.git portfolio/kou1gn/20250912-1st-repo
-git submodule add https://github.com/BARON1118/hksc-water.git portfolio/BARON1118/hksc-water
 git submodule add https://github.com/BARON1118/stackblitz-starters-rjvwwbjg.git portfolio/BARON1118/stackblitz-starters-rjvwwbjg
+git submodule add https://github.com/BARON1118/hksc-water.git portfolio/BARON1118/hksc-water
 git submodule add https://github.com/BARON1118/stackblitz-hksc-daily.git portfolio/BARON1118/stackblitz-hksc-daily
 git submodule add https://github.com/BARON1118/liftCounter.git portfolio/BARON1118/liftCounter
 git submodule add https://github.com/BARON1118/cotd.git portfolio/BARON1118/cotd
@@ -26,8 +26,8 @@ git submodule add https://github.com/EmilyLau41/skyapp.git portfolio/EmilyLau41/
 git submodule add https://github.com/EmilyLau41/cheat-room.git portfolio/EmilyLau41/cheat-room
 git submodule add https://github.com/EmilyLau41/-.git portfolio/EmilyLau41/-
 git submodule add https://github.com/EmilyLau41/emotionapp.git portfolio/EmilyLau41/emotionapp
-git submodule add https://github.com/2526452-cmd/-V2.0.git portfolio/2526452-cmd/-V2.0
 git submodule add https://github.com/2526452-cmd/6-2-2026.git portfolio/2526452-cmd/6-2-2026
+git submodule add https://github.com/2526452-cmd/-V2.0.git portfolio/2526452-cmd/-V2.0
 git submodule add https://github.com/2526452-cmd/-.git portfolio/2526452-cmd/-
 git submodule add https://github.com/2526452-cmd/q3-hk-.git portfolio/2526452-cmd/q3-hk-
 git submodule add https://github.com/2526452-cmd/Q4-HKSC-FRIEND.git portfolio/2526452-cmd/Q4-HKSC-FRIEND
@@ -39,14 +39,14 @@ git submodule add https://github.com/2526453/meow.git portfolio/2526453/meow
 git submodule add https://github.com/2526454-ship-it/CW-chcicken-Warfare.git portfolio/2526454-ship-it/CW-chcicken-Warfare
 git submodule add https://github.com/2526454-ship-it/GT.git portfolio/2526454-ship-it/GT
 git submodule add https://github.com/2526454-ship-it/ni.git portfolio/2526454-ship-it/ni
+git submodule add https://github.com/hayden626/po-1.git portfolio/hayden626/po-1
 git submodule add https://github.com/hayden626/game-BOS.git portfolio/hayden626/game-BOS
 git submodule add https://github.com/hayden626/game-BOSS.git portfolio/hayden626/game-BOSS
-git submodule add https://github.com/hayden626/po-1.git portfolio/hayden626/po-1
 git submodule add https://github.com/hayden626/Hayden-mugffd.git portfolio/hayden626/Hayden-mugffd
 git submodule add https://github.com/hayden626/stackblitz-starters-lvgcssag.git portfolio/hayden626/stackblitz-starters-lvgcssag
 git submodule add https://github.com/hayden626/4M24.git portfolio/hayden626/4M24
-git submodule add https://github.com/ethanhksc0930/Buggy-music_explorer.git portfolio/ethanhksc0930/Buggy-music_explorer
 git submodule add https://github.com/ethanhksc0930/Sigma-Oscilloscope-simulator.git portfolio/ethanhksc0930/Sigma-Oscilloscope-simulator
+git submodule add https://github.com/ethanhksc0930/Buggy-music_explorer.git portfolio/ethanhksc0930/Buggy-music_explorer
 git submodule add https://github.com/ethanhksc0930/Simple-drum-machine.git portfolio/ethanhksc0930/Simple-drum-machine
 git submodule add https://github.com/ethanhksc0930/simple-Hz-generator.git portfolio/ethanhksc0930/simple-Hz-generator
 git submodule add https://github.com/ethanhksc0930/piano-hehehehehhahhahhahahhahaaahhahahaha.git portfolio/ethanhksc0930/piano-hehehehehhahhahhahahhahaaahhahahaha

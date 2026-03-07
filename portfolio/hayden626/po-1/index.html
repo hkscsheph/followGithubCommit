@@ -3,29 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Cyber Chat</title>
+    <title>Aurora Cyber Chat Pro</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="aurora-bg"></div>
-    
-    <div class="chat-container">
+    <div id="glitch-overlay"></div>
+
+    <div id="login-screen" class="glass-panel">
+        <div class="logo">🔐</div>
+        <h2>SECURE_ACCESS</h2>
+        <input type="email" id="auth-email" placeholder="Email 地址">
+        <input type="password" id="auth-password" placeholder="密碼 (最少 6 位)">
+        <div class="auth-btn-group">
+            <button id="btn-login" class="neon-btn">登入</button>
+            <button id="btn-signup" class="text-btn">註冊新帳號</button>
+        </div>
+        <div id="auth-status"></div>
+    </div>
+
+    <div id="chat-container" class="glass-panel" style="display: none;">
         <header class="chat-header">
-            <div class="status">●</div>
-            <div class="title">CYBER_NETWORK_V3</div>
+            <div id="user-avatar" class="avatar-sm"></div>
+            <div class="user-info">
+                <div id="user-display">CONNECTING...</div>
+                <div id="typing-status"></div>
+            </div>
+            <div class="header-controls">
+                <button id="btn-bgm" class="icon-btn">🎵</button>
+                <button id="btn-logout" class="text-btn">登出</button>
+            </div>
         </header>
 
         <main id="chat-box"></main>
 
         <footer class="input-area">
-            <input type="text" id="username" placeholder="ID" value="User">
-            <input type="text" id="content" placeholder="Type a message..." autocomplete="off">
+            <input type="text" id="content" placeholder="輸入訊息... (/help 查看指令)" autocomplete="off">
             <input type="file" id="file-input" accept="image/*" style="display: none;">
-            <button id="btn-upload">📎</button>
-            <button id="btn-send">SEND</button>
+            <button id="btn-upload" class="icon-btn">📎</button>
+            <button id="btn-send" class="neon-btn">發送</button>
         </footer>
     </div>
+
+    <audio id="snd-send" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
+    <audio id="snd-glitch" src="https://assets.mixkit.co/active_storage/sfx/2353/2353-preview.mp3"></audio>
+    <audio id="bgm" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" loop></audio>
+
     <script src="app.js"></script>
 </body>
 </html>
