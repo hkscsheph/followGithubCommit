@@ -10,7 +10,7 @@ class AuthGuard {
   }
 
   /**
-   * Check if user is authenticated and has valid email domain
+   * Check if user is authenticated
    * @returns {Promise<boolean>} True if authenticated, false otherwise
    */
   async checkAuth() {
@@ -26,14 +26,6 @@ class AuthGuard {
       if (!session) {
         // Not authenticated
         this.redirectToLogin();
-        return false;
-      }
-
-      // Validate email domain
-      const email = session.user.email;
-      if (!this.validateEmailDomain(email)) {
-        console.warn('Invalid email domain:', email);
-        await this.signOut();
         return false;
       }
 
@@ -67,6 +59,19 @@ class AuthGuard {
     } finally {
       this.redirectToLogin();
     }
+  }
+
+  /**
+   * Sign in with Google OAuth
+   * @returns {Promise<Object>} Supabase auth response
+   */
+  async signInWithGoogle() {
+    return await this.supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/index.html'
+      }
+    });
   }
 
   /**

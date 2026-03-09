@@ -1,26 +1,39 @@
 # Supabase Setup Guide
 
-This guide covers setting up Supabase for both **Email Authentication** and **Portfolio Likes** features.
+This guide covers setting up Supabase for **Google OAuth Authentication** and **Portfolio Likes** features.
 
 ---
 
-## Part 1: Email Authentication Setup
+## Part 1: Google OAuth Setup
 
 ### Prerequisites
 - A Supabase account (free tier works fine)
+- A Google Cloud project with OAuth 2.0 credentials
 - Access to your Supabase project dashboard
 
-### Step 1: Enable Email Authentication
+### Step 1: Create Google OAuth Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Go to **APIs & Services** → **Credentials**
+4. Click **Create Credentials** → **OAuth 2.0 Client ID**
+5. Choose **Web application**
+6. Add authorized redirect URIs:
+   ```
+   https://wnvgjuhxxwnihmjfrcvk.supabase.co/auth/v1/callback
+   http://localhost:8080/auth/v1/callback
+   ```
+7. Copy your **Client ID** and **Client Secret**
+
+### Step 2: Enable Google Provider in Supabase
 
 1. In your Supabase dashboard, go to **Authentication** → **Providers**
-2. Find **Email** provider
-3. Enable it if not already enabled
-4. Configure the following settings:
-   - **Enable Email provider**: ON
-   - **Confirm email**: OFF (we're using magic links, not confirmation)
-   - **Secure email change**: ON (recommended)
+2. Find **Google** provider
+3. Click to enable it
+4. Paste your **Client ID** and **Client Secret** from Google Cloud
+5. Save changes
 
-### Step 2: Configure Site URL and Redirect URLs
+### Step 3: Configure Site URL and Redirect URLs
 
 1. Go to **Authentication** → **URL Configuration**
 2. Set **Site URL** to your production domain:
@@ -37,50 +50,7 @@ This guide covers setting up Supabase for both **Email Authentication** and **Po
    http://localhost:8080/index.html
    ```
 
-### Step 3: Set Up Email Domain Validation
-
-To restrict authentication to only `@creativehk.edu.hk` and `@student.creativehk.edu.hk` domains:
-
-1. Go to **SQL Editor** in your Supabase dashboard
-2. Create a new query and paste this SQL:
-
-```sql
--- Create function to validate email domain
-CREATE OR REPLACE FUNCTION validate_email_domain()
-RETURNS TRIGGER AS $
-BEGIN
-  IF NEW.email NOT LIKE '%@creativehk.edu.hk' 
-     AND NEW.email NOT LIKE '%@student.creativehk.edu.hk' THEN
-    RAISE EXCEPTION 'Email domain not allowed. Please use your school email.';
-  END IF;
-  RETURN NEW;
-END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create trigger to run validation on user creation
-DROP TRIGGER IF EXISTS check_email_domain ON auth.users;
-CREATE TRIGGER check_email_domain
-  BEFORE INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION validate_email_domain();
-```
-
-3. Click **Run** to execute the SQL
-
-### Step 4: Customize Magic Link Email Template
-
-1. Go to **Authentication** → **Email Templates**
-2. Select **Magic Link** template
-3. Customize the email content (optional):
-   ```html
-   <h2>Sign in to Creative HK Portfolio</h2>
-   <p>Click the link below to sign in to your account:</p>
-   <p><a href="{{ .ConfirmationURL }}">Sign In</a></p>
-   <p>This link expires in 1 hour.</p>
-   <p>If you didn't request this email, you can safely ignore it.</p>
-   ```
-
-### Step 5: Configure Session Settings
+### Step 4: Configure Session Settings
 
 1. Go to **Authentication** → **Settings**
 2. Configure session timeout:
@@ -88,25 +58,22 @@ CREATE TRIGGER check_email_domain
    - **Refresh token expiry**: 2592000 seconds (30 days)
 3. Save changes
 
-### Step 6: Test Authentication Flow
+### Step 5: Test Authentication Flow
 
 1. Open your portfolio website at `login.html`
-2. Enter a valid school email (e.g., `test@creativehk.edu.hk`)
-3. Check your email inbox for the magic link
-4. Click the magic link - you should be redirected to `index.html`
-5. Verify you see your email and a "登出" (Sign Out) button in the header
-6. Try accessing `index.html` or `repos.html` directly - you should be redirected to login if not authenticated
+2. Click **使用 Google 登入** (Sign in with Google)
+3. You'll be redirected to Google's login page
+4. Sign in with your Google account
+5. You should be redirected back to `index.html`
+6. Verify you see your email and a "登出" (Sign Out) button in the header
+7. Try accessing `index.html` or `repos.html` directly - you should remain logged in
 
-### Troubleshooting Authentication
+### Troubleshooting Google OAuth
 
-**Magic link not received:**
-- Check spam/junk folder
-- Verify email provider is enabled in Supabase
-- Check Supabase logs: **Authentication** → **Logs**
-
-**"Email domain not allowed" error:**
-- Verify the SQL trigger was created successfully
-- Check that you're using `@creativehk.edu.hk` or `@student.creativehk.edu.hk`
+**"Redirect URI mismatch" error:**
+- Verify the redirect URI in Google Cloud Console matches exactly
+- Make sure you've added both the production and local development URIs
+- Check that the Supabase redirect URLs are configured correctly
 
 **Redirect not working:**
 - Verify redirect URLs are whitelisted in URL Configuration
@@ -116,6 +83,11 @@ CREATE TRIGGER check_email_domain
 **Session expires too quickly:**
 - Increase JWT expiry in Authentication Settings
 - Check browser is not blocking cookies
+
+**Google login button doesn't work:**
+- Make sure Google provider is enabled in Supabase
+- Verify Client ID and Client Secret are correct
+- Check browser console for error messages
 
 ---
 
