@@ -2,230 +2,251 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>魔法系統 - 覺醒</title>
+    <title>魔法系統 - 完整循環版</title>
     <style>
-        :root {
-            --magic-blue: #00d4ff;
-            --dark-bg: #05050a;
-            --border-gold: #c5a059;
-            --door-locked: #5d4037;
-            --door-open: #2ecc71;
-        }
-
-        body, html { margin: 0; padding: 0; overflow: hidden; background: var(--dark-bg); font-family: "Microsoft JhengHei", sans-serif; }
+        :root { --magic-blue: #00d4ff; --magic-ice: #a0f0ff; --dark-bg: #05050a; --hp-red: #ff3333; --player-hp: #2ecc71; }
+        body, html { margin: 0; padding: 0; overflow: hidden; background: var(--dark-bg); font-family: sans-serif; }
         canvas { display: block; }
-
-        /* UI 介面 */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         
-        #menu-overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+        .full-screen { 
+            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9); 
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            background: radial-gradient(circle, #1a1a2e 0%, #000 100%); 
-            color: white; z-index: 10; transition: opacity 0.8s; pointer-events: auto;
+            z-index: 10; pointer-events: auto; transition: 0.5s;
         }
-
-        h1 { font-size: 3.5rem; letter-spacing: 15px; text-shadow: 0 0 15px var(--magic-blue); margin: 0; }
         
-        .start-btn { 
-            margin-top: 40px; padding: 15px 50px; font-size: 1.2rem; 
-            background: rgba(0, 0, 0, 0.6); color: var(--magic-blue); 
-            border: 2px solid var(--magic-blue); cursor: pointer; border-radius: 4px; 
-            letter-spacing: 5px; transition: 0.3s;
+        #game-over { display: none; background: rgba(30, 0, 0, 0.9); border: 2px solid var(--hp-red); }
+        #game-win { display: none; background: rgba(0, 20, 40, 0.9); border: 2px solid var(--magic-blue); }
+        
+        .btn { 
+            padding: 15px 40px; border: 2px solid var(--magic-blue); background: transparent; 
+            color: var(--magic-blue); cursor: pointer; font-size: 1.2rem; letter-spacing: 5px; 
+            box-shadow: 0 0 15px var(--magic-blue); transition: 0.3s; margin: 10px;
         }
-        .start-btn:hover { background: var(--magic-blue); color: #000; box-shadow: 0 0 30px var(--magic-blue); }
+        .btn:hover { background: var(--magic-blue); color: #000; }
+        .btn-red { border-color: var(--hp-red); color: var(--hp-red); box-shadow: 0 0 15px var(--hp-red); }
+        .btn-red:hover { background: var(--hp-red); color: #fff; }
 
-        #dialogue-box { 
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
-            width: 80%; max-width: 700px; height: 100px; 
-            background: rgba(10, 10, 25, 0.95); border: 2px solid var(--border-gold); 
-            padding: 20px; color: #fff; display: none; z-index: 5; 
-            cursor: pointer; pointer-events: auto;
-        }
+        #player-ui { position: absolute; top: 20px; left: 20px; width: 250px; }
+        .bar-bg { width: 100%; height: 12px; background: #222; border: 1px solid #444; border-radius: 6px; overflow: hidden; }
+        #player-hp-bar { width: 100%; height: 100%; background: var(--player-hp); transition: 0.2s; }
 
-        #room-hint { 
-            position: absolute; top: 30px; width: 100%; text-align: center; 
-            color: #fff; font-size: 1.5rem; letter-spacing: 10px; display: none; 
-        }
+        #room-title { position: absolute; top: 20px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 1.2rem; letter-spacing: 8px; }
+        #boss-ui { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); width: 400px; display: none; text-align: center; }
+        #boss-hp-bar { width: 100%; height: 10px; background: var(--hp-red); transition: 0.1s; }
+        
+        h1 { color: white; letter-spacing: 15px; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        .win-text { color: var(--magic-blue); text-shadow: 0 0 20px var(--magic-blue); }
+        .death-text { color: var(--hp-red); text-shadow: 0 0 20px red; }
     </style>
 </head>
 <body>
 
-    <div id="ui-layer">
-        <div id="room-hint">〈 遺 忘 之 室 〉</div>
-        
-        <div id="menu-overlay">
-            <h1>魔法系統</h1>
-            <div style="color: #666; margin-top: 10px; letter-spacing: 2px;">FIRE MAGIC PUZZLE</div>
-            <button class="start-btn" onclick="startGame()">踏入旅程</button>
-        </div>
-
-        <div id="dialogue-box" onclick="handleDialogue()">
-            <div id="dialogue-text"></div>
-            <div style="text-align: right; font-size: 12px; color: var(--border-gold); margin-top: 10px;">點擊繼續...</div>
-        </div>
+<div id="ui">
+    <div id="player-ui">
+        <div style="color:var(--player-hp); font-size:0.7rem; margin-bottom:5px; letter-spacing: 2px;">SYNC RATIO</div>
+        <div class="bar-bg"><div id="player-hp-bar"></div></div>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
+    <div id="room-title">SYSTEM READY</div>
+    
+    <div id="boss-ui">
+        <div style="color:white; font-size:0.8rem; margin-bottom:5px; letter-spacing: 3px;">ANCIENT GUARDIAN</div>
+        <div class="bar-bg" style="height: 10px;"><div id="boss-hp-bar"></div></div>
+    </div>
 
-    <script>
-        // 使用匿名函式封裝避免變數衝突
-        (function() {
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            let state = "MENU";
-            let hasMagic = false;
-            let isDoorOpen = false;
-            let currentLine = 0;
-            const TILE_SIZE = 70;
-            const fireballs = [];
+    <div id="overlay" class="full-screen">
+        <h1>核心轉移</h1>
+        <button class="btn" onclick="App.start()">啟動系統</button>
+    </div>
 
-            const storyLines = [
-                "系統：權限已重置。你目前位於底層空間。",
-                "那扇門被『代碼鎖』封印了，必須找到遠程觸發裝置。",
-                "先去獲取房間中央的藍色『魔法核心』。",
-                "使用 WASD 移動，滑鼠點擊發射火球。"
-            ];
+    <div id="game-over" class="full-screen">
+        <h1 class="death-text">同步中斷</h1>
+        <p style="color: #ffaaaa; margin-bottom: 40px;">連結訊號丟失...</p>
+        <button class="btn btn-red" onclick="App.reset()">重新啟動連結</button>
+    </div>
 
-            const player = { gx: 1, gy: 2 };
-            const map = [
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 0, 0, 5, 0, 0, 1], // 5: 紅色機關
-                [1, 0, 0, 0, 0, 3, 0, 4], // 3: 核心, 4: 門
-                [1, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1]
-            ];
+    <div id="game-win" class="full-screen">
+        <h1 class="win-text">同步成功</h1>
+        <p style="color: #a0f0ff; margin-bottom: 40px;">核心守護者已淨化，系統恢復運作。</p>
+        <button class="btn" onclick="App.reset()">再次進入系統</button>
+    </div>
+</div>
 
-            function initCanvas() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+<canvas id="gameCanvas"></canvas>
+
+<script>
+window.App = (function() {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let state = "MENU", currentScene = "ROOM", hasMagic = false, hasIcePower = false, doorOpen = false;
+    const TILE = 64, projectiles = [], enemyProjectiles = [], particles = [];
+    const player = { x: 1, y: 2, hp: 100, maxHp: 100, invul: 0 };
+    let enemies = [], lasers = [], chest = null, boss = null;
+    let ox, oy;
+
+    const scenes = {
+        ROOM: { title: "〈 遺 忘 之 室 〉", map: [[1,1,1,1,1,1,1,1],[1,0,0,0,5,0,0,1],[1,0,0,0,0,3,0,4],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]] },
+        CORRIDOR: { title: "〈 幽 暗 長 走 廊 〉", map: [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[4,0,0,0,0,0,0,0,0,0,0,0,0,0,4],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]], lasers: [{x:3,y:1,vx:0.06,vy:0.04},{x:10,y:2,vx:-0.05,vy:-0.05}] },
+        ENEMY_ROOM: { title: "〈 殲 滅 區 域 〉", map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,4],[1,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1]], enemies: [{x:3,y:2,startX:2,endX:7,dir:1,speed:0.06,isAlive:true},{x:5,y:1,startX:2,endX:7,dir:-1,speed:0.04,isAlive:true}] },
+        BOSS_ROOM: { title: "〈 核 心 殿 堂 〉", map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1]] }
+    };
+
+    let currentMap = scenes.ROOM.map;
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    function explode(x, y, color, count=15) { for(let i=0; i<count; i++) particles.push({ x, y, vx:(Math.random()-0.5)*12, vy:(Math.random()-0.5)*12, life:1.0, color }); }
+
+    function takeDamage(amount) {
+        if (player.invul > 0 || state !== "PLAY") return;
+        player.hp -= amount;
+        player.invul = 60;
+        explode(ox + player.x * TILE + 32, oy + player.y * TILE + 32, "red");
+        if (player.hp <= 0) { player.hp = 0; state = "GAMEOVER"; document.getElementById('game-over').style.display = 'flex'; }
+        updateUI();
+    }
+
+    function gameWin() {
+        state = "WIN";
+        explode(ox + boss.x * TILE + 32, oy + boss.y * TILE + 32, "white", 50);
+        explode(ox + boss.x * TILE + 32, oy + boss.y * TILE + 32, "#00d4ff", 50);
+        setTimeout(() => { document.getElementById('game-win').style.display = 'flex'; }, 1000);
+    }
+
+    function updateUI() {
+        document.getElementById('player-hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+        if (boss) document.getElementById('boss-hp-bar').style.width = (boss.hp / boss.maxHp * 100) + "%";
+    }
+
+    function changeScene(sceneName, px, py) {
+        currentScene = sceneName; currentMap = scenes[sceneName].map;
+        enemies = JSON.parse(JSON.stringify(scenes[sceneName].enemies || []));
+        lasers = JSON.parse(JSON.stringify(scenes[sceneName].lasers || []));
+        player.x = px; player.y = py; chest = null; 
+        projectiles.length = 0; enemyProjectiles.length = 0;
+        doorOpen = (sceneName === "CORRIDOR"); 
+        document.getElementById('room-title').innerText = scenes[sceneName].title;
+        document.getElementById('boss-ui').style.display = (sceneName === "BOSS_ROOM") ? 'block' : 'none';
+        if (sceneName === "BOSS_ROOM") boss = { x: 4, y: 1, hp: 100, maxHp: 100, dir: 1, speed: 0.04, lastShot: 0 };
+        else boss = null;
+        updateUI();
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (state !== "PLAY") return;
+        let dx = 0, dy = 0; const k = e.key.toLowerCase();
+        if (k==='w'||k==='arrowup') dy=-1; if (k==='s'||k==='arrowdown') dy=1;
+        if (k==='a'||k==='arrowleft') dx=-1; if (k==='d'||k==='arrowright') dx=1;
+        const nx = player.x + dx, ny = player.y + dy;
+        if (currentMap[ny] && (currentMap[ny][nx] === 0 || currentMap[ny][nx] === 4)) { 
+            if (currentMap[ny][nx] === 4 && !doorOpen) return;
+            player.x = nx; player.y = ny; 
+            if (currentMap[ny][nx] === 4 && doorOpen) {
+                if (currentScene === "ROOM") changeScene("CORRIDOR", 13, 2);
+                else if (currentScene === "CORRIDOR") changeScene("ENEMY_ROOM", 1, 2);
+                else if (currentScene === "ENEMY_ROOM") changeScene("BOSS_ROOM", 4, 5);
             }
-            window.addEventListener('resize', initCanvas);
-            initCanvas();
+        } else if (currentMap[ny] && currentMap[ny][nx] === 3) { hasMagic=true; currentMap[ny][nx]=0; explode(nx*TILE+32+ox, ny*TILE+32+oy, "#00d4ff"); }
+        if (chest && player.x === chest.x && player.y === chest.y) { hasIcePower = true; chest = null; explode(player.x*TILE+32+ox, player.y*TILE+32+oy, "gold"); }
+    });
 
-            // 全域函式綁定到 window 以便 HTML 呼叫
-            window.startGame = function() {
-                document.getElementById('menu-overlay').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('menu-overlay').style.display = 'none';
-                    document.getElementById('dialogue-box').style.display = 'block';
-                    state = "STORY";
-                    window.handleDialogue();
-                }, 800);
-            };
+    canvas.addEventListener('mousedown', (e) => {
+        if (!hasMagic || state !== "PLAY") return;
+        const px = ox + player.x * TILE + 32, py = oy + player.y * TILE + 32;
+        const angle = Math.atan2(e.clientY - py, e.clientX - px);
+        projectiles.push({ x: px, y: py, vx: Math.cos(angle)*15, vy: Math.sin(angle)*15, type: 'fire', color: '#ff4400' });
+        if (hasIcePower) projectiles.push({ x: px, y: py, vx: Math.cos(angle+0.15)*15, vy: Math.sin(angle+0.15)*15, type: 'ice', color: '#a0f0ff' });
+    });
 
-            window.handleDialogue = function() {
-                if (currentLine < storyLines.length) {
-                    document.getElementById('dialogue-text').innerText = storyLines[currentLine];
-                    currentLine++;
-                } else {
-                    document.getElementById('dialogue-box').style.display = 'none';
-                    document.getElementById('room-hint').style.display = 'block';
-                    state = "PLAY";
+    function update() {
+        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ox = (canvas.width - currentMap[0].length * TILE) / 2; oy = (canvas.height - currentMap.length * TILE) / 2;
+
+        currentMap.forEach((row, y) => row.forEach((tile, x) => {
+            const tx = ox + x * TILE, ty = oy + y * TILE;
+            if (tile === 1) { ctx.fillStyle = "#151525"; ctx.fillRect(tx+1, ty+1, TILE-2, TILE-2); }
+            else if (tile === 4) { ctx.fillStyle = doorOpen ? "#2ecc71" : "#511"; ctx.fillRect(tx+2, ty+2, TILE-4, TILE-4); }
+            else if (tile === 3) { ctx.fillStyle = "#00d4ff"; ctx.fillRect(tx+20, ty+20, 24, 24); }
+            else if (tile === 5) { ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(tx+32, ty+32, 15, 0, 7); ctx.fill(); }
+        }));
+
+        if (state === "PLAY") {
+            if (player.invul > 0) player.invul--;
+            if (currentScene === "ENEMY_ROOM") {
+                enemies.forEach(e => {
+                    if (!e.isAlive) return;
+                    e.x += e.speed * e.dir; if (e.x > e.endX || e.x < e.startX) e.dir *= -1;
+                    ctx.fillStyle = "#ff1111"; ctx.fillRect(ox + e.x * TILE + 16, oy + e.y * TILE + 16, 32, 32);
+                    if (Math.hypot(player.x - e.x, player.y - e.y) < 0.6) takeDamage(30);
+                });
+                if (enemies.every(e => !e.isAlive)) { if (!hasIcePower && !chest) chest = { x: 4, y: 2 }; doorOpen = true; }
+            }
+            if (chest) { ctx.fillStyle = "#ffd700"; ctx.fillRect(ox+chest.x*TILE+16, oy+chest.y*TILE+16, 32, 32); }
+            if (boss) {
+                boss.x += boss.speed * boss.dir; if (boss.x > 7 || boss.x < 1) boss.dir *= -1;
+                if (Date.now() - boss.lastShot > 1200) {
+                    for(let i=0; i<3; i++) enemyProjectiles.push({ x: ox + boss.x*TILE + 32, y: oy + boss.y*TILE + 32, vx: (i-1)*4, vy: 6 });
+                    boss.lastShot = Date.now();
                 }
-            };
-
-            // 移動控制
-            window.addEventListener('keydown', (e) => {
-                if (state !== "PLAY") return;
-                let dx = 0, dy = 0;
-                const key = e.key.toLowerCase();
-                if (key === 'w' || e.key === 'ArrowUp') dy = -1;
-                if (key === 's' || e.key === 'ArrowDown') dy = 1;
-                if (key === 'a' || e.key === 'ArrowLeft') dx = -1;
-                if (key === 'd' || e.key === 'ArrowRight') dx = 1;
-
-                const nx = player.gx + dx;
-                const ny = player.gy + dy;
-
-                if (map[ny] && map[ny][nx] === 0) {
-                    player.gx = nx;
-                    player.gy = ny;
-                } else if (map[ny] && map[ny][nx] === 3) {
-                    hasMagic = true;
-                    map[ny][nx] = 0; // 核心消失
-                    alert("【系統】解鎖成功！點擊滑鼠發射火球。");
-                } else if (map[ny] && map[ny][nx] === 4 && isDoorOpen) {
-                    alert("成功逃脫！進入下一頁...");
-                    location.reload();
+                ctx.fillStyle = "#ff3366"; ctx.shadowBlur = 20; ctx.shadowColor = "red";
+                ctx.fillRect(ox + boss.x*TILE, oy + boss.y*TILE, TILE, TILE); ctx.shadowBlur = 0;
+            }
+            projectiles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy;
+                ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill();
+                const gx = Math.floor((p.x - ox) / TILE), gy = Math.floor((p.y - oy) / TILE);
+                if (currentMap[gy] && currentMap[gy][gx] === 5) { currentMap[gy][gx] = 0; doorOpen = true; explode(p.x, p.y, "orange"); projectiles.splice(i, 1); return; }
+                if (currentMap[gy] && currentMap[gy][gx] === 1) { explode(p.x, p.y, "#444"); projectiles.splice(i, 1); return; }
+                enemies.forEach(e => { if (e.isAlive && Math.hypot((p.x-ox)/TILE - (e.x+0.5), (p.y-oy)/TILE - (e.y+0.5)) < 0.5) { e.isAlive = false; explode(p.x, p.y, p.color); projectiles.splice(i, 1); } });
+                if (boss && Math.hypot(p.x - (ox + boss.x*TILE + 32), p.y - (oy + boss.y*TILE + 32)) < 45) {
+                    boss.hp -= (p.type === 'fire' ? 6 : 2);
+                    if (p.type === 'ice') boss.speed = 0.01; else setTimeout(()=> { if(boss) boss.speed = 0.04; }, 400);
+                    explode(p.x, p.y, p.color); projectiles.splice(i, 1); updateUI();
+                    if (boss.hp <= 0) gameWin();
                 }
             });
-
-            // 火球發射
-            canvas.addEventListener('mousedown', (e) => {
-                if (!hasMagic || state !== "PLAY") return;
-                const offX = (canvas.width - map[0].length * TILE_SIZE) / 2;
-                const offY = (canvas.height - map.length * TILE_SIZE) / 2;
-                const px = offX + player.gx * TILE_SIZE + TILE_SIZE / 2;
-                const py = offY + player.gy * TILE_SIZE + TILE_SIZE / 2;
-                
-                const angle = Math.atan2(e.clientY - py, e.clientX - px);
-                fireballs.push({ x: px, y: py, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10 });
+            enemyProjectiles.forEach((p, i) => {
+                p.y += p.vy; p.x += p.vx;
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill();
+                if (Math.hypot(p.x - (ox + player.x*TILE + 32), p.y - (oy + player.y*TILE + 32)) < 22) takeDamage(15);
+                if (p.y > canvas.height || p.x < 0 || p.x > canvas.width) enemyProjectiles.splice(i, 1);
             });
+            lasers.forEach(l => {
+                l.x += l.vx; l.y += l.vy; if (l.x <= 1 || l.x >= 13) l.vx *= -1; if (l.y <= 1 || l.y >= 3) l.vy *= -1;
+                ctx.strokeStyle = "red"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox+l.x*TILE+12, oy+l.y*TILE+12); ctx.lineTo(ox+l.x*TILE+52, oy+l.y*TILE+52); ctx.stroke();
+                if (Math.hypot(player.x - l.x, player.y - l.y) < 0.5) takeDamage(20);
+            });
+        }
 
-            function update() {
-                ctx.fillStyle = "#000";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+            if (p.life <= 0) particles.splice(i, 1);
+            else { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; }
+        });
 
-                if (state === "PLAY" || state === "STORY") {
-                    const offX = (canvas.width - map[0].length * TILE_SIZE) / 2;
-                    const offY = (canvas.height - map.length * TILE_SIZE) / 2;
-
-                    // 繪製地圖
-                    map.forEach((row, y) => {
-                        row.forEach((tile, x) => {
-                            const tx = offX + x * TILE_SIZE;
-                            const ty = offY + y * TILE_SIZE;
-                            if (tile === 1) {
-                                ctx.fillStyle = "#1a1a2e";
-                                ctx.fillRect(tx + 2, ty + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-                            } else if (tile === 3) {
-                                ctx.fillStyle = varColor('--magic-blue');
-                                ctx.shadowBlur = 15; ctx.shadowColor = varColor('--magic-blue');
-                                ctx.fillRect(tx + 20, ty + 20, 30, 30);
-                            } else if (tile === 4) {
-                                ctx.fillStyle = isDoorOpen ? "#2ecc71" : "#5d4037";
-                                ctx.fillRect(tx + 5, ty, TILE_SIZE - 10, TILE_SIZE);
-                            } else if (tile === 5) {
-                                ctx.fillStyle = isDoorOpen ? "#444" : "#ff3333";
-                                ctx.beginPath(); ctx.arc(tx + 35, ty + 35, 15, 0, Math.PI * 2); ctx.fill();
-                            }
-                            ctx.shadowBlur = 0;
-                        });
-                    });
-
-                    // 處理火球
-                    fireballs.forEach((f, i) => {
-                        f.x += f.vx; f.y += f.vy;
-                        ctx.fillStyle = "#ffcc00";
-                        ctx.shadowBlur = 10; ctx.shadowColor = "orange";
-                        ctx.beginPath(); ctx.arc(f.x, f.y, 8, 0, Math.PI * 2); ctx.fill();
-                        
-                        // 碰撞偵測 (機關 5)
-                        const gx = Math.floor((f.x - offX) / TILE_SIZE);
-                        const gy = Math.floor((f.y - offY) / TILE_SIZE);
-                        if (map[gy] && map[gy][gx] === 5) {
-                            isDoorOpen = true;
-                            fireballs.splice(i, 1);
-                        }
-                        // 移除出界火球
-                        if (f.x < 0 || f.x > canvas.width || f.y < 0 || f.y > canvas.height) fireballs.splice(i, 1);
-                    });
-
-                    // 繪製玩家
-                    ctx.fillStyle = "#fff";
-                    ctx.shadowBlur = 15; ctx.shadowColor = "#fff";
-                    ctx.fillRect(offX + player.gx * TILE_SIZE + 20, offY + player.gy * TILE_SIZE + 20, 30, 30);
-                    ctx.shadowBlur = 0;
-                }
-                requestAnimationFrame(update);
+        if (state === "PLAY" || state === "WIN") {
+            if (player.invul % 10 < 5) {
+                ctx.fillStyle = player.invul > 0 ? "red" : "white";
+                ctx.fillRect(ox + player.x * TILE + 16, oy + player.y * TILE + 16, 32, 32); 
             }
+        }
+        requestAnimationFrame(update);
+    }
 
-            function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
-
-            update();
-        })();
-    </script>
+    update();
+    return { 
+        start: () => { document.getElementById('overlay').style.display='none'; state="PLAY"; changeScene("ROOM", 1, 2); },
+        reset: () => { 
+            document.getElementById('game-over').style.display='none'; 
+            document.getElementById('game-win').style.display='none'; 
+            player.hp = 100; player.invul = 0; hasMagic = false; hasIcePower = false; 
+            scenes.ROOM.map[1][4] = 5; scenes.ROOM.map[2][5] = 3; 
+            state="PLAY"; changeScene("ROOM", 1, 2); 
+        }
+    };
+})();
+</script>
 </body>
 </html>

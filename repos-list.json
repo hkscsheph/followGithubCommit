@@ -117,6 +117,11 @@
     "user": "BARON1118",
     "repos": [
       {
+        "name": "hksc-water2",
+        "url": "https://github.com/BARON1118/hksc-water2.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "stackblitz-starters-rjvwwbjg",
         "url": "https://github.com/BARON1118/stackblitz-starters-rjvwwbjg.git",
         "description": "Created with StackBlitz ⚡️"
@@ -157,6 +162,11 @@
     "user": "EmilyLau41",
     "repos": [
       {
+        "name": "Math-",
+        "url": "https://github.com/EmilyLau41/Math-.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "CHAT-ROOM",
         "url": "https://github.com/EmilyLau41/CHAT-ROOM.git",
         "description": "Created with StackBlitz ⚡️"
@@ -190,6 +200,16 @@
   {
     "user": "2526452-cmd",
     "repos": [
+      {
+        "name": "leave-slip",
+        "url": "https://github.com/2526452-cmd/leave-slip.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
+        "name": "stackblitz-starters-w5396haj",
+        "url": "https://github.com/2526452-cmd/stackblitz-starters-w5396haj.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "6-2-2026",
         "url": "https://github.com/2526452-cmd/6-2-2026.git",
@@ -271,6 +291,11 @@
     "user": "hayden626",
     "repos": [
       {
+        "name": "Nba",
+        "url": "https://github.com/hayden626/Nba.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "po-1",
         "url": "https://github.com/hayden626/po-1.git",
         "description": "Created with StackBlitz ⚡️"
@@ -346,6 +371,11 @@
     "user": "2223176-tech",
     "repos": [
       {
+        "name": "TWO-GOLDEN-APPLE-",
+        "url": "https://github.com/2223176-tech/TWO-GOLDEN-APPLE-.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "uno-game",
         "url": "https://github.com/2223176-tech/uno-game.git",
         "description": "Created with StackBlitz ⚡️"
@@ -391,13 +421,13 @@
     "user": "2526470-collab",
     "repos": [
       {
-        "name": "-messages",
-        "url": "https://github.com/2526470-collab/-messages.git",
+        "name": "GAME",
+        "url": "https://github.com/2526470-collab/GAME.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {
-        "name": "GAME",
-        "url": "https://github.com/2526470-collab/GAME.git",
+        "name": "-messages",
+        "url": "https://github.com/2526470-collab/-messages.git",
         "description": "Created with StackBlitz ⚡️"
       },
       {

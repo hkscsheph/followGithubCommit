@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業請假自動生成系統 V2.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --wa-teal: #008069;        /* WhatsApp 經典青綠 */
+            --wa-teal-light: #00a884;  /* WhatsApp 亮綠色 */
+            --wa-bg: #efeae2;          /* WhatsApp 聊天室背景底色 */
+            --wa-bubble: #dcf8c6;      /* WhatsApp 右側綠色氣泡 */
+            --wa-input: #f0f2f5;       /* WhatsApp 輸入框灰底 */
+            --primary: #0f172a;        
+            --primary-light: #334155;  
+            --accent: #00a884;         /* 將主按鈕改為 WhatsApp 綠 */
+            --accent-hover: #008069;
+            --bg: #e1e1de;             /* 網頁版外部灰色底色 */
+            --surface: #ffffff;
+            --border: #d1d7db;
+            --text-main: #111b21;
+            --text-muted: #667781;
+            --whatsapp: #25D366;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            background: var(--bg); 
+            padding: 40px 20px; 
+            color: var(--text-main); 
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .container { 
+            max-width: 850px; 
+            margin: 0 auto; 
+            background: var(--surface); 
+            padding: 0; /* 移除 padding 以滿版顯示 Header */
+            border-radius: 16px; 
+            box-shadow: var(--shadow-md); 
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            overflow: hidden; /* 確保圓角不被遮蓋 */
+        }
+        
+        /* WhatsApp 風格的頂部 Header */
+        .wa-header {
+            background-color: var(--wa-teal);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .wa-avatar {
+            width: 42px; height: 42px;
+            background: #dfe5e7;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+        .wa-title h1 { font-size: 18px; margin: 0; font-weight: 500; letter-spacing: 0; color: white; }
+        .wa-title p { font-size: 13px; margin: 4px 0 0 0; opacity: 0.9; }
+
+        /* WhatsApp 風格的標籤切換 */
+        .tabs-wrapper {
+            background: var(--wa-teal);
+            display: flex;
+            padding: 0 10px;
+        }
+
+        .tabs { 
+            display: flex; 
+            width: 100%;
+            background: transparent; 
+            padding: 0; 
+            border-radius: 0; 
+            box-shadow: none;
+        }
+
+        .tab-btn { 
+            flex: 1;
+            padding: 14px 24px; 
+            border: none; 
+            background: transparent; 
+            cursor: pointer; 
+            border-radius: 0; 
+            font-weight: 600; 
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover { color: white; }
+        .tab-btn.active { 
+            background: transparent; 
+            color: white; 
+            border-bottom: 3px solid white;
+            box-shadow: none;
+        }
+
+        .form-body {
+            padding: 30px;
+        }
+
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px 24px; 
+        }
+        .full-width { grid-column: span 2; }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 8px;
+        }
+
+        /* 調整輸入框為 WhatsApp 柔和灰底無邊框 */
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: none; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-family: inherit; 
+            font-size: 15px;
+            background-color: var(--wa-input);
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder, textarea::placeholder { color: #94a3b8; }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--wa-teal-light);
+        }
+        
+        /* 簽名板樣式優化 */
+        .signature-wrapper { 
+            border: 2px dashed #cbd5e1; 
+            border-radius: 12px; 
+            position: relative; 
+            height: 160px; 
+            background: #ffffff;
+            transition: border-color 0.2s;
+        }
+        .signature-wrapper:hover { border-color: #94a3b8; }
+        canvas { width: 100%; height: 100%; touch-action: none; border-radius: 12px; }
+        
+        .clear-sig { 
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            background: #f1f5f9; 
+            color: var(--text-muted); 
+            border: 1px solid var(--border); 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .clear-sig:hover { background: #fee2e2; color: #ef4444; border-color: #f87171; }
+
+        /* 隨機按鈕樣式 */
+        .btn-random {
+            background: #e0e7ff;
+            color: var(--accent);
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-random:hover {
+            background: #c7d2fe;
+            transform: translateY(-1px);
+        }
+
+        /* 按鈕區塊 */
+        .btn-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+        .btn { 
+            flex: 1 1 calc(33.333% - 12px); 
+            min-width: 140px; 
+            padding: 14px 20px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            color: white; 
+            transition: all 0.2s ease; 
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-gen { background: var(--accent); flex-basis: 100%; font-size: 16px; padding: 16px; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); } 
+        .btn-gen:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.23); }
+
+        .btn-email { background: #8b5cf6; display: none; }
+        .btn-cal { background: #475569; display: none; }
+        .btn-pdf { background: #ef4444; display: none; } 
+        .btn-copy { background: #f59e0b; display: none; }
+        .btn-wa { background: var(--whatsapp); display: none; }
+
+        .btn:not(.btn-gen):hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        /* 聊天預覽區域 (WhatsApp 對話視窗風格) */
+        #chatPreviewSection { 
+            display: none; 
+            background-color: var(--wa-bg);
+            background-image: radial-gradient(#d1d7db 1px, transparent 1px);
+            background-size: 20px 20px;
+            padding: 30px 20px;
+            margin-top: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        
+        .wa-date-badge {
+            text-align: center; 
+            margin-bottom: 20px;
+        }
+        .wa-date-badge span {
+            background: #ffffff; 
+            padding: 6px 12px; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            color: #54656f; 
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+        }
+
+        .wa-message-row {
+            display: flex;
+            justify-content: flex-end; /* 自己發送的訊息靠右 */
+            margin-bottom: 10px;
+        }
+
+        .wa-bubble {
+            background-color: var(--wa-bubble);
+            padding: 8px 12px 12px 12px;
+            border-radius: 8px 0 8px 8px; /* WhatsApp 右側氣泡的尖角 */
+            max-width: 85%;
+            box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-main);
+            white-space: pre-wrap;
+            outline: none;
+            position: relative;
+        }
+
+        .wa-bubble:focus {
+            box-shadow: 0 0 0 2px var(--wa-teal-light);
+        }
+
+        .wa-time {
+            float: right;
+            font-size: 11px;
+            color: #667781;
+            margin: 10px 0 -5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .wa-ticks {
+            color: #53bdeb; /* 藍色雙勾勾 */
+        }
+
+        /* 預覽區域 - 擬真 A4 紙張 */
+        #previewContainer {
+            display: none;
+            padding: 40px 0;
+            background: transparent;
+        }
+
+        #previewSection { 
+            margin: 0 auto; 
+            background: #fff; 
+            padding: 60px 70px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease; 
+            max-width: 800px;
+            position: relative;
+        }
+        
+        /* 列印/PDF 專用樣式 - 專業公文字體 */
+        .official-doc { 
+            font-family: "標楷體", "BiauKai", "DFKai-SB", "Times New Roman", serif; /* 台灣/正式公文常用字體 */
+            line-height: 2; 
+            color: #000; 
+            font-size: 16px;
+        }
+        .doc-header { 
+            text-align: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 15px; 
+            margin-bottom: 30px; 
+        }
+        .doc-title { 
+            font-size: 28px; 
+            font-weight: bold; 
+            letter-spacing: 6px; 
+        }
+        .doc-subtitle {
+            font-size: 14px; 
+            margin-top: 8px;
+            font-family: Arial, sans-serif;
+            letter-spacing: 1px;
+        }
+        .doc-body { 
+            margin-bottom: 50px; 
+            white-space: pre-wrap; 
+            text-align: justify;
+        }
+        .doc-footer { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 60px; 
+            align-items: flex-end;
+        }
+        .sign-area { 
+            text-align: center; 
+            width: 200px;
+        }
+        .sign-line {
+            border-bottom: 1px solid #000;
+            height: 60px;
+            position: relative;
+            margin-bottom: 5px;
+        }
+        .sign-img { 
+            max-height: 70px; 
+            max-width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* 提示訊息 (Toast) 樣式優化 */
+        #toast {
+            visibility: hidden; 
+            min-width: 280px; 
+            background-color: #1e293b; 
+            color: #fff;
+            text-align: center; 
+            border-radius: 30px; 
+            padding: 14px 24px; 
+            position: fixed;
+            z-index: 1000; 
+            left: 50%; 
+            bottom: 40px; 
+            transform: translateX(-50%) translateY(20px);
+            font-size: 15px; 
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        #toast.success { background-color: #10b981; }
+        #toast.error { background-color: #ef4444; }
+        #toast.loading { background-color: var(--accent); }
+
+        @media (max-width: 768px) {
+            body { padding: 20px 10px; }
+            .container { padding: 25px 20px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .btn { flex-basis: 100%; }
+            #previewSection { padding: 40px 30px; }
+            .doc-footer { flex-direction: column; align-items: flex-start; gap: 40px; }
+            .sign-area { align-self: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="wa-header">
+        <div class="wa-avatar">🤖</div>
+        <div class="wa-title">
+            <h1>請假小幫手</h1>
+            <p>在線上</p>
+        </div>
+    </div>
+    
+    <div class="tabs-wrapper">
+        <div class="tabs">
+            <button type="button" class="tab-btn active" onclick="setMode('formal')">📄 正式公文</button>
+            <button type="button" class="tab-btn" onclick="setMode('chat')">💬 訊息模式</button>
+        </div>
+    </div>
+
+    <div class="form-body">
+        <form id="mainForm">
+            <div class="form-grid">
+                <div class="full-width" style="margin-bottom: -10px;">
+                    <label>申請人身分</label>
+                    <div style="display: flex; gap: 20px;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer; color: var(--text-main);">
+                            <input type="radio" name="role" value="employee" checked onchange="updateRoleUI()" style="width: auto;"> 💼 上班族
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer; color: var(--text-main);">
+                            <input type="radio" name="role" value="student" onchange="updateRoleUI()" style="width: auto;"> 🎓 學生
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label>申請人姓名</label>
+                    <input type="text" id="name" placeholder="例如: 王小明">
+                </div>
+                <div>
+                    <label id="deptLabel">所屬部門 (選填)</label>
+                    <input type="text" id="dept" placeholder="例如: 業務部">
+                </div>
+            
+            <div>
+                <label>開始日期</label>
+                <input type="date" id="startDate">
+            </div>
+            <div>
+                <label>結束日期</label>
+                <input type="date" id="endDate">
+            </div>
+
+            <div class="full-width">
+                <label>請假類別</label>
+                <select id="type">
+                    <option value="sick">病假 (需休養)</option>
+                    <option value="personal">事假 (私人事務)</option>
+                    <option value="annual">特休/年假 (放鬆充電)</option>
+                    <option value="wfh">居家辦公申請 (WFH)</option>
+                </select>
+            </div>
+
+            <div class="full-width">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin-bottom: 0;">請假原因說明 (可輸入簡短關鍵字，AI 自動擴寫)</label>
+                    <button type="button" class="btn-random" onclick="fillRandomReason()" title="根據請假類別隨機產生">🎲 隨機帶入</button>
+                </div>
+                <textarea id="reason" rows="3" placeholder="例如：吃壞肚子、要去銀行辦事、小孩學校有活動..."></textarea>
+            </div>
+
+            <div class="full-width" id="sigContainer">
+                <label>申請人簽名 (請在下方框內簽名)</label>
+                <div class="signature-wrapper">
+                    <button type="button" class="clear-sig" onclick="clearSignature()">清除重簽</button>
+                    <canvas id="signature-pad"></canvas>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-gen" onclick="generateDocument()">⚡ 立即生成文件</button>
+                <button type="button" class="btn btn-pdf" id="btnPdf" onclick="downloadPDF()">📥 下載 PDF</button>
+                <button type="button" class="btn btn-email" id="btnEmail" onclick="openEmailDraft()">📧 電子郵件</button>
+                <button type="button" class="btn btn-cal" id="btnCal" onclick="addToCalendar()">📅 行事曆</button>
+                <button type="button" class="btn btn-copy" id="btnCopy" onclick="copyText()">📋 複製文字</button>
+                <button type="button" class="btn btn-wa" id="btnWa" onclick="shareToWhatsApp()">💬 WhatsApp</button>
+            </div>
+        </form>
+
+        <div id="chatPreviewSection" class="full-width">
+            <div class="wa-date-badge">
+                <span>今天</span>
+            </div>
+            <div class="wa-message-row">
+                <div class="wa-bubble" contenteditable="true" id="chatPreviewText">
+                    <!-- 內容會動態插入在這裡 -->
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 12px; color: #667781; margin-top: 20px;">
+                💡 點擊上方綠色對話泡泡可直接編輯文字
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 獨立的預覽區域，營造真實紙張感 -->
+<div id="previewContainer">
+    <div id="previewSection">
+        <div class="official-doc" id="docContent">
+            <div class="doc-header">
+                <div class="doc-title">請 假 申 請 單</div>
+                <div class="doc-subtitle">Leave Application Form</div>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <strong>致 單位主管 / 人力資源部：</strong>
+            </div>
+
+            <div class="doc-body" id="finalBody"></div>
+
+            <div class="doc-footer">
+                <div>
+                    <p>審核主管簽核：</p>
+                    <div style="border-bottom: 1px solid #000; width: 150px; height: 30px;"></div>
+                </div>
+                <div class="sign-area">
+                    <p style="text-align: left; margin: 0 0 5px 0;">申請人簽署：</p>
+                    <div class="sign-line">
+                        <img id="finalSig" class="sign-img" alt="簽名" />
+                    </div>
+                    <p id="finalDate" style="font-size: 14px; margin-top: 5px; font-family: Arial, sans-serif;"></p>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:40px; font-size:12px; color:#94a3b8; text-align:center; border-top:1px solid #e2e8f0; padding-top:10px; font-family: sans-serif;">
+            ※ 本文件由系統自動生成，內容真實性及後續流程由申請人負責。
+        </div>
+    </div>
+</div>
+
+<!-- 提示訊息框 -->
+<div id="toast"></div>
+
+<script>
+    // 提示訊息功能
+    function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        
+        // 設定狀態顏色
+        toast.classList.remove("error", "loading", "success");
+        if (type === "error") toast.classList.add("error");
+        else if (type === "loading") toast.classList.add("loading");
+        else toast.classList.add("success");
+
+        toast.classList.add("show");
+
+        // 讀取中不自動關閉
+        if (type !== "loading") {
+            setTimeout(function(){ toast.classList.remove("show"); }, 3000);
+        }
+    }
+
+    function hideToast() {
+        document.getElementById("toast").classList.remove("show");
+    }
+
+    // 1. 初始化簽名板
+    const canvas = document.getElementById('signature-pad');
+    const signaturePad = new SignaturePad(canvas, {
+        backgroundColor: 'rgba(255, 255, 255, 0)',
+        penColor: 'rgb(15, 23, 42)' // 深藍黑色墨水，更具專業感
+    });
+
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear(); 
+    }
+    window.addEventListener("resize", resizeCanvas);
+    setTimeout(resizeCanvas, 100);
+
+    function clearSignature() {
+        signaturePad.clear();
+    }
+
+    let currentMode = 'formal';
+
+    // 1.5 切換身分 (上班族/學生)
+    function updateRoleUI() {
+        const role = document.querySelector('input[name="role"]:checked').value;
+        const deptLabel = document.getElementById('deptLabel');
+        const deptInput = document.getElementById('dept');
+        const typeSelect = document.getElementById('type');
+
+        if (role === 'student') {
+            deptLabel.innerText = "班級與學號 (選填)";
+            deptInput.placeholder = "例如: 三年二班 30215";
+            typeSelect.innerHTML = `
+                <option value="sick">病假 (需休養/看診)</option>
+                <option value="personal">事假 (家庭或私人事務)</option>
+                <option value="official">公假 (代表學校/競賽)</option>
+                <option value="menstrual">生理假 (生理期不適)</option>
+            `;
+        } else {
+            deptLabel.innerText = "所屬部門 (選填)";
+            deptInput.placeholder = "例如: 業務部";
+            typeSelect.innerHTML = `
+                <option value="sick">病假 (需休養)</option>
+                <option value="personal">事假 (私人事務)</option>
+                <option value="annual">特休/年假 (放鬆充電)</option>
+                <option value="wfh">居家辦公申請 (WFH)</option>
+            `;
+        }
+        // 清空原因輸入框
+        document.getElementById('reason').value = '';
+    }
+
+    // 2. 切換模式
+    function setMode(mode) {
+        currentMode = mode;
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        
+        if (mode === 'formal') {
+            btns[0].classList.add('active');
+            document.getElementById('sigContainer').style.display = 'block';
+            document.getElementById('chatPreviewSection').style.display = 'none';
+        } else {
+            btns[1].classList.add('active');
+            document.getElementById('sigContainer').style.display = 'none';
+            document.getElementById('previewContainer').style.display = 'none';
+        }
+        
+        // 隱藏所有功能按鈕，直到重新生成
+        ['btnPdf', 'btnCopy', 'btnWa', 'btnEmail', 'btnCal'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
+    }
+
+    // 3. 生成內容
+    function generateDocument() {
+        const name = document.getElementById('name').value;
+        const dept = document.getElementById('dept').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        const type = document.getElementById('type').value;
+        const rawReason = document.getElementById('reason').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
+
+        if(!name || !start || !end) {
+            showToast("請填寫姓名與請假日期等必填資訊！", "error");
+            return;
+        }
+
+        let polishedReason = "";
+        let subject = "";
+
+        if (role === 'student') {
+            if (type === 'sick') {
+                subject = "病假";
+                polishedReason = rawReason ? `學生因${rawReason}身體不適，需請病假休養就醫。` : "學生因突發性身體不適，需請病假休養。";
+            } else if (type === 'personal') {
+                subject = "事假";
+                polishedReason = rawReason ? `學生因${rawReason}，需請事假處理私人與家庭事務。` : "學生因家庭重要事務需處理，擬請事假。";
+            } else if (type === 'official') {
+                subject = "公假";
+                polishedReason = rawReason ? `學生因${rawReason}，擬申請公假。` : "學生因代表學校參加活動或競賽，擬申請公假。";
+            } else if (type === 'menstrual') {
+                subject = "生理假";
+                polishedReason = rawReason ? `學生因生理期不適（${rawReason}），需請生理假休養。` : "學生因生理期不適，需請生理假休養。";
+            }
+        } else {
+            if (type === 'sick') {
+                subject = "病假";
+                polishedReason = rawReason 
+                    ? `職因${rawReason}，身體不適。經評估後需休養，以避免病情加重或影響同仁健康。`
+                    : "職因突發性身體不適，需請病假休養。";
+            } else if (type === 'personal') {
+                subject = "事假";
+                polishedReason = rawReason 
+                    ? `職因${rawReason}，屬必要之私人事務需親自處理，故無法於當日出勤。`
+                    : "職因有重要私人事務需處理，擬請事假。";
+            } else if (type === 'wfh') {
+                subject = "居家辦公(WFH)";
+                polishedReason = `職因${rawReason || "個人行程安排"}，擬申請居家辦公。期間將保持聯繫暢通，不影響公務與專案進度。`;
+            } else {
+                subject = "特別休假";
+                polishedReason = "為調節身心平衡及處理個人事務，擬申請年度特別休假。";
+            }
+        }
+
+        const dateRange = start === end ? `${start} (共 1 天)` : `${start} 至 ${end}`;
+
+        if (currentMode === 'formal') {
+            let formalClosing = role === 'student' 
+                ? "請假期間之課業將自行補齊。懇請 師長核准。" 
+                : "休假期間若有緊急公務，請以電子郵件或電話聯繫。懇請 鈞長核准。";
+
+            const bodyHtml = `
+                <p><strong>申請人姓名：</strong> ${name} ${dept ? '（'+dept+'）' : ''}</p>
+                <p><strong>請假期間：</strong> ${dateRange}</p>
+                <p><strong>請假類別：</strong> ${subject}</p>
+                <hr style="border:0; border-top:1px dashed #cbd5e1; margin:25px 0;">
+                <p><strong>事由說明：</strong></p>
+                <p style="padding-left: 2em; margin-top: 10px;">${polishedReason}</p>
+                <p style="margin-top: 30px;">${formalClosing}</p>
+            `;
+            
+            // 更新公文對象
+            const docTarget = document.querySelector('.official-doc strong');
+            if (docTarget) {
+                docTarget.innerText = role === 'student' ? "致 導師 / 學務處：" : "致 單位主管 / 人力資源部：";
+            }
+            
+            document.getElementById('finalBody').innerHTML = bodyHtml;
+            document.getElementById('finalDate').innerText = "申請日期：" + new Date().toISOString().slice(0,10);
+
+            if (!signaturePad.isEmpty()) {
+                document.getElementById('finalSig').src = signaturePad.toDataURL();
+                document.getElementById('finalSig').style.display = 'block';
+            } else {
+                document.getElementById('finalSig').style.display = 'none';
+            }
+
+            document.getElementById('previewContainer').style.display = 'block';
+            document.getElementById('chatPreviewSection').style.display = 'none';
+            
+            document.getElementById('btnPdf').style.display = 'flex';
+            document.getElementById('btnEmail').style.display = 'flex';
+            document.getElementById('btnCal').style.display = 'flex';
+            document.getElementById('btnCopy').style.display = 'none';
+            document.getElementById('btnWa').style.display = 'none';
+            
+            setTimeout(() => {
+                document.getElementById('previewContainer').scrollIntoView({behavior: "smooth"});
+            }, 100);
+
+        } else {
+            let greetingChat = role === 'student' ? "老師您好" : "主管您好";
+            let closingChat = role === 'student' ? "請假期間的課業我會請同學協助筆記，麻煩老師了，謝謝！" : "休假期間若有急事可隨時聯繫我，麻煩您了，謝謝！";
+            
+            const chatText = `【${subject}申請】\n${greetingChat}，我是${dept ? dept+'的' : ''}${name}。\n\n${polishedReason}\n\n請假日期：${dateRange}\n\n${closingChat}`;
+            
+            // 獲取當前時間格式化 (例如: 10:42)
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            // 將內容與時間標籤、藍勾勾組合放入綠色泡泡 (div) 中
+            document.getElementById('chatPreviewText').innerHTML = chatText.replace(/\n/g, '<br>') + `<div class="wa-time">${timeStr} <span class="wa-ticks">✓✓</span></div>`;
+            
+            document.getElementById('chatPreviewSection').style.display = 'block';
+            document.getElementById('previewContainer').style.display = 'none';
+            
+            document.getElementById('btnCopy').style.display = 'flex';
+            document.getElementById('btnWa').style.display = 'flex';
+            document.getElementById('btnEmail').style.display = 'flex';
+            document.getElementById('btnCal').style.display = 'flex';
+            document.getElementById('btnPdf').style.display = 'none';
+        }
+    }
+
+    // 4. 優化後的 PDF 下載功能 (確保絕對單頁)
+    async function downloadPDF() {
+        const element = document.getElementById('previewSection');
+        const name = document.getElementById('name').value || '未命名'; 
+        
+        showToast("正在生成高畫質 PDF，請稍候...", "loading");
+
+        // 套用 PDF 專屬壓縮樣式，確保總高度完美落在單張 A4 範圍內
+        element.classList.add('pdf-export-mode');
+
+        const opt = {
+            margin:       [15, 15, 15, 15], // 上下左右保留 15mm 的安全邊距
+            filename:     `請假單_${name}.pdf`,
+            image:        { type: 'jpeg', quality: 1.0 }, 
+            html2canvas:  { 
+                scale: 2, 
+                useCORS: true, 
+                letterRendering: true,
+                scrollY: 0 
+            },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            // ⚠️ 關鍵修正：已徹底移除 avoid-all，不再讓系統神經過敏地亂推頁面
+        };
+
+        try {
+            await html2pdf().set(opt).from(element).save();
+            showToast("✅ PDF 下載完成！");
+        } catch (error) {
+            console.error("PDF 生成失敗:", error);
+            showToast("❌ PDF 生成失敗，請再試一次", "error");
+        } finally {
+            // 復原畫面樣式，讓網頁瀏覽器上依然保持寬敞美觀
+            element.classList.remove('pdf-export-mode');
+        }
+    }
+
+    // 5. 其他功能 (配合 contenteditable div 進行修正)
+    function copyText() {
+        const textElement = document.getElementById('chatPreviewText');
+        
+        // 為了不複製到內建的時間戳記，我們先做一個複製節點並清理
+        const clone = textElement.cloneNode(true);
+        const timeNode = clone.querySelector('.wa-time');
+        if(timeNode) timeNode.remove();
+        
+        // 建立暫時的 textarea 來協助複製純文字，並將 <br> 轉回換行符號
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = clone.innerHTML.replace(/<br\s*[\/]?>/gi, "\n").replace(/&nbsp;/gi, " ").trim();
+        document.body.appendChild(tempTextArea);
+        
+        tempTextArea.select();
+        tempTextArea.setSelectionRange(0, 99999);
+        
+        try {
+            document.execCommand('copy');
+            showToast("✅ 訊息文字已成功複製！");
+        } catch (err) {
+            showToast("複製失敗，請手動選取複製", "error");
+        }
+        
+        document.body.removeChild(tempTextArea);
+    }
+
+    function shareToWhatsApp() {
+        const clone = document.getElementById('chatPreviewText').cloneNode(true);
+        const timeNode = clone.querySelector('.wa-time');
+        if(timeNode) timeNode.remove();
+        
+        const cleanText = clone.innerHTML.replace(/<br\s*[\/]?>/gi, "\n").replace(/&nbsp;/gi, " ").trim();
+        const text = encodeURIComponent(cleanText);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    function openEmailDraft() {
+        const name = document.getElementById('name').value;
+        const typeSelect = document.getElementById('type');
+        const typeText = typeSelect.options[typeSelect.selectedIndex].text.split(' ')[0];
+        
+        const subject = encodeURIComponent(`【請假申請】${name} - ${typeText}`);
+        let bodyText = "";
+
+        if (currentMode === 'chat') {
+            const clone = document.getElementById('chatPreviewText').cloneNode(true);
+            const timeNode = clone.querySelector('.wa-time');
+            if(timeNode) timeNode.remove();
+            bodyText = encodeURIComponent(clone.innerHTML.replace(/<br\s*[\/]?>/gi, "\n").replace(/&nbsp;/gi, " ").trim());
+        } else {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            if (role === 'student') {
+                bodyText = encodeURIComponent(`老師您好，\n\n我是 ${name}。\n附上我的請假申請表（請見附件），再請您查收並協助審核。\n\n請假期間的課業我會自行補齊，謝謝老師！`);
+            } else {
+                bodyText = encodeURIComponent(`主管您好，\n\n我是 ${name}。\n附上我的請假申請表（請見附件），再請您查收並協助審核。\n\n休假期間若有急事可隨時聯繫我，謝謝！`);
+            }
+        }
+        
+        window.location.href = `mailto:?subject=${subject}&body=${bodyText}`;
+    }
+
+    function addToCalendar() {
+        const name = document.getElementById('name').value;
+        const typeSelect = document.getElementById('type');
+        const typeText = typeSelect.options[typeSelect.selectedIndex].text.split(' ')[0];
+        const title = encodeURIComponent(`[${typeText}] ${name} 請假`);
+        
+        const startRaw = document.getElementById('startDate').value;
+        const endRaw = document.getElementById('endDate').value;
+        
+        if(!startRaw) return;
+
+        const start = startRaw.replace(/-/g, '');
+        
+        let endObj = new Date(endRaw || startRaw);
+        endObj.setDate(endObj.getDate() + 1);
+        const end = endObj.toISOString().split('T')[0].replace(/-/g, '');
+        
+        let details = "";
+        if (currentMode === 'chat') {
+            const clone = document.getElementById('chatPreviewText').cloneNode(true);
+            const timeNode = clone.querySelector('.wa-time');
+            if(timeNode) timeNode.remove();
+            details = encodeURIComponent(clone.innerHTML.replace(/<br\s*[\/]?>/gi, "\n").replace(/&nbsp;/gi, " ").trim());
+        } else {
+            details = encodeURIComponent(`請假類別：${typeText}\n申請人：${name}`);
+        }
+        
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+        window.open(url, '_blank');
+    }
+
+    // 6. 隨機產生請假原因
+    function fillRandomReason() {
+        const type = document.getElementById('type').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
+        
+        let reasons = {};
+        if (role === 'student') {
+            reasons = {
+                sick: ["感冒發燒", "急性腸胃炎", "偏頭痛", "牙痛就醫", "流感需居家隔離", "因突發狀況就醫檢查"],
+                personal: ["家中長輩需陪同就醫", "處理突發家庭事務", "家裡有重要祭祀活動", "需至戶政機關辦理證件"],
+                official: ["代表學校參加校外學科競賽", "參加縣市體育競賽", "協助校內大型活動場地佈置", "參與校外志工服務學習"],
+                menstrual: ["生理期嚴重不適", "嚴重經痛無法到校"]
+            };
+        } else {
+            reasons = {
+                sick: ["感冒發燒", "急性腸胃炎", "偏頭痛", "牙痛就醫", "季節性過敏嚴重", "生理期不適", "因突發狀況就醫檢查"],
+                personal: ["家中長輩需陪同就醫", "前往銀行辦理重要業務", "車輛突發故障需進廠維修", "處理租屋與房屋修繕事宜", "處理突發家庭事務", "小孩學校臨時有活動需出席"],
+                annual: ["安排家庭旅遊", "個人進修與學習計畫", "返鄉探親", "處理私人事務", "身心放鬆休息充電", "參加親友婚禮"],
+                wfh: ["配合家中水電管線維修", "需接收重要掛號包裹", "住家附近施工噪音影響通勤，但可在家工作", "專注處理特定專案企劃"]
+            };
+        }
+        
+        const list = reasons[type];
+        const randomReason = list[Math.floor(Math.random() * list.length)];
+        
+        const reasonInput = document.getElementById('reason');
+        reasonInput.value = randomReason;
+        
+        // 給予視覺回饋 (閃爍一下藍色框與底色)
+        reasonInput.style.transition = 'none';
+        reasonInput.style.backgroundColor = '#eff6ff';
+        reasonInput.style.borderColor = '#3b82f6';
+        
+        setTimeout(() => {
+            reasonInput.style.transition = 'all 0.5s ease';
+            reasonInput.style.backgroundColor = '';
+            reasonInput.style.borderColor = '';
+        }, 300);
+        
+        showToast("🎲 已帶入隨機原因！");
+    }
+</script>
+
+</body>
+</html>

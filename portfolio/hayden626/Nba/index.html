@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Legend Hub | Ultimate 3-in-1</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Bangers&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+
+    <div id="effect-overlay"></div>
+
+    <div id="sidebar">
+        <div class="team-header">
+            <div id="logo-container"><img id="team-logo" src="" alt="Logo"></div>
+            <div class="header-main">
+                <h1 id="team-label">NBA HUB</h1>
+                <select id="team-select" onchange="changeTeam()">
+                    <option value="raptors">多倫多暴龍 (TOR)</option>
+                    <option value="lakers">洛杉磯湖人 (LAL)</option>
+                    <option value="bulls">芝加哥公牛 (CHI)</option>
+                    <option value="warriors">金州勇士 (GSW)</option>
+                    <option value="celtics">波士頓塞爾特人 (BOS)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="widget quote-box">
+            <p id="quote-text">"Loading..."</p>
+            <small id="quote-author">- Legend</small>
+        </div>
+
+        <div class="widget achievement-box">
+            <div class="title-row">🏅 射手成就階級</div>
+            <div id="badge-display">新秀 (Rookie)</div>
+        </div>
+
+        <div class="widget game-box">
+            <h3>🔥 快速三分賽 (10s)</h3>
+            <div id="timer-txt">得分: 0 | 時間: 10s</div>
+            <button class="btn-game" onclick="shootThree()">連按投籃！</button>
+            <div class="leaderboard">🏆 個人最高紀錄: <span id="high-score">0</span></div>
+        </div>
+
+        <button id="theme-btn" onclick="toggleTheme()">☀️ 模式切換</button>
+    </div>
+
+    <div id="map-wrapper">
+        <div id="map"></div>
+        <div id="ticker">
+            <div class="ticker-text">NBA LEGEND HUB ACTIVE... SCHEME A & C LOADED... CHECK YOUR ACHIEVEMENTS...</div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

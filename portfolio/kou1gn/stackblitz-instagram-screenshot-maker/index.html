@@ -5,12 +5,52 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
   </head>
 <!-- extra row for space -->
   <body>
-    <div class="funny"><img src="tangerine-with-leaves.jpg" class="tangy"/>
+    <div class="reels-comments-container">
+      <div class="drag-handle"></div>
+      <div class="comments-header">
+        <span class="header-title">Comments</span>
+      </div>
+
+      <div class="comments-list">
+        <div class="comment-row">
+          <div class="profile-pic">
+            <img src="tangerine-with-leaves.jpg" id="avatar-preview" onclick="triggerUpload()" alt="avatar" title="Click to change photo">
+          </div>
+
+          <div class="comment-main">
+            <div class="comment-text">
+              <span class="username" contenteditable="true">lucki3st_or4nge</span>
+              <span class="text" contenteditable="true">I ate a dead rat once</span>
+            </div>
+
+            <div class="comment-footer">
+              <span contenteditable="true">2w</span>
+              <span class="footer-action">Reply</span>
+            </div>
+
+             <div class="view-replies">
+              <div class="line"></div>
+              <span>View 13 replies</span>
+            </div>
+
+          </div>
+          <div class="comment-side">
+            <div class="heart-icon">
+               <svg aria-label="Like" height="15" viewBox="0 0 24 24" width="15"><path d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.194 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.03.044.06.091.087.141.03-.05.059-.097.087-.141a4.21 4.21 0 013.735-1.941z"></path></svg>
+            </div>
+
+            <span class="like-count" contenteditable="true">1</span>
+          </div>
+        </div>
+      </div>
     </div>
-  
+      <input type="file" id="image-input" accept="image/*" style="display: none;" onchange="updateImage(this)">
+    </div>
   </body>
+  <!-- row 4 space -->
+  <footer></footer>
 </html>

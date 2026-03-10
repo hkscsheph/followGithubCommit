@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Math Logic Master</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            --f4-navy: #1e293b;
+            --olympiad-purple: #7c3aed;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .app-container { background: white; width: 100%; max-width: 800px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        
+        .level-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 25px; }
+        .lvl-btn { padding: 12px 5px; border: 2px solid #e2e8f0; background: white; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 0.85rem; }
+        .lvl-btn.active { border-color: var(--olympiad-purple); color: var(--olympiad-purple); background: #f5f3ff; }
+
+        .display-panel { 
+            background: linear-gradient(135deg, var(--f4-navy) 0%, #334155 100%);
+            color: white; padding: 50px 20px; border-radius: 15px; text-align: center; 
+            font-size: 2.2rem; margin-bottom: 25px; min-height: 80px; position: relative;
+        }
+        .hint-text { position: absolute; bottom: 10px; right: 20px; font-size: 0.8rem; color: #94a3b8; }
+
+        textarea { 
+            width: 100%; height: 220px; padding: 20px; border: 2px solid #f1f5f9; border-radius: 12px; 
+            font-family: 'Fira Code', 'Consolas', monospace; font-size: 1.1rem; line-height: 1.6; 
+            box-sizing: border-box; background: #fafafa;
+        }
+        textarea:focus { outline: none; border-color: var(--olympiad-purple); background: white; }
+
+        .btn-group { display: flex; gap: 12px; margin-top: 15px; }
+        button.action { flex: 1; padding: 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
+        .btn-check { background: var(--olympiad-purple); color: white; }
+        .btn-next { background: #e2e8f0; color: #475569; }
+
+        #log { margin-top: 25px; }
+        .log-step { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 5px; }
+        .ok { background: #ecfdf5; border-left: 4px solid var(--success); }
+        .bad { background: #fef2f2; border-left: 4px solid var(--error); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div style="text-align:center; margin-bottom: 20px;">
+        <h2 style="margin:0; color: var(--f4-navy);">高等數學與奧數邏輯檢測</h2>
+        <p style="color:#64748b">從代數基礎到奧數恆等式驗證</p>
+    </div>
+
+    <div class="level-nav">
+        <button class="lvl-btn active" onclick="mathApp.setLvl('Basic')">F1: 基礎</button>
+        <button class="lvl-btn" onclick="mathApp.setLvl('Intermediate')">F2: 進階</button>
+        <button class="lvl-btn" onclick="mathApp.setLvl('Advanced')">F4: 專業</button>
+        <button class="lvl-btn" onclick="mathApp.setLvl('Olympiad')" style="background: #fffbeb; border-color: #fbbf24;">Ω: 奧數</button>
+    </div>
+
+    <div id="math-box" class="display-panel"></div>
+
+    <div class="workspace">
+        <textarea id="steps" placeholder="請在此輸入你的解題步驟...&#10;奧數級別支援符號恆等式，例如：&#10;(a+b)^2 - (a-b)^2&#10;4ab"></textarea>
+    </div>
+
+    <div class="btn-group">
+        <button class="action btn-check" onclick="mathApp.verify()">驗證邏輯鏈</button>
+        <button class="action btn-next" onclick="mathApp.generate()">更換挑戰</button>
+    </div>
+
+    <div id="log"></div>
+</div>
+
+<script>
+    const mathApp = {
+        lvl: 'Basic',
+        target: '',
+
+        setLvl(l) {
+            this.lvl = l;
+            document.querySelectorAll('.lvl-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            this.generate();
+        },
+
+        generate() {
+            const r = (n) => Math.floor(Math.random() * n) + 1;
+            let expr = "";
+            let hint = "";
+
+            switch(this.lvl) {
+                case 'Basic':
+                    expr = `${r(5)}(x + ${r(9)})`;
+                    break;
+                case 'Intermediate':
+                    expr = `(x + ${r(5)})(x + ${r(5)})`;
+                    break;
+                case 'Advanced':
+                    const a = r(2), b = r(4), c = r(3);
+                    expr = `${a}(x + ${b})(x + ${c})`;
+                    break;
+                case 'Olympiad':
+                    // 奧數級別：著名的恆等式挑戰
+                    const olyQuestions = [
+                        "(a + b)^3", 
+                        "a^3 - b^3", 
+                        "(x + y + z)^2",
+                        "(x + y)(x^2 - xy + y^2)"
+                    ];
+                    expr = olyQuestions[Math.floor(Math.random() * olyQuestions.length)];
+                    hint = "奧數級別：請寫出該恆等式的展開或分解。";
+                    break;
+            }
+
+            this.target = expr;
+            this.render(expr);
+            document.getElementById('steps').value = "";
+            document.getElementById('log').innerHTML = "";
+        },
+
+        render(expr) {
+            let tex = expr.replace(/\*/g, '').replace(/x2/g, 'x^2').replace(/a3/g, 'a^3').replace(/b3/g, 'b^3');
+            katex.render(tex, document.getElementById('math-box'), { throwOnError: false });
+        },
+
+        verify() {
+            const input = document.getElementById('steps').value.trim();
+            const lines = input.split('\n').filter(l => l.trim());
+            const log = document.getElementById('log');
+            log.innerHTML = "<h4>邏輯流分析：</h4>";
+
+            if (!lines.length) return;
+
+            let allCorrect = true;
+
+            lines.forEach((line, i) => {
+                const div = document.createElement('div');
+                div.className = 'log-step';
+                try {
+                    // 奧數檢查：檢查 (目標) 與 (學生輸入) 的符號差是否為 0
+                    const isCorrect = math.simplify(`(${this.target}) - (${line})`).toString() === "0";
+                    
+                    div.innerHTML = `<span>步驟 ${i+1}: ${line}</span>`;
+                    if (isCorrect) {
+                        div.innerHTML += `<span style="color:var(--success)">✅ 等價</span>`;
+                        div.classList.add('ok');
+                    } else {
+                        div.innerHTML += `<span style="color:var(--error)">❌ 不等值</span>`;
+                        div.classList.add('bad');
+                        allCorrect = false;
+                    }
+                } catch (e) {
+                    div.innerHTML += `<span style="color:var(--error)">⚠ 語法解析失敗</span>`;
+                    allCorrect = false;
+                }
+                log.appendChild(div);
+            });
+
+            if (allCorrect) {
+                log.innerHTML += `<div style="text-align:center; padding:20px; background:#f5f3ff; color:var(--olympiad-purple); border-radius:12px; margin-top:15px; font-weight:bold;">🏆 奧數級邏輯驗證通過！你對代數恆等式的掌握非常紮實。</div>`;
+            }
+        }
+    };
+
+    window.onload = () => mathApp.generate();
+</script>
+
+</body>
+</html>

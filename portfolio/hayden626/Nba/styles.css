@@ -1,0 +1,76 @@
+:root {
+  --primary: #CE1141;
+  --bg-side: #0a0a0a;
+  --bg-widget: #1c1c1c;
+  --text-color: #ffffff;
+  --sidebar-width: 350px;
+}
+
+.light-theme {
+  --bg-side: #ffffff;
+  --bg-widget: #f4f4f4;
+  --text-color: #111111;
+}
+
+body, html {
+  margin: 0; padding: 0;
+  height: 100vh; width: 100vw;
+  display: flex;
+  font-family: 'Oswald', sans-serif;
+  background: #000;
+  overflow: hidden;
+}
+
+/* Sidebar 佈局 */
+#sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: var(--bg-side);
+  border-right: 5px solid var(--primary);
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  overflow-y: auto;
+  color: var(--text-color);
+}
+
+/* 地圖強制顯現排版 */
+#map-wrapper {
+  position: absolute;
+  left: var(--sidebar-width);
+  right: 0; top: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: #111;
+}
+
+#map {
+  flex: 1;
+  width: 100%;
+  z-index: 1;
+}
+
+/* 方案 A & C 視覺設計 */
+.widget { background: var(--bg-widget); padding: 15px; border-radius: 12px; margin-bottom: 12px; }
+.quote-box { border-left: 5px solid var(--primary); font-style: italic; background: rgba(255,255,255,0.05); }
+#quote-author { color: var(--primary); font-weight: bold; display: block; text-align: right; }
+#badge-display { color: #ffd700; font-weight: bold; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255,215,0,0.3); }
+
+.team-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+#logo-container { width: 65px; height: 65px; background: white; border-radius: 10px; padding: 5px; display: flex; align-items: center; justify-content: center; }
+#team-logo { max-width: 100%; max-height: 100%; }
+
+.btn-game { width: 100%; padding: 12px; background: #333; color: #fff; border: 2px solid var(--primary); cursor: pointer; font-weight: bold; }
+.btn-game:active { transform: scale(0.95); }
+
+#ticker { height: 30px; background: var(--primary); color: white; display: flex; align-items: center; overflow: hidden; white-space: nowrap; }
+.ticker-text { display: inline-block; animation: scroll 25s linear infinite; }
+@keyframes scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+#theme-btn { margin-top: auto; padding: 8px; background: none; border: 1px solid var(--primary); color: var(--primary); cursor: pointer; border-radius: 5px; }
+
+/* 特效 */
+.hype-text { position: absolute; font-family: 'Bangers'; font-size: 80px; color: var(--primary); text-shadow: 3px 3px 0 #fff; z-index: 2000; pointer-events: none; animation: fly 0.8s forwards; }
+@keyframes fly { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 0; transform: scale(1.5) translateY(-150px); } }
