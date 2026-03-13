@@ -2,132 +2,69 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Domain Expansion: Infinite Chicken</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlimited Void: Hand Sign Update</title>
     <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background: #000;
-        font-family: 'Segoe UI', sans-serif;
-        user-select: none;
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
+      body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; }
+      
+      /* UI Layer */
+      #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+      #hud { padding: 30px; display: flex; justify-content: space-between; opacity: 0; transition: opacity 1s; }
+      #hp-bar { width: 250px; height: 10px; background: rgba(255, 255, 255, 0.2); border: 2px solid #00d2ff; border-radius: 5px; }
+      #hp-fill { width: 100%; height: 100%; background: #00d2ff; box-shadow: 0 0 15px #00d2ff; transition: width 0.3s ease; }
+      
+      /* Hand Sign Animation */
+      #hand-sign-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center;
+        z-index: 200; pointer-events: none;
+      }
+      .hand-sign {
+        width: 300px; height: 300px; border: 8px solid #fff; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 0 50px #00d2ff, inset 0 0 50px #bc13fe;
+        animation: sign-pulse 1.5s ease-out forwards;
+      }
+      .hand-sign::before {
+        content: "🤞"; font-size: 150px; filter: drop-shadow(0 0 20px #00d2ff);
+        animation: finger-cross 1.5s ease-out forwards;
       }
 
-      /* UI OVERLAY */
-      #ui-layer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        z-index: 10;
+      @keyframes sign-pulse {
+        0% { transform: scale(0.5); opacity: 0; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0; }
+      }
+      @keyframes finger-cross {
+        0% { transform: translateY(50px); }
+        100% { transform: translateY(0); }
       }
 
-      #hud-top {
-        padding: 20px;
-        display: flex;
-        justify-content: space-between;
-      }
+      /* Menu */
+      #menu { position: absolute; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: 1s; }
+      h1 { color: #fff; letter-spacing: 10px; text-shadow: 0 0 20px #00d2ff; }
+      button { padding: 20px 60px; background: transparent; border: 3px solid #00d2ff; color: #00d2ff; font-family: 'Orbitron'; cursor: pointer; font-size: 1.5rem; transition: 0.3s; }
+      button:hover { background: #00d2ff; color: #000; box-shadow: 0 0 30px #00d2ff; }
 
-      #p-health-label {
-        color: #00d2ff;
-        font-weight: bold;
-        text-shadow: 0 0 10px #00d2ff;
-        letter-spacing: 2px;
-      }
-
-      #p-health-box {
-        width: 350px;
-        height: 15px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid #00d2ff;
-        box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
-      }
-
-      #p-health-fill {
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, #00d2ff, #bc13fe);
-        transition: width 0.1s;
-      }
-
-      #hud-right {
-        text-align: right;
-        color: white;
-      }
-
-      #ammo-txt {
-        font-size: 40px;
-        font-weight: 900;
-        color: #bc13fe;
-        text-shadow: 0 0 15px #bc13fe;
-      }
-
-      #menu {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, #1a0033 0%, #000 100%);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        z-index: 100;
-      }
-
-      #menu h1 {
-        font-size: 70px;
-        color: #bc13fe;
-        text-shadow: 0 0 30px #bc13fe, 0 0 60px #00d2ff;
-        margin: 0;
-      }
-
-      button {
-        margin-top: 40px;
-        padding: 20px 80px;
-        font-size: 24px;
-        background: rgba(188, 19, 254, 0.2);
-        color: #00d2ff;
-        border: 2px solid #00d2ff;
-        cursor: pointer;
-        transition: 0.3s;
-        box-shadow: 0 0 20px #00d2ff;
-      }
-
-      button:hover {
-        background: #00d2ff;
-        color: #000;
-      }
-
-      #damage-flash {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: white;
-        opacity: 0;
-        pointer-events: none;
-        z-index: 50;
-      }
+      #charge-ui { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); width: 300px; opacity: 0; }
+      #charge-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; }
+      #charge-fill { width: 0%; height: 100%; background: #bc13fe; box-shadow: 0 0 25px #bc13fe; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </head>
   <body>
-    <div id="damage-flash"></div>
+    <div id="hand-sign-overlay"><div class="hand-sign"></div></div>
+    
     <div id="ui-layer">
-      <div id="hud-top">
+      <div id="hud">
         <div>
-          <div id="p-health-label">CURSED ENERGY</div>
-          <div id="p-health-box"><div id="p-health-fill"></div></div>
+          <div style="color:#00d2ff; font-weight: 900;">DOMAIN STABILITY</div>
+          <div id="hp-bar"><div id="hp-fill"></div></div>
         </div>
-        <div id="hud-right">
-          <div id="ammo-txt">30 / 30</div>
-          <div id="score-txt">EXORCISED: 0</div>
-        </div>
+        <div style="text-align: right; color:#bc13fe;">[E] 0.2s VOID | [Q] BLUE | [R-CLICK] RED</div>
       </div>
+      <div id="charge-ui"><div id="charge-bar"><div id="charge-fill"></div></div></div>
     </div>
 
     <div id="menu">
@@ -136,210 +73,181 @@
     </div>
 
     <script>
-      let camera, scene, renderer, raycaster, yawObj, pitchObj;
-      let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
-      let velocityY = 0, prevTime = performance.now();
-      let projectiles = [], enemies = [], stars = [];
-      let score = 0, health = 100, ammo = 30, isLocked = false, lastSpawn = 0;
-
-      const SOUNDS = {
-        expansion: "https://www.myinstants.com/media/sounds/ryoiki-tenkai.mp3",
-        purple: "https://www.myinstants.com/media/sounds/hollow-purple.mp3",
-        hit: "https://www.myinstants.com/media/sounds/punch-anime.mp3"
-      };
+      let scene, camera, renderer, yaw, pitch;
+      let moveState = { f:0, b:0, l:0, r:0 }, velocity = new THREE.Vector3();
+      let isLocked=false, isHolding=false, charge=0, isFrozen=false;
+      let enemies=[], projectiles=[], lastSpawn=0, health=100;
+      let orbB, orbR, orbP;
+      const clock = new THREE.Clock();
 
       init();
       animate();
 
       function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050010);
-        scene.fog = new THREE.Fog(0x0a001a, 20, 100);
+        scene.background = new THREE.Color(0x050510); 
+        scene.fog = new THREE.Fog(0x00d2ff, 10, 450); // Luminous Fog
 
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        pitchObj = new THREE.Object3D();
-        pitchObj.add(camera);
-        yawObj = new THREE.Object3D();
-        yawObj.position.y = 2;
-        yawObj.add(pitchObj);
-        scene.add(yawObj);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        pitch = new THREE.Object3D(); pitch.add(camera);
+        yaw = new THREE.Object3D(); yaw.position.set(0, 5, 0); yaw.add(pitch);
+        scene.add(yaw);
+
+        const orbMat = (c) => new THREE.MeshStandardMaterial({color: c, emissive: c, emissiveIntensity: 3});
+        orbB = new THREE.Mesh(new THREE.SphereGeometry(0.12), orbMat(0x00d2ff));
+        orbR = new THREE.Mesh(new THREE.SphereGeometry(0.12), orbMat(0xff0044));
+        orbP = new THREE.Mesh(new THREE.SphereGeometry(0.4), orbMat(0xbc13fe));
+        [orbB, orbR, orbP].forEach(o => { o.visible=false; camera.add(o); });
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        raycaster = new THREE.Raycaster();
+        // Map Visibility Boost
+        const grid = new THREE.GridHelper(1000, 50, 0x00d2ff, 0x111122);
+        scene.add(grid);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const light = new THREE.PointLight(0x00d2ff, 5, 400); light.position.set(0, 100, 0); scene.add(light);
 
-        // Lighting
-        scene.add(new THREE.AmbientLight(0x4b0082, 0.6));
-        const pLight = new THREE.PointLight(0x00d2ff, 2, 50);
-        pLight.position.set(0, 10, 0);
-        scene.add(pLight);
-
-        // Map Visuals
-        createInfiniteVoidMap();
-
-        // START
         document.getElementById('start-btn').onclick = () => {
-          document.body.requestPointerLock();
+          const overlay = document.getElementById('hand-sign-overlay');
+          overlay.style.display = 'flex';
           
-          // FORCED AUDIO START
-          const vox = new Audio(SOUNDS.expansion);
-          vox.volume = 1.0;
-          vox.play().catch(e => console.log("Audio Blocked", e));
-
-          const flash = document.getElementById('damage-flash');
-          flash.style.opacity = "1";
-          setTimeout(() => flash.style.opacity = "0", 1000);
+          setTimeout(() => {
+            document.body.requestPointerLock();
+            overlay.style.display = 'none';
+          }, 1500);
         };
 
-        document.addEventListener('pointerlockchange', () => {
+        document.addEventListener('pointerlockchange', () => { 
           isLocked = document.pointerLockElement === document.body;
-          document.getElementById('menu').style.display = isLocked ? 'none' : 'flex';
+          document.getElementById('menu').style.opacity = isLocked ? '0' : '1';
+          document.getElementById('menu').style.pointerEvents = isLocked ? 'none' : 'all';
+          document.getElementById('hud').style.opacity = isLocked ? '1' : '0';
         });
 
-        window.addEventListener('resize', onResize);
-        document.addEventListener('keydown', (e) => handleKey(e.code, true));
-        document.addEventListener('keyup', (e) => handleKey(e.code, false));
-        document.addEventListener('mousedown', onShoot);
-        document.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('keydown', (e) => {
+          if(e.code==='KeyW') moveState.f=1; if(e.code==='KeyS') moveState.b=1;
+          if(e.code==='KeyA') moveState.l=1; if(e.code==='KeyD') moveState.r=1;
+          if(e.code==='KeyE') toggleVoid();
+          if(e.code==='KeyQ') fireBlue();
+        });
+        window.addEventListener('keyup', (e) => {
+          if(e.code==='KeyW') moveState.f=0; if(e.code==='KeyS') moveState.b=0;
+          if(e.code==='KeyA') moveState.l=0; if(e.code==='KeyD') moveState.r=0;
+        });
+        window.addEventListener('mousedown', (e) => { 
+          if(!isLocked) return;
+          if(e.button === 0) isHolding = true; 
+          if(e.button === 2) fireRed(); 
+        });
+        window.addEventListener('mouseup', (e) => { if(e.button === 0) releaseShot(); });
+        window.addEventListener('contextmenu', e => e.preventDefault());
+        
+        document.addEventListener('mousemove', (e) => {
+          if(!isLocked) return;
+          yaw.rotation.y -= e.movementX * 0.002;
+          pitch.rotation.x -= e.movementY * 0.002;
+          pitch.rotation.x = Math.max(-1.5, Math.min(1.5, pitch.rotation.x));
+        });
       }
 
-      function createInfiniteVoidMap() {
-        // Reflective Floor
-        const grid = new THREE.GridHelper(200, 40, 0xbc13fe, 0x4b0082);
-        grid.position.y = 0.05;
-        scene.add(grid);
-
-        const floorGeo = new THREE.PlaneGeometry(1000, 1000);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x020005, metalness: 0.9, roughness: 0.1 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        scene.add(floor);
-
-        // Colorful Star Particles
-        const starGeo = new THREE.BufferGeometry();
-        const starCoords = [];
-        for(let i=0; i<2000; i++) {
-          starCoords.push((Math.random()-0.5)*200, Math.random()*100, (Math.random()-0.5)*200);
-        }
-        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.2, transparent: true });
-        const starField = new THREE.Points(starGeo, starMat);
-        scene.add(starField);
+      function toggleVoid() {
+        isFrozen = !isFrozen;
+        if(isFrozen) { health -= 5; document.body.style.filter = "invert(1) brightness(1.2)"; }
+        else document.body.style.filter = "none";
       }
 
-      function createChicken() {
+      function fireBlue() {
+        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+        const p = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshBasicMaterial({color: 0x00d2ff}));
+        p.position.copy(yaw.position);
+        p.userData = { vel: dir.multiplyScalar(150), isBlue: true };
+        scene.add(p); projectiles.push(p);
+      }
+
+      function fireRed() {
+        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+        const p = new THREE.Mesh(new THREE.SphereGeometry(0.7), new THREE.MeshBasicMaterial({color: 0xff0044}));
+        p.position.copy(yaw.position);
+        p.userData = { vel: dir.multiplyScalar(220), isRed: true };
+        scene.add(p); projectiles.push(p);
+      }
+
+      function spawnEnemy() {
+        if(isFrozen) return;
         const group = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xbc13fe, emissiveIntensity: 0.8 });
+        const mat = new THREE.MeshStandardMaterial({color: 0x111111});
+        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 1.8), mat);
+        body.position.y = 2.5; group.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.7), mat); head.position.y = 4.5;
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color:0xff0000})); eye.position.z = 0.5;
+        head.add(eye); group.add(head);
         
-        const body = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1.2), mat);
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), mat);
-        head.position.set(0, 0.8, 0.5);
-        
-        const blindfold = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.25, 0.75), new THREE.MeshBasicMaterial({color: 0x000000}));
-        blindfold.position.set(0, 0.85, 0.5);
-        
-        group.add(body, head, blindfold);
-        
-        const dist = 40;
-        const ang = Math.random() * Math.PI * 2;
-        group.position.set(yawObj.position.x + Math.cos(ang)*dist, 0, yawObj.position.z + Math.sin(ang)*dist);
-        
-        group.userData = { hp: 3, speed: 10 };
-        scene.add(group);
-        enemies.push(group);
+        const lLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 1.2), mat); lLeg.position.set(-0.5, 0.8, 0); group.add(lLeg);
+        const rLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 1.2), mat); rLeg.position.set(0.5, 0.8, 0); group.add(rLeg);
+
+        const hb = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.2), new THREE.MeshBasicMaterial({color: 0x00ff00}));
+        hb.position.y = 6; group.add(hb);
+
+        const angle = Math.random() * Math.PI * 2;
+        group.position.set(Math.cos(angle)*120 + yaw.position.x, 0, Math.sin(angle)*120 + yaw.position.z);
+        group.userData = { hp: 30, maxHp: 30, hb, lLeg, rLeg, speed: 12 };
+        scene.add(group); enemies.push(group);
       }
 
-      function onShoot() {
-        if (!isLocked || ammo <= 0) return;
-        ammo--;
-        new Audio(SOUNDS.purple).play();
-        
-        const egg = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshBasicMaterial({ color: 0xbc13fe }));
-        egg.position.copy(yawObj.position);
-        const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
-        egg.userData = { vel: dir.multiplyScalar(80) };
-        scene.add(egg);
-        projectiles.push(egg);
-        document.getElementById('ammo-txt').innerText = `${ammo} / 30`;
-      }
-
-      function handleKey(code, down) {
-        if(code==='KeyW') moveF=down; if(code==='KeyS') moveB=down;
-        if(code==='KeyA') moveL=down; if(code==='KeyD') moveR=down;
-        if(code==='Space' && down && canJump) { velocityY=12; canJump=false; }
-      }
-
-      function onMouseMove(e) {
-        if (!isLocked) return;
-        yawObj.rotation.y -= e.movementX * 0.002;
-        pitchObj.rotation.x -= e.movementY * 0.002;
-        pitchObj.rotation.x = Math.max(-1.5, Math.min(1.5, pitchObj.rotation.x));
-      }
-
-      function onResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+      function releaseShot() {
+        if(charge >= 1) {
+          const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+          const p = new THREE.Mesh(new THREE.SphereGeometry(6), new THREE.MeshStandardMaterial({color: 0xbc13fe, emissive: 0xbc13fe, transparent: true, opacity: 0.8}));
+          p.position.copy(yaw.position);
+          p.userData = { vel: dir.multiplyScalar(250), isPurple: true };
+          scene.add(p); projectiles.push(p);
+          pitch.rotation.x += 0.25;
+        }
+        isHolding = false; charge = 0; [orbB, orbR, orbP].forEach(o => o.visible=false);
+        document.getElementById('charge-ui').style.opacity = '0';
       }
 
       function animate() {
         requestAnimationFrame(animate);
-        if (!isLocked) return;
+        if(!isLocked) return;
+        const dt = clock.getDelta(), t = clock.getElapsedTime();
 
-        const time = performance.now();
-        const delta = (time - prevTime) / 1000;
-        prevTime = time;
+        velocity.lerp(new THREE.Vector3(moveState.r-moveState.l, 0, moveState.b-moveState.f).normalize().applyQuaternion(yaw.quaternion).multiplyScalar(50), 0.1);
+        yaw.position.add(velocity.clone().multiplyScalar(dt));
 
-        // Player movement
-        velocityY -= 30 * delta;
-        yawObj.position.y += velocityY * delta;
-        if (yawObj.position.y < 2) { velocityY = 0; yawObj.position.y = 2; canJump = true; }
-        const speed = 15 * delta;
-        if (moveF) yawObj.translateZ(-speed); if (moveB) yawObj.translateZ(speed);
-        if (moveL) yawObj.translateX(-speed); if (moveR) yawObj.translateX(speed);
-
-        // Spawn
-        if (time - lastSpawn > 1500) { createChicken(); lastSpawn = time; }
-
-        // Projectiles
-        projectiles.forEach((p, i) => {
-          p.position.add(p.userData.vel.clone().multiplyScalar(delta));
-          enemies.forEach((e, ei) => {
-            if (p.position.distanceTo(e.position) < 2) {
-              e.userData.hp--;
-              scene.remove(p); projectiles.splice(i, 1);
-              if (e.userData.hp <= 0) { score += 10; scene.remove(e); enemies.splice(ei, 1); }
-            }
-          });
-        });
-
-        // Enemies & TAKE DAMAGE LOGIC
-        enemies.forEach(e => {
-          e.lookAt(yawObj.position.x, 0, yawObj.position.z);
-          e.translateZ(e.userData.speed * delta);
-          
-          // If within range, take significant damage
-          if (e.position.distanceTo(yawObj.position) < 3.5) {
-            health -= 40 * delta; // You will die in ~2.5 seconds if standing still
-            document.getElementById('p-health-fill').style.width = health + '%';
-            
-            // Visual feedback
-            const flash = document.getElementById('damage-flash');
-            flash.style.background = "red";
-            flash.style.opacity = "0.2";
-            setTimeout(() => flash.style.opacity = "0", 50);
-
-            if(Math.random() > 0.98) new Audio(SOUNDS.hit).play();
-          }
-        });
-
-        if (health <= 0) {
-          alert("CURSED ENERGY DEPLETED");
-          location.reload();
+        if(isHolding) {
+          charge = Math.min(charge + dt * 1.5, 1);
+          document.getElementById('charge-ui').style.opacity = '1';
+          document.getElementById('charge-fill').style.width = (charge*100) + "%";
+          orbB.visible = orbR.visible = (charge < 1); orbP.visible = (charge >= 1);
+          if(charge < 1) { orbB.position.set(-1.5+charge, -0.6, -2); orbR.position.set(1.5-charge, -0.6, -2); }
+          else orbP.position.set(0, -0.6, -2);
         }
 
+        if(t - lastSpawn > 2 && !isFrozen) { spawnEnemy(); lastSpawn = t; }
+
+        projectiles.forEach((p, i) => {
+          p.position.add(p.userData.vel.clone().multiplyScalar(dt));
+          if(p.userData.isBlue) enemies.forEach(e => { if(p.position.distanceTo(e.position) < 30) e.position.lerp(p.position, 0.08); });
+          if(p.userData.isRed) enemies.forEach(e => { if(p.position.distanceTo(e.position) < 12) e.position.add(e.position.clone().sub(p.position).normalize().multiplyScalar(25)); });
+          if(p.userData.isPurple) enemies.forEach((e, ei) => { if(p.position.distanceTo(e.position) < 18) { scene.remove(e); enemies.splice(ei, 1); } });
+          if(p.position.length() > 800) { scene.remove(p); projectiles.splice(i, 1); }
+        });
+
+        enemies.forEach(e => {
+          if(!isFrozen) {
+            e.lookAt(yaw.position.x, 0, yaw.position.z); e.translateZ(e.userData.speed * dt);
+            const walk = Math.sin(t * 12); e.userData.lLeg.rotation.x = walk; e.userData.rLeg.rotation.x = -walk;
+          }
+          e.userData.hb.scale.x = e.userData.hp/e.userData.maxHp;
+          e.userData.hb.lookAt(camera.position);
+          if(e.position.distanceTo(yaw.position) < 6) health -= 0.3;
+        });
+
+        document.getElementById('hp-fill').style.width = health + "%";
+        if(health <= 0) location.reload();
         renderer.render(scene, camera);
       }
     </script>
