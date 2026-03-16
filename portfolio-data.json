@@ -154,6 +154,11 @@
       "name": "GT",
       "type": "directory",
       "repoUrl": "https://github.com/2526454-ship-it/GT"
+    },
+    {
+      "name": "my-eng-persent",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526454-ship-it/my-eng-persent"
     }
   ],
   "2526465-lgtm": [
@@ -175,6 +180,11 @@
       "repoUrl": "https://github.com/2526470-collab/GAME"
     },
     {
+      "name": "hk-public-holiday",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526470-collab/hk-public-holiday"
+    },
+    {
       "name": "hksc-woman-toilet",
       "type": "directory",
       "repoUrl": "https://github.com/2526470-collab/hksc-woman-toilet"
@@ -188,6 +198,11 @@
       "name": "stackblitz-starters-8lhyu1m1",
       "type": "directory",
       "repoUrl": "https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1"
+    },
+    {
+      "name": "stackblitz-starters-fzm8yjsl",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526470-collab/stackblitz-starters-fzm8yjsl"
     }
   ],
   "BARON1118": [
@@ -205,6 +220,11 @@
       "name": "hksc-water2",
       "type": "directory",
       "repoUrl": "https://github.com/BARON1118/hksc-water2"
+    },
+    {
+      "name": "kmb",
+      "type": "directory",
+      "repoUrl": "https://github.com/BARON1118/kmb"
     },
     {
       "name": "liftCounter",
@@ -252,6 +272,16 @@
       "name": "Game-1",
       "type": "directory",
       "repoUrl": "https://github.com/crazyjayhm/Game-1"
+    },
+    {
+      "name": "weather",
+      "type": "directory",
+      "repoUrl": "https://github.com/crazyjayhm/weather"
+    },
+    {
+      "name": "weather-2",
+      "type": "directory",
+      "repoUrl": "https://github.com/crazyjayhm/weather-2"
     }
   ],
   "EmilyLau41": [
@@ -313,6 +343,13 @@
       "repoUrl": "https://github.com/ethanhksc0930/simple-Hz-generator"
     }
   ],
+  "giovanniuufj": [
+    {
+      "name": "pet",
+      "type": "directory",
+      "repoUrl": "https://github.com/giovanniuufj/pet"
+    }
+  ],
   "haha197": [
     {
       "name": "chat",
@@ -355,6 +392,11 @@
       "name": "Hayden-mugffd",
       "type": "directory",
       "repoUrl": "https://github.com/hayden626/Hayden-mugffd"
+    },
+    {
+      "name": "hong-kong",
+      "type": "directory",
+      "repoUrl": "https://github.com/hayden626/hong-kong"
     },
     {
       "name": "Nba",

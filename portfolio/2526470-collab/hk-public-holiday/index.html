@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>香港公眾假期日曆 - 穩定版</title>
+    <style>
+        :root { --main-blue: #0056b3; --holiday-red: #d93025; }
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .calendar-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header h2 { margin: 0; color: var(--main-blue); font-size: 1.2em; }
+        table { width: 100%; border-collapse: collapse; }
+        th { color: #999; font-weight: normal; padding: 10px 0; font-size: 0.85em; }
+        td { text-align: center; padding: 12px 0; cursor: default; position: relative; border-radius: 8px; font-size: 1.1em; }
+        .is-holiday { background-color: #ffebee; color: var(--holiday-red); font-weight: bold; }
+        .is-holiday::after { content: ''; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--holiday-red); border-radius: 50%; }
+        .holiday-name { display: none; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap; z-index: 10; }
+        td:hover .holiday-name { display: block; }
+        .loading { font-size: 0.8em; color: #777; margin-top: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h1>📅 香港公眾假期</h1>
+    
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button onclick="changeMonth(-1)">❮</button>
+            <h2 id="monthDisplay">載入中...</h2>
+            <button onclick="changeMonth(1)">❯</button>
+        </div>
+        
+        <table>
+            <thead>
+                <tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr>
+            </thead>
+            <tbody id="calendarBody"></tbody>
+        </table>
+        <p id="status" class="loading">正在請求開放數據...</p>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let holidayMap = {}; 
+
+        async function init() {
+            await fetchHolidays();
+            renderCalendar();
+        }
+
+        async function fetchHolidays() {
+            const statusEl = document.getElementById('status');
+            const target = 'https://www.1823.gov.hk/common/ical/tc.json';
+            
+            // 使用 AllOrigins，但加入隨機參數 _cacheBuster 來解決之前的 CORS 緩存問題
+            const cacheBuster = encodeURIComponent('?t=' + Date.now());
+            const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}${cacheBuster}`;
+            
+            try {
+                const response = await fetch(proxy);
+                if (!response.ok) throw new Error("代理伺服器響應錯誤");
+                
+                const wrapper = await response.json();
+                const data = JSON.parse(wrapper.contents); 
+                
+                const events = data.vcalendar[0].vevent;
+                events.forEach(event => {
+                    holidayMap[event.dtstart[0]] = event.summary;
+                });
+                
+                statusEl.innerText = "✅ 假期數據同步成功";
+            } catch (e) {
+                console.error("Fetch Error:", e);
+                statusEl.innerHTML = `<span style="color:red">數據載入失敗，請重整頁面。</span>`;
+            }
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('monthDisplay').innerText = `${year}年 ${month + 1}月`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const tbody = document.getElementById('calendarBody');
+            tbody.innerHTML = '';
+
+            let date = 1;
+            for (let i = 0; i < 6; i++) {
+                let row = document.createElement('tr');
+                let hasDate = false;
+                for (let j = 0; j < 7; j++) {
+                    let cell = document.createElement('td');
+                    if (i === 0 && j < firstDay) {
+                        // 空格
+                    } else if (date > daysInMonth) {
+                        // 結束
+                    } else {
+                        const mStr = String(month + 1).padStart(2, '0');
+                        const dStr = String(date).padStart(2, '0');
+                        const dateKey = `${year}${mStr}${dStr}`;
+                        
+                        cell.innerText = date;
+                        if (holidayMap[dateKey]) {
+                            cell.className = 'is-holiday';
+                            cell.innerHTML += `<span class="holiday-name">${holidayMap[dateKey]}</span>`;
+                        }
+                        date++;
+                        hasDate = true;
+                    }
+                    row.appendChild(cell);
+                }
+                if (hasDate) tbody.appendChild(row);
+                if (date > daysInMonth) break;
+            }
+        }
+
+        function changeMonth(step) {
+            currentDate.setMonth(currentDate.getMonth() + step);
+            renderCalendar();
+        }
+
+        init();
+    </script>
+</body>
+</html>

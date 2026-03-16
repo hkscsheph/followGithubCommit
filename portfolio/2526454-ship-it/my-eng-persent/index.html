@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pillow Pall | Shark Tank Edition</title>
+    <style>
+      :root {
+        --navy: #2c3e50;
+        --teal: #4ca1af;
+        --orange: #e67e22;
+        --white: #ecf0f1;
+      }
+
+      body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        margin: 0;
+        color: var(--navy);
+        background-color: #f9f9f9;
+      }
+
+      header {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--teal) 100%);
+        color: white;
+        padding: 20px 0;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        text-align: center;
+      }
+
+      nav a {
+        color: white;
+        text-decoration: none;
+        margin: 0 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+      }
+
+      section {
+        padding: 60px 20px;
+        max-width: 900px;
+        margin: auto;
+        text-align: center;
+      }
+
+      .card {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+
+      .btn {
+        background-color: var(--orange);
+        color: white;
+        padding: 18px 40px;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        background-color: #d35400;
+      }
+
+      table {
+        width: 100%;
+        margin: 30px 0;
+        border-collapse: collapse;
+        background: white;
+      }
+
+      th {
+        background-color: var(--navy);
+        color: white;
+        padding: 15px;
+      }
+      td {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+      }
+
+      footer {
+        background: var(--navy);
+        color: white;
+        padding: 30px;
+        text-align: center;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="#hero">Home</a>
+        <a href="#about">The Story</a>
+        <a href="#numbers">Financials</a>
+        <a href="#contact">The Pitch</a>
+      </nav>
+    </header>
+
+    <section id="hero">
+      <div class="card">
+        <h1>
+          Pillow Pall:
+          <span style="color: var(--orange)">The Billion-Dollar</span> Nap
+        </h1>
+        <p>
+          Solving pet anxiety through the science of deep pressure stimulation.
+          A hug for your pet, even when you aren't there.
+        </p>
+        <br />
+        <button class="btn" onclick="scamJoke()">ORDER A BUNDLE</button>
+      </div>
+    </section>
+
+    <section id="about">
+      <h2>The Founder's Story</h2>
+      <div class="card">
+        <p style="text-align: left; line-height: 1.8">
+          I started Pillow Pall because my own pet couldn't find peace during
+          thunderstorms and fireworks. Traditional solutions were either
+          medication-heavy or ineffective.
+          <br /><br />
+          After working with veterinary consultants, I developed a weighted
+          system tailored specifically for pet physiology. Today, we aren't just
+          selling blankets; we are selling <strong>peace of mind</strong> for
+          pet parents worldwide.
+        </p>
+      </div>
+    </section>
+
+    <section id="numbers">
+      <h2>The Business Case</h2>
+      <div class="card">
+        <table>
+          <tr>
+            <th>Product Tier</th>
+            <th>Production Cost</th>
+            <th>Retail Price</th>
+            <th>Margin</th>
+          </tr>
+          <tr>
+            <td>Pillow Pall Standard</td>
+            <td>$12.00</td>
+            <td>$45.00</td>
+            <td style="color: green; font-weight: bold">73%</td>
+          </tr>
+          <tr>
+            <td>Pillow Pall Deluxe</td>
+            <td>$18.00</td>
+            <td>$75.00</td>
+            <td style="color: green; font-weight: bold">76%</td>
+          </tr>
+        </table>
+        <p><strong>Revenue (Last 6 Months):</strong> $250,000</p>
+        <p><strong>Customer Acquisition Cost:</strong> $8.50</p>
+      </div>
+    </section>
+
+    <section id="contact">
+      <div class="card" style="border: 2px solid var(--teal)">
+        <h2>The Ask</h2>
+        <p>
+          I am seeking <strong>$150,000 in exchange for 10% equity</strong> in
+          Pillow Pall.
+        </p>
+        <p>
+          This investment will go directly toward inventory and retail
+          distribution partnerships.
+        </p>
+        <br />
+        <button
+          class="btn"
+          style="background-color: var(--navy)"
+          onclick="scamJoke()"
+        >
+          MAKE AN OFFER
+        </button>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        &copy; 2026 Pillow Pall Technologies. Created for the Shark Tank
+        Presentation.
+      </p>
+    </footer>
+
+    <script>
+      function scamJoke() {
+        alert(
+          "🛑 WAIT A MINUTE! 🛑\n\nDid you just try to buy a demo product?\n\nThis is a 'SCAM'... just kidding! It's a joke for the presentation to show how high the demand is. \n\nClick 'OK' to continue the pitch."
+        );
+      }
+    </script>
+  </body>
+</html>

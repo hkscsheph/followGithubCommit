@@ -1,0 +1,408 @@
+<<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虛擬桌面寵物</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --pet-body: #ffeb3b;
+            --pet-eye: #333;
+            --accent-color: #ff5722;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: "Microsoft JhengHei", sans-serif;
+            background: #a8dadc; /* 模擬桌面背景色 */
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* 寵物容器 */
+        #pet-container {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            cursor: grab;
+            user-select: none;
+            z-index: 100;
+            transition: transform 0.1s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #pet-container:active {
+            cursor: grabbing;
+        }
+
+        /* 對話氣泡 */
+        #speech-bubble {
+            position: absolute;
+            top: -60px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            display: none;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        #speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
+        }
+
+        /* 寵物身體設計 */
+        .pet-body {
+            width: 80px;
+            height: 80px;
+            background: var(--pet-body);
+            border-radius: 50% 50% 40% 40%;
+            position: relative;
+            box-shadow: inset -5px -5px 0 rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .eye {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--pet-eye);
+            border-radius: 50%;
+            top: 30px;
+            transition: height 0.1s;
+        }
+
+        .eye.left { left: 20px; }
+        .eye.right { right: 20px; }
+
+        .mouth {
+            position: absolute;
+            width: 20px;
+            height: 10px;
+            border-bottom: 3px solid #333;
+            border-radius: 50%;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* 狀態面板 */
+        #status-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 200px;
+        }
+
+        .stat-bar {
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            margin: 5px 0 15px 0;
+            overflow: hidden;
+        }
+
+        .fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        #hunger-fill { background: #4caf50; width: 100%; }
+        #happy-fill { background: #2196f3; width: 100%; }
+        #energy-fill { background: #ff9800; width: 100%; }
+
+        /* 控制按鈕 */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* 動畫 */
+        @keyframes bounce {
+            from { transform: translateY(0) translateX(-50%); }
+            to { transform: translateY(-5px) translateX(-50%); }
+        }
+
+        .blink {
+            height: 2px !important;
+        }
+
+        .jumping {
+            animation: jump 0.4s ease;
+        }
+
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 狀態面板 -->
+    <div id="status-panel">
+        <div>肚子餓度: <span id="hunger-text">100</span>%</div>
+        <div class="stat-bar"><div id="hunger-fill" class="fill"></div></div>
+        
+        <div>幸福程度: <span id="happy-text">100</span>%</div>
+        <div class="stat-bar"><div id="happy-fill" class="fill"></div></div>
+        
+        <div>體力值: <span id="energy-text">100</span>%</div>
+        <div class="stat-bar"><div id="energy-fill" class="fill"></div></div>
+    </div>
+
+    <!-- 寵物實體 -->
+    <div id="pet-container">
+        <div id="speech-bubble">哈囉！</div>
+        <div class="pet-body">
+            <div class="eye left" id="eye-l"></div>
+            <div class="eye right" id="eye-r"></div>
+            <div class="mouth"></div>
+        </div>
+    </div>
+
+    <!-- 互動控制 -->
+    <div class="controls">
+        <button onclick="interact('feed')">餵食 🍎</button>
+        <button onclick="interact('play')">玩耍 ⚽</button>
+        <button onclick="interact('sleep')">睡覺 💤</button>
+    </div>
+
+    <script>
+        // 狀態變數
+        const state = {
+            hunger: 100,
+            happy: 100,
+            energy: 100,
+            posX: window.innerWidth / 2 - 60,
+            posY: window.innerHeight - 150,
+            velY: 0,
+            isDragging: false,
+            isSleeping: false
+        };
+
+        const pet = document.getElementById('pet-container');
+        const bubble = document.getElementById('speech-bubble');
+        const gravity = 0.8;
+        const bounceFactor = -0.4;
+
+        // 初始化位置
+        function init() {
+            updatePosition();
+            startLoops();
+        }
+
+        // 定時更新狀態與行為
+        function startLoops() {
+            // 狀態衰減
+            setInterval(() => {
+                if (state.isSleeping) {
+                    state.energy = Math.min(100, state.energy + 5);
+                    state.hunger = Math.max(0, state.hunger - 1);
+                    if (state.energy >= 100) wakeUp();
+                } else {
+                    state.hunger = Math.max(0, state.hunger - 0.5);
+                    state.happy = Math.max(0, state.happy - 0.3);
+                    state.energy = Math.max(0, state.energy - 0.2);
+                }
+                updateUI();
+            }, 1000);
+
+            // 物理引擎循環
+            function physicsUpdate() {
+                if (!state.isDragging) {
+                    state.velY += gravity;
+                    state.posY += state.velY;
+
+                    // 碰撞地板
+                    const floor = window.innerHeight - 120;
+                    if (state.posY > floor) {
+                        state.posY = floor;
+                        state.velY *= bounceFactor;
+                        if (Math.abs(state.velY) < 1) state.velY = 0;
+                    }
+                    updatePosition();
+                }
+                requestAnimationFrame(physicsUpdate);
+            }
+            requestAnimationFrame(physicsUpdate);
+
+            // 隨機行為
+            setInterval(() => {
+                if (!state.isDragging && !state.isSleeping) {
+                    const rand = Math.random();
+                    if (rand < 0.2) blink();
+                    if (rand < 0.1) speak(["好無聊喔...", "摸摸我！", "肚子餓了嗎？", "啦啦啦~"][Math.floor(Math.random()*4)]);
+                    if (rand < 0.05) randomMove();
+                }
+            }, 3000);
+        }
+
+        // 互動函數
+        function interact(type) {
+            if (state.isSleeping && type !== 'sleep') {
+                speak("我在睡覺啦...");
+                return;
+            }
+
+            switch(type) {
+                case 'feed':
+                    if (state.hunger >= 100) {
+                        speak("好撐喔！");
+                    } else {
+                        state.hunger = Math.min(100, state.hunger + 20);
+                        speak("好好吃！😋");
+                        jump();
+                    }
+                    break;
+                case 'play':
+                    if (state.energy < 20) {
+                        speak("我累壞了...");
+                    } else {
+                        state.happy = Math.min(100, state.happy + 25);
+                        state.energy -= 15;
+                        speak("太好玩了！🎉");
+                        jump();
+                    }
+                    break;
+                case 'sleep':
+                    if (!state.isSleeping) {
+                        state.isSleeping = true;
+                        speak("晚安...💤");
+                        document.querySelector('.pet-body').style.opacity = "0.7";
+                    } else {
+                        wakeUp();
+                    }
+                    break;
+            }
+            updateUI();
+        }
+
+        function wakeUp() {
+            state.isSleeping = false;
+            speak("早安！☀️");
+            document.querySelector('.pet-body').style.opacity = "1";
+        }
+
+        // 視覺效果函數
+        function updatePosition() {
+            pet.style.left = state.posX + 'px';
+            pet.style.top = state.posY + 'px';
+        }
+
+        function updateUI() {
+            document.getElementById('hunger-text').innerText = Math.floor(state.hunger);
+            document.getElementById('hunger-fill').style.width = state.hunger + '%';
+            document.getElementById('happy-text').innerText = Math.floor(state.happy);
+            document.getElementById('happy-fill').style.width = state.happy + '%';
+            document.getElementById('energy-text').innerText = Math.floor(state.energy);
+            document.getElementById('energy-fill').style.width = state.energy + '%';
+        }
+
+        function speak(text) {
+            bubble.innerText = text;
+            bubble.style.display = 'block';
+            setTimeout(() => {
+                bubble.style.display = 'none';
+            }, 2500);
+        }
+
+        function blink() {
+            const eyes = [document.getElementById('eye-l'), document.getElementById('eye-r')];
+            eyes.forEach(e => e.classList.add('blink'));
+            setTimeout(() => {
+                eyes.forEach(e => e.classList.remove('blink'));
+            }, 150);
+        }
+
+        function jump() {
+            pet.classList.add('jumping');
+            setTimeout(() => pet.classList.remove('jumping'), 400);
+        }
+
+        function randomMove() {
+            const moveX = (Math.random() - 0.5) * 100;
+            state.posX = Math.max(0, Math.min(window.innerWidth - 120, state.posX + moveX));
+            updatePosition();
+        }
+
+        // 拖曳處理
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        pet.addEventListener('mousedown', (e) => {
+            state.isDragging = true;
+            dragOffsetX = e.clientX - state.posX;
+            dragOffsetY = e.clientY - state.posY;
+            state.velY = 0;
+            pet.style.transition = "none";
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (state.isDragging) {
+                state.posX = e.clientX - dragOffsetX;
+                state.posY = e.clientY - dragOffsetY;
+                updatePosition();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (state.isDragging) {
+                state.isDragging = false;
+                pet.style.transition = "transform 0.1s ease-out";
+            }
+        });
+
+        // 處理視窗大小改變
+        window.addEventListener('resize', () => {
+            state.posX = Math.min(state.posX, window.innerWidth - 120);
+            state.posY = Math.min(state.posY, window.innerHeight - 120);
+        });
+
+        // 啟動
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港九天天氣預報</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", Arial, sans-serif; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #2c3e50; }
+        #weather-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 100%; max-width: 1000px; }
+        .forecast-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; border-top: 5px solid #3498db; }
+        .date { font-weight: bold; color: #7f8c8d; }
+        .temp { font-size: 1.2em; margin: 10px 0; color: #e67e22; }
+        .desc { font-size: 0.9em; color: #34495e; }
+        .loading { font-style: italic; color: #95a5a6; }
+    </style>
+</head>
+<body>
+
+    <h1>香港九天天氣預報</h1>
+    <div id="weather-container" class="loading">正在載入天氣數據...</div>
+
+    <script>
+        const apiURL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc";
+
+        async function fetchWeather() {
+            try {
+                const response = await fetch(apiURL);
+                const data = await response.json();
+                displayWeather(data.weatherForecast);
+            } catch (error) {
+                console.error("獲取數據失敗:", error);
+                document.getElementById('weather-container').innerHTML = "暫時無法獲取天氣數據，請稍後再試。";
+            }
+        }
+
+        function displayWeather(forecasts) {
+            const container = document.getElementById('weather-container');
+            container.innerHTML = ""; // 清除加載中文字
+            container.classList.remove('loading');
+
+            forecasts.forEach(day => {
+                const card = document.createElement('div');
+                card.className = 'forecast-card';
+
+                // 格式化日期 (例如: 20231024 -> 10月24日)
+                const rawDate = day.forecastDate;
+                const formattedDate = `${rawDate.substring(4, 6)}月${rawDate.substring(6, 8)}日`;
+
+                card.innerHTML = `
+                    <div class="date">${formattedDate} (${day.week})</div>
+                    <div class="temp">${day.forecastMintemp.value}°C - ${day.forecastMaxtemp.value}°C</div>
+                    <div class="desc">${day.forecastWeather}</div>
+                    <div style="font-size: 0.8em; margin-top:10px; color:#95a5a6;">濕度: ${day.forecastMinrh.value}% - ${day.forecastMaxrh.value}%</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 執行抓取
+        fetchWeather();
+    </script>
+</body>
+</html>

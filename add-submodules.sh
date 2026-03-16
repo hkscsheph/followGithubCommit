@@ -15,6 +15,7 @@ git submodule add https://github.com/haha197/chat.git portfolio/haha197/chat
 git submodule add https://github.com/kou1gn/stackblitz-instagram-screenshot-maker.git portfolio/kou1gn/stackblitz-instagram-screenshot-maker
 git submodule add https://github.com/kou1gn/stackblitz-starters-chatroom.git portfolio/kou1gn/stackblitz-starters-chatroom
 git submodule add https://github.com/kou1gn/20250912-1st-repo.git portfolio/kou1gn/20250912-1st-repo
+git submodule add https://github.com/BARON1118/kmb.git portfolio/BARON1118/kmb
 git submodule add https://github.com/BARON1118/hksc-water2.git portfolio/BARON1118/hksc-water2
 git submodule add https://github.com/BARON1118/stackblitz-starters-rjvwwbjg.git portfolio/BARON1118/stackblitz-starters-rjvwwbjg
 git submodule add https://github.com/BARON1118/hksc-water.git portfolio/BARON1118/hksc-water
@@ -28,6 +29,7 @@ git submodule add https://github.com/EmilyLau41/skyapp.git portfolio/EmilyLau41/
 git submodule add https://github.com/EmilyLau41/cheat-room.git portfolio/EmilyLau41/cheat-room
 git submodule add https://github.com/EmilyLau41/-.git portfolio/EmilyLau41/-
 git submodule add https://github.com/EmilyLau41/emotionapp.git portfolio/EmilyLau41/emotionapp
+git submodule add https://github.com/giovanniuufj/pet.git portfolio/giovanniuufj/pet
 git submodule add https://github.com/2526452-cmd/leave-slip.git portfolio/2526452-cmd/leave-slip
 git submodule add https://github.com/2526452-cmd/stackblitz-starters-w5396haj.git portfolio/2526452-cmd/stackblitz-starters-w5396haj
 git submodule add https://github.com/2526452-cmd/6-2-2026.git portfolio/2526452-cmd/6-2-2026
@@ -40,9 +42,11 @@ git submodule add https://github.com/2526453/i-need-ur-locations.git portfolio/2
 git submodule add https://github.com/2526453/chatroom-but-GREEEEEEEEEEEN.git portfolio/2526453/chatroom-but-GREEEEEEEEEEEN
 git submodule add https://github.com/2526453/weeeeeeeeeeee.git portfolio/2526453/weeeeeeeeeeee
 git submodule add https://github.com/2526453/meow.git portfolio/2526453/meow
+git submodule add https://github.com/2526454-ship-it/my-eng-persent.git portfolio/2526454-ship-it/my-eng-persent
 git submodule add https://github.com/2526454-ship-it/CW-chcicken-Warfare.git portfolio/2526454-ship-it/CW-chcicken-Warfare
 git submodule add https://github.com/2526454-ship-it/GT.git portfolio/2526454-ship-it/GT
 git submodule add https://github.com/2526454-ship-it/ni.git portfolio/2526454-ship-it/ni
+git submodule add https://github.com/hayden626/hong-kong.git portfolio/hayden626/hong-kong
 git submodule add https://github.com/hayden626/Nba.git portfolio/hayden626/Nba
 git submodule add https://github.com/hayden626/po-1.git portfolio/hayden626/po-1
 git submodule add https://github.com/hayden626/game-BOS.git portfolio/hayden626/game-BOS
@@ -65,11 +69,15 @@ git submodule add https://github.com/2223176-tech/stackblitz-starters-6xsn86o2nb
 git submodule add https://github.com/2223176-tech/one-game.git portfolio/2223176-tech/one-game
 git submodule add https://github.com/2223176-tech/nba-marks-scot.git portfolio/2223176-tech/nba-marks-scot
 git submodule add https://github.com/2223176-tech/nba-marks-sc.git portfolio/2223176-tech/nba-marks-sc
+git submodule add https://github.com/2526470-collab/hk-public-holiday.git portfolio/2526470-collab/hk-public-holiday
+git submodule add https://github.com/2526470-collab/stackblitz-starters-fzm8yjsl.git portfolio/2526470-collab/stackblitz-starters-fzm8yjsl
 git submodule add https://github.com/2526470-collab/GAME.git portfolio/2526470-collab/GAME
 git submodule add https://github.com/2526470-collab/-messages.git portfolio/2526470-collab/-messages
 git submodule add https://github.com/2526470-collab/stackblitz-starters-8lhyu1m1.git portfolio/2526470-collab/stackblitz-starters-8lhyu1m1
 git submodule add https://github.com/2526470-collab/hksc-woman-toilet.git portfolio/2526470-collab/hksc-woman-toilet
 git submodule add https://github.com/2526470-collab/Krystal.git portfolio/2526470-collab/Krystal
+git submodule add https://github.com/crazyjayhm/weather-2.git portfolio/crazyjayhm/weather-2
+git submodule add https://github.com/crazyjayhm/weather.git portfolio/crazyjayhm/weather
 git submodule add https://github.com/crazyjayhm/Game-1.git portfolio/crazyjayhm/Game-1
 git submodule add https://github.com/crazyjayhm/game.git portfolio/crazyjayhm/game
 git submodule add https://github.com/crazyjayhm/ai-2.git portfolio/crazyjayhm/ai-2

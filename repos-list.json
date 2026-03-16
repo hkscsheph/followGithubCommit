@@ -117,6 +117,11 @@
     "user": "BARON1118",
     "repos": [
       {
+        "name": "kmb",
+        "url": "https://github.com/BARON1118/kmb.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "hksc-water2",
         "url": "https://github.com/BARON1118/hksc-water2.git",
         "description": "Created with StackBlitz ⚡️"
@@ -195,7 +200,13 @@
   },
   {
     "user": "giovanniuufj",
-    "repos": []
+    "repos": [
+      {
+        "name": "pet",
+        "url": "https://github.com/giovanniuufj/pet.git",
+        "description": "Created with StackBlitz ⚡️"
+      }
+    ]
   },
   {
     "user": "2526452-cmd",
@@ -271,6 +282,11 @@
     "user": "2526454-ship-it",
     "repos": [
       {
+        "name": "my-eng-persent",
+        "url": "https://github.com/2526454-ship-it/my-eng-persent.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "CW-chcicken-Warfare",
         "url": "https://github.com/2526454-ship-it/CW-chcicken-Warfare.git",
         "description": "Created with StackBlitz ⚡️"
@@ -290,6 +306,11 @@
   {
     "user": "hayden626",
     "repos": [
+      {
+        "name": "hong-kong",
+        "url": "https://github.com/hayden626/hong-kong.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "Nba",
         "url": "https://github.com/hayden626/Nba.git",
@@ -421,6 +442,16 @@
     "user": "2526470-collab",
     "repos": [
       {
+        "name": "hk-public-holiday",
+        "url": "https://github.com/2526470-collab/hk-public-holiday.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
+        "name": "stackblitz-starters-fzm8yjsl",
+        "url": "https://github.com/2526470-collab/stackblitz-starters-fzm8yjsl.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
         "name": "GAME",
         "url": "https://github.com/2526470-collab/GAME.git",
         "description": "Created with StackBlitz ⚡️"
@@ -450,6 +481,16 @@
   {
     "user": "crazyjayhm",
     "repos": [
+      {
+        "name": "weather-2",
+        "url": "https://github.com/crazyjayhm/weather-2.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
+      {
+        "name": "weather",
+        "url": "https://github.com/crazyjayhm/weather.git",
+        "description": "Created with StackBlitz ⚡️"
+      },
       {
         "name": "Game-1",
         "url": "https://github.com/crazyjayhm/Game-1.git",

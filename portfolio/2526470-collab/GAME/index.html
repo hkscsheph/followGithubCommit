@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>魔法系統 - 完整循環版</title>
+    <title>魔法系統 - BOSS 全方位彈幕版</title>
     <style>
         :root { --magic-blue: #00d4ff; --magic-ice: #a0f0ff; --dark-bg: #05050a; --hp-red: #ff3333; --player-hp: #2ecc71; }
         body, html { margin: 0; padding: 0; overflow: hidden; background: var(--dark-bg); font-family: sans-serif; }
@@ -62,14 +62,12 @@
 
     <div id="game-over" class="full-screen">
         <h1 class="death-text">同步中斷</h1>
-        <p style="color: #ffaaaa; margin-bottom: 40px;">連結訊號丟失...</p>
         <button class="btn btn-red" onclick="App.reset()">重新啟動連結</button>
     </div>
 
     <div id="game-win" class="full-screen">
         <h1 class="win-text">同步成功</h1>
-        <p style="color: #a0f0ff; margin-bottom: 40px;">核心守護者已淨化，系統恢復運作。</p>
-        <button class="btn" onclick="App.reset()">再次進入系統</button>
+        <button class="btn" onclick="App.backToMenu()">回到初始畫面</button>
     </div>
 </div>
 
@@ -87,9 +85,17 @@ window.App = (function() {
 
     const scenes = {
         ROOM: { title: "〈 遺 忘 之 室 〉", map: [[1,1,1,1,1,1,1,1],[1,0,0,0,5,0,0,1],[1,0,0,0,0,3,0,4],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]] },
-        CORRIDOR: { title: "〈 幽 暗 長 走 廊 〉", map: [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[4,0,0,0,0,0,0,0,0,0,0,0,0,0,4],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]], lasers: [{x:3,y:1,vx:0.06,vy:0.04},{x:10,y:2,vx:-0.05,vy:-0.05}] },
-        ENEMY_ROOM: { title: "〈 殲 滅 區 域 〉", map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,4],[1,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1]], enemies: [{x:3,y:2,startX:2,endX:7,dir:1,speed:0.06,isAlive:true},{x:5,y:1,startX:2,endX:7,dir:-1,speed:0.04,isAlive:true}] },
-        BOSS_ROOM: { title: "〈 核 心 殿 堂 〉", map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1]] }
+        CORRIDOR: { 
+            title: "〈 幽 暗 長 走 廊 〉", 
+            map: [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[4,0,0,0,0,0,0,0,0,0,0,0,0,0,4],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]], 
+            lasers: [{x:3,y:1,vx:0.06,vy:0.04},{x:10,y:2,vx:-0.05,vy:-0.05}] 
+        },
+        ENEMY_ROOM: { 
+            title: "〈 殲 滅 區 域 〉", 
+            map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,1],[4,0,0,0,0,0,0,0,4],[1,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1]], 
+            enemies: [{x:3,y:2,startX:2,endX:7,dir:1,speed:0.06,isAlive:true},{x:5,y:1,startX:2,endX:7,dir:-1,speed:0.04,isAlive:true}] 
+        },
+        BOSS_ROOM: { title: "〈 核 心 殿 堂 〉", map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,1],[4,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1]] }
     };
 
     let currentMap = scenes.ROOM.map;
@@ -101,8 +107,7 @@ window.App = (function() {
 
     function takeDamage(amount) {
         if (player.invul > 0 || state !== "PLAY") return;
-        player.hp -= amount;
-        player.invul = 60;
+        player.hp -= amount; player.invul = 60;
         explode(ox + player.x * TILE + 32, oy + player.y * TILE + 32, "red");
         if (player.hp <= 0) { player.hp = 0; state = "GAMEOVER"; document.getElementById('game-over').style.display = 'flex'; }
         updateUI();
@@ -111,7 +116,6 @@ window.App = (function() {
     function gameWin() {
         state = "WIN";
         explode(ox + boss.x * TILE + 32, oy + boss.y * TILE + 32, "white", 50);
-        explode(ox + boss.x * TILE + 32, oy + boss.y * TILE + 32, "#00d4ff", 50);
         setTimeout(() => { document.getElementById('game-win').style.display = 'flex'; }, 1000);
     }
 
@@ -121,17 +125,23 @@ window.App = (function() {
     }
 
     function changeScene(sceneName, px, py) {
-        currentScene = sceneName; currentMap = scenes[sceneName].map;
+        currentScene = sceneName; 
+        currentMap = scenes[sceneName].map;
         enemies = JSON.parse(JSON.stringify(scenes[sceneName].enemies || []));
         lasers = JSON.parse(JSON.stringify(scenes[sceneName].lasers || []));
-        player.x = px; player.y = py; chest = null; 
+        player.x = px; player.y = py; chest = null;
         projectiles.length = 0; enemyProjectiles.length = 0;
-        doorOpen = (sceneName === "CORRIDOR"); 
+        doorOpen = (sceneName === "CORRIDOR" || sceneName === "ROOM"); 
         document.getElementById('room-title').innerText = scenes[sceneName].title;
         document.getElementById('boss-ui').style.display = (sceneName === "BOSS_ROOM") ? 'block' : 'none';
-        if (sceneName === "BOSS_ROOM") boss = { x: 4, y: 1, hp: 100, maxHp: 100, dir: 1, speed: 0.04, lastShot: 0 };
+        if (sceneName === "BOSS_ROOM") boss = { x: 4, y: 2, hp: 100, maxHp: 100, dir: 1, speed: 0.04, lastShot: 0 };
         else boss = null;
         updateUI();
+    }
+
+    function fullReset() {
+        player.hp = 100; player.invul = 0; hasMagic = false; hasIcePower = false;
+        scenes.ROOM.map[1][4] = 5; scenes.ROOM.map[2][5] = 3;
     }
 
     window.addEventListener('keydown', (e) => {
@@ -140,16 +150,25 @@ window.App = (function() {
         if (k==='w'||k==='arrowup') dy=-1; if (k==='s'||k==='arrowdown') dy=1;
         if (k==='a'||k==='arrowleft') dx=-1; if (k==='d'||k==='arrowright') dx=1;
         const nx = player.x + dx, ny = player.y + dy;
-        if (currentMap[ny] && (currentMap[ny][nx] === 0 || currentMap[ny][nx] === 4)) { 
+
+        if (currentMap[ny] && (currentMap[ny][nx] === 0 || currentMap[ny][nx] === 4)) {
             if (currentMap[ny][nx] === 4 && !doorOpen) return;
-            player.x = nx; player.y = ny; 
-            if (currentMap[ny][nx] === 4 && doorOpen) {
-                if (currentScene === "ROOM") changeScene("CORRIDOR", 13, 2);
-                else if (currentScene === "CORRIDOR") changeScene("ENEMY_ROOM", 1, 2);
-                else if (currentScene === "ENEMY_ROOM") changeScene("BOSS_ROOM", 4, 5);
+            player.x = nx; player.y = ny;
+            if (currentMap[ny][nx] === 4) {
+                if (currentScene === "ROOM") changeScene("CORRIDOR", 1, 2);
+                else if (currentScene === "CORRIDOR") {
+                    if (nx === 0) changeScene("ROOM", 6, 2);
+                    else changeScene("ENEMY_ROOM", 1, 2);
+                } 
+                else if (currentScene === "ENEMY_ROOM") {
+                    if (nx === 0) changeScene("CORRIDOR", 13, 2);
+                    else changeScene("BOSS_ROOM", 1, 2);
+                }
+                else if (currentScene === "BOSS_ROOM") { if (nx === 0) changeScene("ENEMY_ROOM", 7, 2); }
             }
-        } else if (currentMap[ny] && currentMap[ny][nx] === 3) { hasMagic=true; currentMap[ny][nx]=0; explode(nx*TILE+32+ox, ny*TILE+32+oy, "#00d4ff"); }
-        if (chest && player.x === chest.x && player.y === chest.y) { hasIcePower = true; chest = null; explode(player.x*TILE+32+ox, player.y*TILE+32+oy, "gold"); }
+        } else if (currentMap[ny] && currentMap[ny][nx] === 3) {
+            hasMagic=true; currentMap[ny][nx]=0; explode(nx*TILE+32+ox, ny*TILE+32+oy, "#00d4ff");
+        }
     });
 
     canvas.addEventListener('mousedown', (e) => {
@@ -183,16 +202,30 @@ window.App = (function() {
                 });
                 if (enemies.every(e => !e.isAlive)) { if (!hasIcePower && !chest) chest = { x: 4, y: 2 }; doorOpen = true; }
             }
-            if (chest) { ctx.fillStyle = "#ffd700"; ctx.fillRect(ox+chest.x*TILE+16, oy+chest.y*TILE+16, 32, 32); }
+            if (chest) { ctx.fillStyle = "#ffd700"; ctx.fillRect(ox+chest.x*TILE+16, oy+chest.y*TILE+16, 32, 32); if(player.x===chest.x && player.y===chest.y){ hasIcePower=true; chest=null; explode(ox+player.x*TILE+32, oy+player.y*TILE+32, "gold");} }
+            
+            // BOSS 邏輯更新
             if (boss) {
                 boss.x += boss.speed * boss.dir; if (boss.x > 7 || boss.x < 1) boss.dir *= -1;
-                if (Date.now() - boss.lastShot > 1200) {
-                    for(let i=0; i<3; i++) enemyProjectiles.push({ x: ox + boss.x*TILE + 32, y: oy + boss.y*TILE + 32, vx: (i-1)*4, vy: 6 });
+                
+                // 360 度射擊邏輯
+                if (Date.now() - boss.lastShot > 2000) { 
+                    const bulletCount = 12; // 發射 12 個方向
+                    for(let i = 0; i < bulletCount; i++) {
+                        const angle = (i / bulletCount) * Math.PI * 2;
+                        enemyProjectiles.push({ 
+                            x: ox + boss.x * TILE + 32, 
+                            y: oy + boss.y * TILE + 32, 
+                            vx: Math.cos(angle) * 5, 
+                            vy: Math.sin(angle) * 5 
+                        });
+                    }
                     boss.lastShot = Date.now();
                 }
-                ctx.fillStyle = "#ff3366"; ctx.shadowBlur = 20; ctx.shadowColor = "red";
+                ctx.fillStyle = "#ff3366"; ctx.shadowBlur = 15; ctx.shadowColor = "red";
                 ctx.fillRect(ox + boss.x*TILE, oy + boss.y*TILE, TILE, TILE); ctx.shadowBlur = 0;
             }
+
             projectiles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy;
                 ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill();
@@ -207,12 +240,15 @@ window.App = (function() {
                     if (boss.hp <= 0) gameWin();
                 }
             });
+
+            // 敵方子彈 (包含 360 度移動)
             enemyProjectiles.forEach((p, i) => {
-                p.y += p.vy; p.x += p.vx;
+                p.x += p.vx; p.y += p.vy;
                 ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill();
-                if (Math.hypot(p.x - (ox + player.x*TILE + 32), p.y - (oy + player.y*TILE + 32)) < 22) takeDamage(15);
-                if (p.y > canvas.height || p.x < 0 || p.x > canvas.width) enemyProjectiles.splice(i, 1);
+                if (Math.hypot(p.x - (ox + player.x*TILE + 32), p.y - (oy + player.y*TILE + 32)) < 22) { takeDamage(15); enemyProjectiles.splice(i, 1); return; }
+                if (p.y > canvas.height || p.y < 0 || p.x < 0 || p.x > canvas.width) enemyProjectiles.splice(i, 1);
             });
+
             lasers.forEach(l => {
                 l.x += l.vx; l.y += l.vy; if (l.x <= 1 || l.x >= 13) l.vx *= -1; if (l.y <= 1 || l.y >= 3) l.vy *= -1;
                 ctx.strokeStyle = "red"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(ox+l.x*TILE+12, oy+l.y*TILE+12); ctx.lineTo(ox+l.x*TILE+52, oy+l.y*TILE+52); ctx.stroke();
@@ -240,10 +276,13 @@ window.App = (function() {
         start: () => { document.getElementById('overlay').style.display='none'; state="PLAY"; changeScene("ROOM", 1, 2); },
         reset: () => { 
             document.getElementById('game-over').style.display='none'; 
+            fullReset(); state="PLAY"; changeScene("ROOM", 1, 2); 
+        },
+        backToMenu: () => {
             document.getElementById('game-win').style.display='none'; 
-            player.hp = 100; player.invul = 0; hasMagic = false; hasIcePower = false; 
-            scenes.ROOM.map[1][4] = 5; scenes.ROOM.map[2][5] = 3; 
-            state="PLAY"; changeScene("ROOM", 1, 2); 
+            document.getElementById('overlay').style.display='flex'; 
+            fullReset(); state = "MENU";
+            document.getElementById('boss-ui').style.display = 'none';
         }
     };
 })();

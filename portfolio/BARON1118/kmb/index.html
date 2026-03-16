@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HKSTP Local Transport Data</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
+        .container { max-width: 800px; margin: auto; }
+        .transport-item { 
+            background: white; padding: 15px; margin-bottom: 10px; 
+            border-left: 5px solid #005596; border-radius: 4px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .route { font-size: 1.2em; font-weight: bold; }
+        .dir-in { color: #28a745; font-weight: bold; }
+        .dir-out { color: #007bff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>HKSTP Transport (Local Data)</h1>
+    <div id="display-area">Loading local data...</div>
+</div>
+
+<script>
+    async function loadLocalData() {
+        const display = document.getElementById('display-area');
+        
+        try {
+            // Fetching the local file in the same directory
+            const response = await fetch('./public-transportation.json');
+            if (!response.ok) throw new Error("Could not find public-transportation.json");
+            
+            const data = await response.json();
+            display.innerHTML = ''; // Clear loading text
+
+            data.value.forEach(item => {
+                const isToPark = item.bound === 'I';
+                const div = document.createElement('div');
+                div.className = 'transport-item';
+                div.innerHTML = `
+                    <div>
+                        <span class="route">${item.route}</span> - ${item.operator}<br>
+                        <small>${item.orig_en} ➔ ${item.dest_en}</small>
+                    </div>
+                    <div class="${isToPark ? 'dir-in' : 'dir-out'}">
+                        ${isToPark ? 'To Park ➔' : 'Leaving ➔'}
+                    </div>
+                `;
+                display.appendChild(div);
+            });
+        } catch (err) {
+            display.innerHTML = `<p style="color:red">Error: ${err.message}. Ensure the JSON file is in the same folder as this HTML.</p>`;
+        }
+    }
+
+    loadLocalData();
+</script>
+</body>
+</html>

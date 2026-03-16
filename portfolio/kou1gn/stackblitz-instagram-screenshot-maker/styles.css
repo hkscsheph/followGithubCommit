@@ -58,6 +58,15 @@ body {
   .username {
     font-weight: 600;
     margin-right: 4px;
+
+  }
+
+  .comment-time {
+    color: #BDBBBE;
+  }
+
+  .text {
+    margin-top: 5px; margin-bottom: 5px;
   }
   
   .comment-footer {
@@ -65,7 +74,7 @@ body {
     gap: 15px;
     font-size: 12px;
     color: #BDBBBE;
-    margin-top: 8px;
+    margin-top: 0px;
   }
   
   .footer-action {
@@ -75,18 +84,13 @@ body {
   .view-replies {
     display: flex;
     align-items: center;
-    margin-top: 16px;
+    margin-top: 15px;
     color: #BDBBBE;
     font-size: 12px;
     font-weight: 600;
+    margin-left: 30px;
   }
   
-  .view-replies .line {
-    width: 24px;
-    height: 1px;
-    background: #BDBBBE;
-    margin-right: 12px;
-  }
   
   .comment-side {
     display: flex;
@@ -96,7 +100,7 @@ body {
   }
   
   .heart-icon svg {
-    fill: #a8a8a8;
+    fill: #BDBBBE;
     cursor: pointer;
   }
   

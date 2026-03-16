@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>香港未來天氣預報</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>香港未來 5 日天氣</h1>
+    <p class="subtitle">香港天文台官方資料</p>
+
+    <div class="topbar">
+      <button id="refreshBtn">重新整理</button>
+      <span id="updateTime">更新時間：載入中...</span>
+    </div>
+
+    <div id="weatherList" class="weather-grid">
+      <div class="loading">載入中...</div>
+    </div>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>HK-POP QUANT TERMINAL</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="scanner-line"></div>
+    <div class="grid-bg"></div>
+    
+    <div class="app-container">
+        <header class="top-bar">
+            <div class="brand">HKG_DATA_CORE <span id="clock">00:00:00</span></div>
+            <div class="status">SYSTEM_STATUS: <span class="neon-cyan">ACTIVE</span></div>
+        </header>
+
+        <main class="grid-layout">
+            <aside class="side-panel">
+                <div class="glass-module">
+                    <span class="label">TOTAL_POPULATION</span>
+                    <div class="main-number neon-cyan" id="pop-main">7,503,100</div>
+                </div>
+                <div class="glass-module">
+                    <span class="label">LIFE_EXPECTANCY</span>
+                    <div class="row">MALE: <span id="life-m" class="neon-blue">83.5</span></div>
+                    <div class="row">FEMALE: <span id="life-f" class="neon-pink">88.9</span></div>
+                    <div class="radar-box">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="main-content">
+                <div class="glass-module chart-box">
+                    <canvas id="mainChart"></canvas>
+                </div>
+                <div class="bottom-area">
+                    <div class="glass-module table-box">
+                        <table>
+                            <thead><tr><th>YEAR</th><th>POPULATION</th><th>MALE</th><th>FEMALE</th></tr></thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="glass-module console-box">
+                        <div id="console-out" class="console-text"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
