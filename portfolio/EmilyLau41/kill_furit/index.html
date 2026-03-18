@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MediaPipe 水果忍者 Web 版</title>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        font-family: 'Arial', sans-serif;
+      }
+      #ui {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: #ffcc00;
+        z-index: 10;
+        font-size: 24px;
+        text-shadow: 2px 2px 4px #000;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ui">分數: <span id="score">0</span></div>
+    <video id="input_video" style="display: none"></video>
+    <canvas id="output_canvas"></canvas>
+
+    <script>
+      const videoElement = document.getElementById('input_video');
+      const canvasElement = document.getElementById('output_canvas');
+      const canvasCtx = canvasElement.getContext('2d');
+      const scoreEl = document.getElementById('score');
+
+      let score = 0;
+      let fruits = [];
+      let particles = [];
+      let prevPos = null; // 紀錄上一幀的手指位置
+
+      canvasElement.width = window.innerWidth;
+      canvasElement.height = window.innerHeight;
+
+      class Fruit {
+        constructor() {
+          this.x = Math.random() * (canvasElement.width - 100) + 50;
+          this.y = canvasElement.height;
+          this.r = 40;
+          this.vx = (Math.random() - 0.5) * 8;
+          this.vy = -Math.random() * 15 - 10;
+          this.gravity = 0.4;
+          this.color = `hsl(${Math.random() * 360}, 80%, 50%)`;
+          this.isSliced = false;
+        }
+
+        update() {
+          this.vy += this.gravity;
+          this.x += this.vx;
+          this.y += this.vy;
+        }
+
+        draw() {
+          canvasCtx.beginPath();
+          canvasCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+          canvasCtx.fillStyle = this.color;
+          canvasCtx.fill();
+          canvasCtx.strokeStyle = 'white';
+          canvasCtx.stroke();
+        }
+      }
+
+      function createParticles(x, y, color) {
+        for (let i = 0; i < 8; i++) {
+          particles.push({
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10,
+            life: 1.0,
+            color,
+          });
+        }
+      }
+
+      function onResults(results) {
+        canvasCtx.save();
+        // 繪製背景
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.translate(canvasElement.width, 0);
+        canvasCtx.scale(-1, 1);
+        canvasCtx.drawImage(
+          results.image,
+          0,
+          0,
+          canvasElement.width,
+          canvasElement.height
+        );
+
+        // 1. 處理手部軌跡與碰撞
+        if (
+          results.multiHandLandmarks &&
+          results.multiHandLandmarks.length > 0
+        ) {
+          const landmarks = results.multiHandLandmarks[0];
+          const indexTip = landmarks[8];
+          const curX = (1 - indexTip.x) * canvasElement.width;
+          const curY = indexTip.y * canvasElement.height;
+
+          if (prevPos) {
+            // 繪製揮砍劍氣
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(prevPos.x, prevPos.y);
+            canvasCtx.lineTo(curX, curY);
+            canvasCtx.lineWidth = 8;
+            canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            canvasCtx.lineCap = 'round';
+            canvasCtx.stroke();
+
+            // 碰撞檢測：檢查線段是否穿過水果
+            fruits.forEach((f, i) => {
+              if (!f.isSliced) {
+                const dist = Math.hypot(curX - f.x, curY - f.y);
+                if (dist < f.r) {
+                  f.isSliced = true;
+                  score += 1;
+                  scoreEl.innerText = score;
+                  createParticles(f.x, f.y, f.color);
+                }
+              }
+            });
+          }
+          prevPos = { x: curX, y: curY };
+        } else {
+          prevPos = null;
+        }
+
+        // 2. 更新水果
+        if (Math.random() < 0.03) fruits.push(new Fruit());
+        fruits = fruits.filter(
+          (f) => f.y < canvasElement.height + 100 && !f.isSliced
+        );
+        fruits.forEach((f) => {
+          f.update();
+          f.draw();
+        });
+
+        // 3. 更新粒子效果
+        particles.forEach((p, i) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.02;
+          canvasCtx.globalAlpha = p.life;
+          canvasCtx.fillStyle = p.color;
+          canvasCtx.fillRect(p.x, p.y, 10, 10);
+          if (p.life <= 0) particles.splice(i, 1);
+        });
+        canvasCtx.globalAlpha = 1.0;
+
+        canvasCtx.restore();
+      }
+
+      const hands = new Hands({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6,
+      });
+      hands.onResults(onResults);
+
+      const camera = new Camera(videoElement, {
+        onFrame: async () => {
+          await hands.send({ image: videoElement });
+        },
+        width: 1280,
+        height: 720,
+      });
+      camera.start();
+    </script>
+  </body>
+</html>

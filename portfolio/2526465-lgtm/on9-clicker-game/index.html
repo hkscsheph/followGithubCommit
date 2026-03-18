@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Time Test</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --ready-color: #2b2b2b;
+            --go-color: #2ecc71;
+            --error-color: #e74c3c;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        #game-area {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+        }
+
+        .instruction {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .best-score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="best-score">Best: <span id="best-val">--</span> ms</div>
+
+    <div id="game-area" style="background-color: var(--ready-color);">
+        <div class="instruction" id="status-text">Click to Start</div>
+        <div class="stats" id="result-text">Wait for Green</div>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('game-area');
+        const statusText = document.getElementById('status-text');
+        const resultText = document.getElementById('result-text');
+        const bestValDisplay = document.getElementById('best-val');
+
+        let state = 'START'; // START, WAITING, GO, RESULT
+        let startTime;
+        let timeoutRef;
+        let bestScore = Infinity;
+
+        const colors = {
+            ready: '#2b2b2b',
+            waiting: '#000000',
+            go: '#2ecc71',
+            error: '#e74c3c'
+        };
+
+        function startGame() {
+            state = 'WAITING';
+            gameArea.style.backgroundColor = colors.waiting;
+            statusText.innerText = 'Wait for Green...';
+            resultText.innerText = '';
+
+            // Random delay between 2 and 5 seconds
+            const delay = Math.floor(Math.random() * 3000) + 2000;
+
+            timeoutRef = setTimeout(() => {
+                state = 'GO';
+                gameArea.style.backgroundColor = colors.go;
+                statusText.innerText = 'CLICK!';
+                startTime = performance.now();
+            }, delay);
+        }
+
+        function handleInteraction() {
+            if (state === 'START' || state === 'RESULT') {
+                startGame();
+            } 
+            else if (state === 'WAITING') {
+                // Cheating / Clicking too early
+                clearTimeout(timeoutRef);
+                state = 'RESULT';
+                gameArea.style.backgroundColor = colors.error;
+                statusText.innerText = 'Too Early!';
+                resultText.innerText = 'Click to try again.';
+            } 
+            else if (state === 'GO') {
+                // Success
+                const endTime = performance.now();
+                const reactionTime = Math.round(endTime - startTime);
+                state = 'RESULT';
+                
+                statusText.innerText = reactionTime + ' ms';
+                resultText.innerText = 'Click to play again';
+
+                if (reactionTime < bestScore) {
+                    bestScore = reactionTime;
+                    bestValDisplay.innerText = bestScore;
+                }
+            }
+        }
+
+        gameArea.addEventListener('mousedown', (e) => {
+            // Left click only
+            if (e.button === 0) handleInteraction();
+        });
+
+        // Spacebar support
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') handleInteraction();
+        });
+    </script>
+</body>
+</html>

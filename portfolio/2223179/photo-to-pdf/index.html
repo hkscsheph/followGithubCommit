@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速照片轉 PDF 工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h2 { color: #333; margin-bottom: 1.5rem; }
+
+        .upload-area {
+            border: 2px dashed var(--primary-color);
+            padding: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover { background: #eef5ff; }
+
+        #fileInput { display: none; }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        #preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📸 照片轉 PDF</h2>
+    
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <p>點擊此處或拖放照片到這裡</p>
+        <small>支援 JPG, PNG</small>
+        <input type="file" id="fileInput" multiple accept="image/*">
+    </div>
+
+    <div id="preview"></div>
+    
+    <button id="downloadBtn" class="btn" style="margin-top: 20px;" disabled>生成並下載 PDF</button>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const downloadBtn = document.getElementById('downloadBtn');
+    let imagesData = [];
+
+    // 當選擇檔案時觸發
+    fileInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files.length === 0) return;
+
+        preview.innerHTML = '';
+        imagesData = [];
+        downloadBtn.disabled = false;
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // 儲存 Base64 資料
+                imagesData.push(event.target.result);
+                
+                // 建立預覽圖
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.className = 'preview-img';
+                preview.appendChild(img);
+            }
+            reader.readAsDataURL(file);
+        });
+    });
+
+    // 生成 PDF 的邏輯
+    downloadBtn.addEventListener('click', async function() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        
+        downloadBtn.innerText = '處理中...';
+        downloadBtn.disabled = true;
+
+        for (let i = 0; i < imagesData.length; i++) {
+            if (i > 0) pdf.addPage();
+            
+            const img = imagesData[i];
+            
+            // 獲取 PDF 頁面寬高 (預設 A4)
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            // 將圖片加入 PDF，設定寬度為頁面寬，高度等比例縮放（或填滿）
+            pdf.addImage(img, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+        }
+
+        pdf.save("my-photos.pdf");
+        
+        downloadBtn.innerText = '生成並下載 PDF';
+        downloadBtn.disabled = false;
+    });
+</script>
+
+</body>
+</html>

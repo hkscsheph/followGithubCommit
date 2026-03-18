@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Lux - 三大生態星系與心靈守護</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="vignette"></div>
+    <canvas id="starCanvas"></canvas>
+    <div id="sun-core"></div>
+    <div id="solar-system"></div>
+
+    <div class="name-control">
+        <input type="text" id="nameInput" placeholder="為你的精靈命名..." maxlength="10">
+    </div>
+
+    <div id="scene-3d">
+        <div id="observer" class="aurora-sprite">
+            <div class="name-label" id="nameLabel">Lux</div>
+            <div class="sprite-halo"></div>
+            <div class="sprite-head"></div>
+            <div class="sprite-body"></div>
+            <div class="sprite-wing left"></div>
+            <div class="sprite-wing right"></div>
+            <div id="bubble" class="bubble-chat"></div>
+        </div>
+    </div>
+
+    <div class="scene-menu">
+        <button onclick="switchScene(0)">🌲 寧靜森林</button>
+        <button onclick="switchScene(1)">🔥 炙熱熔岩</button>
+        <button onclick="switchScene(2)">🌊 深海希望</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -3,81 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unlimited Void: Hand Sign Update</title>
+    <title>Shadow Monarch: Final System</title>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-      body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,900&display=swap');
+      body { margin: 0; overflow: hidden; background: #000; font-family: 'Kanit', sans-serif; }
       
-      /* UI Layer */
-      #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-      #hud { padding: 30px; display: flex; justify-content: space-between; opacity: 0; transition: opacity 1s; }
-      #hp-bar { width: 250px; height: 10px; background: rgba(255, 255, 255, 0.2); border: 2px solid #00d2ff; border-radius: 5px; }
-      #hp-fill { width: 100%; height: 100%; background: #00d2ff; box-shadow: 0 0 15px #00d2ff; transition: width 0.3s ease; }
+      #hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; padding: 30px; }
       
-      /* Hand Sign Animation */
-      #hand-sign-overlay {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center;
-        z-index: 200; pointer-events: none;
-      }
-      .hand-sign {
-        width: 300px; height: 300px; border: 8px solid #fff; border-radius: 50%;
-        display: flex; justify-content: center; align-items: center;
-        box-shadow: 0 0 50px #00d2ff, inset 0 0 50px #bc13fe;
-        animation: sign-pulse 1.5s ease-out forwards;
-      }
-      .hand-sign::before {
-        content: "🤞"; font-size: 150px; filter: drop-shadow(0 0 20px #00d2ff);
-        animation: finger-cross 1.5s ease-out forwards;
-      }
+      /* SYSTEM HEALTH BAR */
+      .status-wrap { width: 400px; transform: skew(-15deg); }
+      .bar-label { color: #0f0; font-size: 0.8rem; letter-spacing: 3px; margin-bottom: 4px; text-shadow: 0 0 5px #0f0; }
+      .hp-bg { width: 100%; height: 18px; background: rgba(0, 40, 0, 0.6); border: 2px solid #0f0; position: relative; overflow: hidden; }
+      #hp-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #0f0, #004400); transition: 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+      #hp-ghost { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; opacity: 0; transition: 0.2s; }
 
-      @keyframes sign-pulse {
-        0% { transform: scale(0.5); opacity: 0; }
-        50% { transform: scale(1.1); opacity: 1; }
-        100% { transform: scale(1); opacity: 0; }
-      }
-      @keyframes finger-cross {
-        0% { transform: translateY(50px); }
-        100% { transform: translateY(0); }
-      }
-
-      /* Menu */
-      #menu { position: absolute; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: 1s; }
-      h1 { color: #fff; letter-spacing: 10px; text-shadow: 0 0 20px #00d2ff; }
-      button { padding: 20px 60px; background: transparent; border: 3px solid #00d2ff; color: #00d2ff; font-family: 'Orbitron'; cursor: pointer; font-size: 1.5rem; transition: 0.3s; }
-      button:hover { background: #00d2ff; color: #000; box-shadow: 0 0 30px #00d2ff; }
-
-      #charge-ui { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); width: 300px; opacity: 0; }
-      #charge-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; }
-      #charge-fill { width: 0%; height: 100%; background: #bc13fe; box-shadow: 0 0 25px #bc13fe; }
+      #menu { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; color: #0f0; }
+      button { padding: 15px 60px; font-size: 1.8rem; background: #0f0; border: none; cursor: pointer; transform: skew(-10deg); color: #000; font-family: 'Kanit'; }
+      
+      #crosshair { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #0f0; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px #0f0; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </head>
   <body>
-    <div id="hand-sign-overlay"><div class="hand-sign"></div></div>
-    
-    <div id="ui-layer">
-      <div id="hud">
-        <div>
-          <div style="color:#00d2ff; font-weight: 900;">DOMAIN STABILITY</div>
-          <div id="hp-bar"><div id="hp-fill"></div></div>
+    <div id="crosshair"></div>
+    <div id="hud">
+      <div class="status-wrap">
+        <div class="bar-label">PLAYER: SUNG JIN-WOO</div>
+        <div class="hp-bg">
+            <div id="hp-ghost"></div>
+            <div id="hp-bar"></div>
         </div>
-        <div style="text-align: right; color:#bc13fe;">[E] 0.2s VOID | [Q] BLUE | [R-CLICK] RED</div>
       </div>
-      <div id="charge-ui"><div id="charge-bar"><div id="charge-fill"></div></div></div>
     </div>
 
     <div id="menu">
-      <h1>UNLIMITED VOID</h1>
-      <button id="start-btn">EXPAND DOMAIN</button>
+      <h1 style="font-size: 4rem; letter-spacing: -2px;">SYSTEM INITIALIZED</h1>
+      <button id="start-btn">ARISE</button>
     </div>
 
     <script>
-      let scene, camera, renderer, yaw, pitch;
-      let moveState = { f:0, b:0, l:0, r:0 }, velocity = new THREE.Vector3();
-      let isLocked=false, isHolding=false, charge=0, isFrozen=false;
-      let enemies=[], projectiles=[], lastSpawn=0, health=100;
-      let orbB, orbR, orbP;
+      let scene, camera, renderer, yaw, pitch, viewmodel;
+      let moveState = { w:0, a:0, s:0, d:0, shift:0, space:0, ctrl:0 };
+      let velocity = new THREE.Vector3(), canJump = true, health = 100;
+      let isLocked = false, enemies = [];
       const clock = new THREE.Clock();
 
       init();
@@ -85,169 +53,133 @@
 
       function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050510); 
-        scene.fog = new THREE.Fog(0x00d2ff, 10, 450); // Luminous Fog
+        scene.fog = new THREE.Fog(0x000500, 10, 450);
 
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         pitch = new THREE.Object3D(); pitch.add(camera);
         yaw = new THREE.Object3D(); yaw.position.set(0, 5, 0); yaw.add(pitch);
         scene.add(yaw);
 
-        const orbMat = (c) => new THREE.MeshStandardMaterial({color: c, emissive: c, emissiveIntensity: 3});
-        orbB = new THREE.Mesh(new THREE.SphereGeometry(0.12), orbMat(0x00d2ff));
-        orbR = new THREE.Mesh(new THREE.SphereGeometry(0.12), orbMat(0xff0044));
-        orbP = new THREE.Mesh(new THREE.SphereGeometry(0.4), orbMat(0xbc13fe));
-        [orbB, orbR, orbP].forEach(o => { o.visible=false; camera.add(o); });
+        // Viewmodel
+        viewmodel = new THREE.Group();
+        camera.add(viewmodel);
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 1.2), new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
+        blade.position.set(0.6, -0.4, -1.2);
+        viewmodel.add(blade);
+
+        // Ground
+        scene.add(new THREE.GridHelper(2000, 100, 0x003300, 0x001100));
+        scene.add(new THREE.AmbientLight(0x00ff00, 0.1));
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Map Visibility Boost
-        const grid = new THREE.GridHelper(1000, 50, 0x00d2ff, 0x111122);
-        scene.add(grid);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const light = new THREE.PointLight(0x00d2ff, 5, 400); light.position.set(0, 100, 0); scene.add(light);
-
-        document.getElementById('start-btn').onclick = () => {
-          const overlay = document.getElementById('hand-sign-overlay');
-          overlay.style.display = 'flex';
-          
-          setTimeout(() => {
-            document.body.requestPointerLock();
-            overlay.style.display = 'none';
-          }, 1500);
-        };
-
-        document.addEventListener('pointerlockchange', () => { 
+        document.getElementById('start-btn').onclick = () => document.body.requestPointerLock();
+        document.addEventListener('pointerlockchange', () => {
           isLocked = document.pointerLockElement === document.body;
-          document.getElementById('menu').style.opacity = isLocked ? '0' : '1';
-          document.getElementById('menu').style.pointerEvents = isLocked ? 'none' : 'all';
-          document.getElementById('hud').style.opacity = isLocked ? '1' : '0';
+          document.getElementById('menu').style.display = isLocked ? 'none' : 'flex';
         });
 
-        window.addEventListener('keydown', (e) => {
-          if(e.code==='KeyW') moveState.f=1; if(e.code==='KeyS') moveState.b=1;
-          if(e.code==='KeyA') moveState.l=1; if(e.code==='KeyD') moveState.r=1;
-          if(e.code==='KeyE') toggleVoid();
-          if(e.code==='KeyQ') fireBlue();
-        });
-        window.addEventListener('keyup', (e) => {
-          if(e.code==='KeyW') moveState.f=0; if(e.code==='KeyS') moveState.b=0;
-          if(e.code==='KeyA') moveState.l=0; if(e.code==='KeyD') moveState.r=0;
-        });
-        window.addEventListener('mousedown', (e) => { 
-          if(!isLocked) return;
-          if(e.button === 0) isHolding = true; 
-          if(e.button === 2) fireRed(); 
-        });
-        window.addEventListener('mouseup', (e) => { if(e.button === 0) releaseShot(); });
-        window.addEventListener('contextmenu', e => e.preventDefault());
+        // INPUT LISTENERS
+        const handleKeys = (e, val) => {
+          const key = e.key.toLowerCase();
+          if (key === 'shift') moveState.shift = val;
+          if (key === ' ') moveState.space = val;
+          if (e.code === 'ControlLeft') moveState.ctrl = val;
+          if (moveState.hasOwnProperty(key)) moveState[key] = val;
+        };
+        window.addEventListener('keydown', (e) => handleKeys(e, 1));
+        window.addEventListener('keyup', (e) => handleKeys(e, 0));
+        window.addEventListener('mousedown', () => { if(isLocked) attack(); });
         
         document.addEventListener('mousemove', (e) => {
           if(!isLocked) return;
           yaw.rotation.y -= e.movementX * 0.002;
           pitch.rotation.x -= e.movementY * 0.002;
-          pitch.rotation.x = Math.max(-1.5, Math.min(1.5, pitch.rotation.x));
+          pitch.rotation.x = Math.max(-1.4, Math.min(1.4, pitch.rotation.x));
         });
       }
 
-      function toggleVoid() {
-        isFrozen = !isFrozen;
-        if(isFrozen) { health -= 5; document.body.style.filter = "invert(1) brightness(1.2)"; }
-        else document.body.style.filter = "none";
+      function attack() {
+        viewmodel.position.z = -0.5;
+        setTimeout(() => viewmodel.position.z = 0, 100);
+        enemies.forEach((e, i) => {
+          if(yaw.position.distanceTo(e.position) < 22) {
+            scene.remove(e);
+            enemies.splice(i, 1);
+          }
+        });
       }
 
-      function fireBlue() {
-        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
-        const p = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshBasicMaterial({color: 0x00d2ff}));
-        p.position.copy(yaw.position);
-        p.userData = { vel: dir.multiplyScalar(150), isBlue: true };
-        scene.add(p); projectiles.push(p);
-      }
-
-      function fireRed() {
-        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
-        const p = new THREE.Mesh(new THREE.SphereGeometry(0.7), new THREE.MeshBasicMaterial({color: 0xff0044}));
-        p.position.copy(yaw.position);
-        p.userData = { vel: dir.multiplyScalar(220), isRed: true };
-        scene.add(p); projectiles.push(p);
+      function takeDamage(amt) {
+        health -= amt;
+        const bar = document.getElementById('hp-bar');
+        const ghost = document.getElementById('hp-ghost');
+        bar.style.width = health + "%";
+        ghost.style.opacity = 1;
+        setTimeout(() => ghost.style.opacity = 0, 100);
+        if(health <= 0) location.reload();
       }
 
       function spawnEnemy() {
-        if(isFrozen) return;
-        const group = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({color: 0x111111});
-        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 1.8), mat);
-        body.position.y = 2.5; group.add(body);
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.7), mat); head.position.y = 4.5;
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color:0xff0000})); eye.position.z = 0.5;
-        head.add(eye); group.add(head);
-        
-        const lLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 1.2), mat); lLeg.position.set(-0.5, 0.8, 0); group.add(lLeg);
-        const rLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 1.2), mat); rLeg.position.set(0.5, 0.8, 0); group.add(rLeg);
-
-        const hb = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.2), new THREE.MeshBasicMaterial({color: 0x00ff00}));
-        hb.position.y = 6; group.add(hb);
-
+        if(enemies.length > 15) return;
+        const e = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 2), new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }));
         const angle = Math.random() * Math.PI * 2;
-        group.position.set(Math.cos(angle)*120 + yaw.position.x, 0, Math.sin(angle)*120 + yaw.position.z);
-        group.userData = { hp: 30, maxHp: 30, hb, lLeg, rLeg, speed: 12 };
-        scene.add(group); enemies.push(group);
-      }
-
-      function releaseShot() {
-        if(charge >= 1) {
-          const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
-          const p = new THREE.Mesh(new THREE.SphereGeometry(6), new THREE.MeshStandardMaterial({color: 0xbc13fe, emissive: 0xbc13fe, transparent: true, opacity: 0.8}));
-          p.position.copy(yaw.position);
-          p.userData = { vel: dir.multiplyScalar(250), isPurple: true };
-          scene.add(p); projectiles.push(p);
-          pitch.rotation.x += 0.25;
-        }
-        isHolding = false; charge = 0; [orbB, orbR, orbP].forEach(o => o.visible=false);
-        document.getElementById('charge-ui').style.opacity = '0';
+        e.position.set(Math.cos(angle)*150 + yaw.position.x, 3, Math.sin(angle)*150 + yaw.position.z);
+        scene.add(e); enemies.push(e);
       }
 
       function animate() {
         requestAnimationFrame(animate);
         if(!isLocked) return;
-        const dt = clock.getDelta(), t = clock.getElapsedTime();
 
-        velocity.lerp(new THREE.Vector3(moveState.r-moveState.l, 0, moveState.b-moveState.f).normalize().applyQuaternion(yaw.quaternion).multiplyScalar(50), 0.1);
+        const dt = clock.getDelta();
+        const t = clock.getElapsedTime();
+
+        // --- PHYSICS & MOVEMENT ---
+        let speed = moveState.shift ? 75 : 45;
+        if (moveState.ctrl) speed *= 0.5;
+
+        // XZ Movement
+        let input = new THREE.Vector3((moveState.d - moveState.a), 0, (moveState.s - moveState.w)).normalize();
+        let moveDir = input.applyQuaternion(yaw.quaternion);
+        velocity.x = THREE.MathUtils.lerp(velocity.x, moveDir.x * speed, 0.15);
+        velocity.z = THREE.MathUtils.lerp(velocity.z, moveDir.z * speed, 0.15);
+        
+        // Jump & Gravity
+        if (moveState.space && canJump) {
+            velocity.y = 35;
+            canJump = false;
+        }
+        velocity.y -= 90 * dt; // Gravity
+        
         yaw.position.add(velocity.clone().multiplyScalar(dt));
 
-        if(isHolding) {
-          charge = Math.min(charge + dt * 1.5, 1);
-          document.getElementById('charge-ui').style.opacity = '1';
-          document.getElementById('charge-fill').style.width = (charge*100) + "%";
-          orbB.visible = orbR.visible = (charge < 1); orbP.visible = (charge >= 1);
-          if(charge < 1) { orbB.position.set(-1.5+charge, -0.6, -2); orbR.position.set(1.5-charge, -0.6, -2); }
-          else orbP.position.set(0, -0.6, -2);
+        // Floor Collision
+        if (yaw.position.y < 5) {
+            velocity.y = 0;
+            yaw.position.y = 5;
+            canJump = true;
         }
 
-        if(t - lastSpawn > 2 && !isFrozen) { spawnEnemy(); lastSpawn = t; }
+        // Crouch POV
+        const targetHeight = moveState.ctrl ? -1.5 : 0;
+        pitch.position.y = THREE.MathUtils.lerp(pitch.position.y, targetHeight, 0.2);
 
-        projectiles.forEach((p, i) => {
-          p.position.add(p.userData.vel.clone().multiplyScalar(dt));
-          if(p.userData.isBlue) enemies.forEach(e => { if(p.position.distanceTo(e.position) < 30) e.position.lerp(p.position, 0.08); });
-          if(p.userData.isRed) enemies.forEach(e => { if(p.position.distanceTo(e.position) < 12) e.position.add(e.position.clone().sub(p.position).normalize().multiplyScalar(25)); });
-          if(p.userData.isPurple) enemies.forEach((e, ei) => { if(p.position.distanceTo(e.position) < 18) { scene.remove(e); enemies.splice(ei, 1); } });
-          if(p.position.length() > 800) { scene.remove(p); projectiles.splice(i, 1); }
-        });
+        // Sprint FOV Effect
+        const targetFOV = moveState.shift ? 85 : 75;
+        camera.fov = THREE.MathUtils.lerp(camera.fov, targetFOV, 0.1);
+        camera.updateProjectionMatrix();
 
+        // Enemies
+        if(Math.random() > 0.98) spawnEnemy();
         enemies.forEach(e => {
-          if(!isFrozen) {
-            e.lookAt(yaw.position.x, 0, yaw.position.z); e.translateZ(e.userData.speed * dt);
-            const walk = Math.sin(t * 12); e.userData.lLeg.rotation.x = walk; e.userData.rLeg.rotation.x = -walk;
-          }
-          e.userData.hb.scale.x = e.userData.hp/e.userData.maxHp;
-          e.userData.hb.lookAt(camera.position);
-          if(e.position.distanceTo(yaw.position) < 6) health -= 0.3;
+          e.lookAt(yaw.position.x, 3, yaw.position.z);
+          e.translateZ(18 * dt);
+          if(e.position.distanceTo(yaw.position) < 7) takeDamage(0.3);
         });
 
-        document.getElementById('hp-fill').style.width = health + "%";
-        if(health <= 0) location.reload();
         renderer.render(scene, camera);
       }
     </script>

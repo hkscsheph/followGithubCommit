@@ -1,0 +1,64 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星際礦工：深空傳奇</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="stars"></div>
+
+        <header class="stats-panel">
+            <div class="stat-item">
+                <span class="label">水晶礦石</span>
+                <span id="crystal-count" class="value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">每秒產出 (CPS)</span>
+                <span id="cps-count" class="value">0</span>
+            </div>
+        </header>
+
+        <main class="click-area">
+            <div class="crystal-wrapper">
+                <div id="main-crystal" class="crystal"></div>
+            </div>
+        </main>
+
+        <aside class="shop-panel">
+            <h3>物資與升級</h3>
+            <div class="upgrade-list">
+                <button class="upgrade-card" onclick="buyUpgrade('miner')">
+                    <div class="info">
+                        <span class="name">自動採礦機</span>
+                        <span class="desc">每秒自動產生 1 礦石</span>
+                    </div>
+                    <div class="cost-tag">💰 <span id="miner-cost">15</span></div>
+                </button>
+
+                <button class="upgrade-card" onclick="buyUpgrade('drill')">
+                    <div class="info">
+                        <span class="name">雷射鑽頭</span>
+                        <span class="desc">每秒自動產生 5 礦石</span>
+                    </div>
+                    <div class="cost-tag">💰 <span id="drill-cost">100</span></div>
+                </button>
+                
+                <button class="upgrade-card" onclick="buyUpgrade('station')">
+                    <div class="info">
+                        <span class="name">軌道採礦站</span>
+                        <span class="desc">每秒自動產生 25 礦石</span>
+                    </div>
+                    <div class="cost-tag">💰 <span id="station-cost">500</span></div>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

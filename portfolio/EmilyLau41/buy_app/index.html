@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>香港超市價格監測通</title>
+    <style>
+      :root {
+        --primary: #27ae60;
+        --secondary: #e67e22;
+        --bg: #f4f7f6;
+        --card: #ffffff;
+        --text: #2c3e50;
+      }
+
+      body {
+        font-family: 'PingFang HK', 'Microsoft JhengHei', sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      .search-box {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid var(--primary);
+        border-radius: 30px;
+        font-size: 16px;
+        box-sizing: border-box;
+        outline: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+      }
+
+      #status {
+        text-align: center;
+        color: #666;
+        margin-top: 20px;
+      }
+
+      .product-card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .brand {
+        font-size: 0.85em;
+        color: #7f8c8d;
+        margin-bottom: 5px;
+      }
+
+      .product-name {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .category-path {
+        font-size: 0.8em;
+        color: #95a5a6;
+        margin-bottom: 15px;
+      }
+
+      .price-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+      }
+
+      .price-item {
+        background: #f9f9f9;
+        padding: 10px;
+        border-radius: 8px;
+        border-left: 4px solid #ddd;
+      }
+
+      .store-name {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .price-value {
+        color: var(--secondary);
+        font-size: 1.1em;
+        font-weight: 800;
+      }
+
+      .offer-tag {
+        display: block;
+        font-size: 0.8em;
+        color: #c0392b;
+        margin-top: 5px;
+        border-top: 1px dashed #ccc;
+        padding-top: 5px;
+      }
+
+      .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #95a5a6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🛒 網上價格一覽通</h1>
+        <p>根據消委會開放數據構建</p>
+      </header>
+
+      <input
+        type="text"
+        id="search"
+        class="search-box"
+        placeholder="搜尋品牌或貨品名稱 (例如: 出前一丁)..."
+      />
+
+      <div id="status">正在讀取數據，請稍候...</div>
+      <div id="results"></div>
+    </div>
+
+    <script>
+      let allProducts = [];
+
+      // 超市代碼轉換表 [cite: 6, 12]
+      const STORE_MAP = {
+        WELLCOME: '惠康 Wellcome',
+        PARKNSHOP: '百佳 PARKnSHOP',
+        JASONS: 'Market Place',
+        WATSONS: '屈臣氏 Watsons',
+        AEON: 'AEON',
+        DCHFOOD: '大昌食品 DCH Food Mart',
+      };
+
+      // 初始化 App
+      async function init() {
+        try {
+          // 在 StackBlitz 中，確保檔名為 data.json 且位於根目錄
+          const response = await fetch('data.json');
+
+          if (!response.ok) {
+            throw new Error(
+              `無法讀取檔案 (HTTP ${response.status})。請檢查左側是否有 data.json。`
+            );
+          }
+
+          const data = await response.json();
+
+          // 根據字典規範，偵測數據位置 [cite: 9, 10]
+          if (Array.isArray(data)) {
+            allProducts = data;
+          } else if (data.items && Array.isArray(data.items)) {
+            allProducts = data.items;
+          } else {
+            // 尋找物件中第一個陣列
+            const key = Object.keys(data).find((k) => Array.isArray(data[k]));
+            allProducts = key ? data[key] : [];
+          }
+
+          if (allProducts.length === 0) {
+            throw new Error('JSON 格式不符或沒有貨品數據。');
+          }
+
+          document.getElementById('status').style.display = 'none';
+          render(allProducts.slice(0, 50));
+        } catch (err) {
+          document.getElementById(
+            'status'
+          ).innerHTML = `<b style="color:red">❌ 載入失敗: ${err.message}</b>`;
+          console.error(err);
+        }
+      }
+
+      // 渲染貨品列表
+      function render(list) {
+        const results = document.getElementById('results');
+        if (list.length === 0) {
+          results.innerHTML = '<div class="no-data">找不到符合條件的貨品</div>';
+          return;
+        }
+
+        results.innerHTML = list
+          .map((item) => {
+            // 讀取字典定義的繁體中文欄位 [cite: 10, 11]
+            const name = item.name ? item.name['zh-Hant'] : '未知貨品';
+            const brand = item.brand ? item.brand['zh-Hant'] : '';
+            const catPath = [
+              item.cat1Name ? item.cat1Name['zh-Hant'] : null,
+              item.cat2Name ? item.cat2Name['zh-Hant'] : null,
+              item.cat3Name ? item.cat3Name['zh-Hant'] : null,
+            ]
+              .filter((v) => v)
+              .join(' > ');
+
+            // 處理價格與優惠
+            const priceMap = {};
+            if (item.prices) {
+              item.prices.forEach((p) => {
+                priceMap[p.supermarketCode] = { price: p.price };
+              });
+            }
+            if (item.offers) {
+              item.offers.forEach((o) => {
+                if (priceMap[o.supermarketCode]) {
+                  priceMap[o.supermarketCode].offer = o['zh-Hant'];
+                }
+              });
+            }
+
+            const priceHTML = Object.entries(priceMap)
+              .map(
+                ([code, info]) => `
+                <div class="price-item">
+                    <span class="store-name">${STORE_MAP[code] || code}</span>
+                    <span class="price-value">$${info.price}</span>
+                    ${
+                      info.offer
+                        ? `<span class="offer-tag">🎁 ${info.offer}</span>`
+                        : ''
+                    }
+                </div>
+            `
+              )
+              .join('');
+
+            return `
+                <div class="product-card">
+                    <div class="brand">${brand}</div>
+                    <div class="product-name">${name}</div>
+                    <div class="category-path">${catPath}</div>
+                    <div class="price-grid">
+                        ${
+                          priceHTML ||
+                          '<span style="color:#999">暫無價格資料</span>'
+                        }
+                    </div>
+                </div>
+            `;
+          })
+          .join('');
+      }
+
+      // 搜尋過濾
+      document.getElementById('search').addEventListener('input', (e) => {
+        const kw = e.target.value.trim().toLowerCase();
+        if (!kw) {
+          render(allProducts.slice(0, 50));
+          return;
+        }
+
+        const filtered = allProducts.filter((p) => {
+          const n =
+            p.name && p.name['zh-Hant'] ? p.name['zh-Hant'].toLowerCase() : '';
+          const b =
+            p.brand && p.brand['zh-Hant']
+              ? p.brand['zh-Hant'].toLowerCase()
+              : '';
+          return n.includes(kw) || b.includes(kw);
+        });
+
+        render(filtered.slice(0, 50));
+      });
+
+      init();
+    </script>
+  </body>
+</html>

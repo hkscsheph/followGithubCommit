@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kory's Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #2c3e50; /* Dark blue background */
+      color: white;
+      margin-top: 50px;
+    }
+    #game-area {
+      width: 400px;
+      height: 400px;
+      background-color: #ecf0f1; /* Light gray game board */
+      position: relative;
+      margin: 0 auto;
+      border-radius: 10px;
+      border: 5px solid #bdc3c7;
+      overflow: hidden;
+    }
+    #target {
+      width: 50px;
+      height: 50px;
+      background-color: #e74c3c; /* Red dot */
+      border-radius: 50%;
+      position: absolute;
+      top: 175px;
+      left: 175px;
+      cursor: pointer;
+      transition: top 0.1s, left 0.1s; /* Makes the movement slightly smooth */
+    }
+    h1 { color: #f1c40f; /* Yellow title */ }
+  </style>
+</head>
+<body>
+
+  <h1>Kory's Clicker Game</h1>
+  <p>Score: <span id="score">0</span></p>
+
+  <div id="game-area">
+    <div id="target" onclick="moveTarget()"></div>
+  </div>
+
+  <script>
+    let score = 0;
+    
+    function moveTarget() {
+      // Add a point to the score
+      score++;
+      document.getElementById('score').innerText = score;
+
+      // Find the game area and the target dot
+      let gameArea = document.getElementById('game-area');
+      let target = document.getElementById('target');
+
+      // Calculate safe random coordinates so the dot doesn't leave the box
+      let maxX = gameArea.clientWidth - target.clientWidth;
+      let maxY = gameArea.clientHeight - target.clientHeight;
+
+      let randomX = Math.floor(Math.random() * maxX);
+      let randomY = Math.floor(Math.random() * maxY);
+
+      // Move the dot to the new random spot
+      target.style.left = randomX + 'px';
+      target.style.top = randomY + 'px';
+    }
+  </script>
+
+</body>
+</html>

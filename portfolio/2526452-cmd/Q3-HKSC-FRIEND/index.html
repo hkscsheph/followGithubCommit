@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Home</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <!--
+      Need a visual blank slate?
+      Remove all code in `styles.css`!
+    -->
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="script.js"></script>
+  </head>
+  <body>
+    <nav>
+      <a href="/" aria-current="page">Home</a>
+      <a href="/page2.html">Other page</a>
+    </nav>
+    <main>
+      <h1>Home page</h1>
+    </main>
+  </body>
+</html>
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SC-Connect | 兆基創意書院交友</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Teko:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <section id="page-login" class="screen active">
+      <div class="login-content">
+        <h1 class="logo-text">SC<br>Connect</h1>
+        <p class="slogan">在混亂的創意中，<br>隨機遇見你。</p>
+        
+        <form id="loginForm">
+          <input type="text" placeholder="學號 / 電郵" class="input-field">
+          <input type="password" placeholder="密碼" class="input-field">
+          <button type="button" class="btn-main" onclick="router.navigate('home')">登入</button>
+        </form>
+        
+        <div class="divider">OR</div>
+        <button class="btn-outline" onclick="router.navigate('register')">創建創意帳戶</button>
+      </div>
+    </section>
+
+    <section id="page-register" class="screen">
+      <div class="header">
+        <button class="icon-btn" onclick="router.back()">←</button>
+        <h2>建立檔案</h2>
+        <div style="width: 24px;"></div>
+      </div>
+      <div class="scroll-content">
+        <div class="upload-photo">
+          <span>+ 上傳作品/大頭照</span>
+        </div>
+        <input type="text" id="reg-name" placeholder="你的稱呼 (Artist Name)" class="input-field">
+        <select class="input-field">
+          <option>選擇主修 / 專長</option>
+          <option>視覺藝術 (VA)</option>
+          <option>電影與數碼藝術 (FDA)</option>
+          <option>多媒體表演藝術 (MPA)</option>
+          <option>空間研習 (ESS)</option>
+        </select>
+        <textarea placeholder="破冰問題：如果世界末日，你會帶哪一支畫筆？" class="input-field" rows="3"></textarea>
+        <button class="btn-main" onclick="app.register()">完成註冊</button>
+      </div>
+    </section>
+
+    <section id="page-home" class="screen">
+      <div class="top-nav">
+        <span class="brand">SC-Connect</span>
+        <button class="icon-btn" onclick="router.navigate('chat-list')">💬</button>
+      </div>
+
+      <div class="card-stack" id="card-stack">
+        <div class="loading-text">搜尋靈魂中...</div>
+      </div>
+
+      <div class="controls">
+        <button class="control-btn pass" onclick="app.swipe('left')">✕</button>
+        <button class="control-btn random" onclick="app.randomMatch()">🎲</button>
+        <button class="control-btn like" onclick="app.swipe('right')">♥</button>
+      </div>
+    </section>
+
+    <section id="page-chat-list" class="screen">
+      <div class="header">
+        <button class="icon-btn" onclick="router.navigate('home')">←</button>
+        <h2>訊息</h2>
+        <div style="width: 24px;"></div>
+      </div>
+      <div class="scroll-content" id="chat-list-container">
+        </div>
+    </section>
+
+    <section id="page-chat-detail" class="screen">
+      <div class="header">
+        <button class="icon-btn" onclick="router.navigate('chat-list')">←</button>
+        <h2 id="chat-partner-name">用戶名</h2>
+        <div class="avatar-small" id="chat-partner-avatar"></div>
+      </div>
+      
+      <div class="chat-messages" id="message-container">
+        </div>
+
+      <div class="chat-input-area">
+        <input type="text" id="msg-input" placeholder="輸入訊息...">
+        <button onclick="app.sendMessage()">發送</button>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

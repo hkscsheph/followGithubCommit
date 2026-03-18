@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能天氣追蹤器</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        color: white;
+      }
+      .weather-card {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 2.5rem;
+        border-radius: 30px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        width: 350px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .search-box {
+        margin-bottom: 25px;
+        display: flex;
+        gap: 8px;
+      }
+      input {
+        flex: 1;
+        padding: 12px;
+        border-radius: 12px;
+        border: none;
+        outline: none;
+        background: rgba(255, 255, 255, 0.9);
+      }
+      button {
+        padding: 12px 18px;
+        background: #4facfe;
+        border: none;
+        color: white;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+      button:hover {
+        background: #00f2fe;
+      }
+      .temp {
+        font-size: 4rem;
+        font-weight: 700;
+        margin: 15px 0;
+      }
+      .city {
+        font-size: 1.8rem;
+        font-weight: 500;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="weather-card">
+      <div class="search-box">
+        <input type="text" id="cityInput" placeholder="輸入城市..." />
+        <button onclick="getWeatherByCity()">搜尋</button>
+      </div>
+
+      <div id="weatherResult">
+        <div class="city" id="cityName">正在定位中...</div>
+        <div class="temp" id="temp">--°C</div>
+        <div class="desc" id="description">讀取數據中</div>
+        <div class="info-grid">
+          <div id="humidity">濕度: --%</div>
+          <div id="wind">風速: -- m/s</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const apiKey = '你的_API_KEY_貼在這裡';
+
+      // 1. 根據城市名稱搜尋
+      async function getWeatherByCity() {
+        const city = document.getElementById('cityInput').value;
+        if (!city) return alert('請輸入城市名稱');
+        fetchData(`q=${city}`);
+      }
+
+      // 2. 獲取地理位置 (GPS)
+      function getLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords;
+              fetchData(`lat=${latitude}&lon=${longitude}`);
+            },
+            (error) => {
+              console.error('定位失敗:', error);
+              document.getElementById('cityName').innerText = '定位被拒絕';
+              // 定位失敗則預設顯示一個城市
+              fetchData('q=Hong Kong');
+            }
+          );
+        } else {
+          alert('您的瀏覽器不支持地理定位');
+          fetchData('q=Hong Kong');
+        }
+      }
+
+      // 核心數據抓取函式
+      async function fetchData(queryParam) {
+        const url = `https://api.openweathermap.org/data/2.5/weather?${queryParam}&units=metric&appid=${apiKey}&lang=zh_tw`;
+
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (data.cod !== 200) throw new Error(data.message);
+
+          document.getElementById('cityName').innerText = data.name;
+          document.getElementById('temp').innerText = `${Math.round(
+            data.main.temp
+          )}°C`;
+          document.getElementById('description').innerText =
+            data.weather[0].description;
+          document.getElementById(
+            'humidity'
+          ).innerText = `濕度: ${data.main.humidity}%`;
+          document.getElementById(
+            'wind'
+          ).innerText = `風速: ${data.wind.speed} m/s`;
+        } catch (error) {
+          alert('錯誤: ' + error.message);
+        }
+      }
+
+      // 頁面載入時自動執行定位
+      window.onload = getLocation;
+    </script>
+  </body>
+</html>

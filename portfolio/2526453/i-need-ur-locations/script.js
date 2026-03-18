@@ -64,3 +64,4 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLiveTracker(); // Run once immediately
   setInterval(updateLiveTracker, 1000); // Sync every second
 });
+

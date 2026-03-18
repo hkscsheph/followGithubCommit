@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stepfun Food Scanner</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0e14; color: #fff; text-align: center; padding: 20px; }
+        .card { background: #1a1f2e; max-width: 420px; margin: 40px auto; padding: 30px; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        h1 { font-size: 24px; margin-bottom: 8px; color: #4facfe; }
+        p { color: #8e9aaf; font-size: 14px; margin-bottom: 25px; }
+        #preview { width: 100%; border-radius: 20px; margin-bottom: 20px; display: none; border: 2px solid #4facfe; }
+        .btn { background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; padding: 18px; border: none; border-radius: 16px; cursor: pointer; font-size: 16px; font-weight: 800; width: 100%; transition: 0.2s; }
+        .btn:active { transform: scale(0.96); }
+        #result { margin-top: 25px; text-align: left; background: #252d40; padding: 20px; border-radius: 20px; display: none; }
+        .macro-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #36415a; }
+        .macro-row:last-child { border: none; }
+        .label { color: #8e9aaf; font-weight: 500; }
+        .value { color: #4facfe; font-weight: 700; }
+        #status { margin-top: 15px; color: #00f2fe; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🍕 Stepfun Scan</h1>
+    <p>Real-time visual calorie estimation</p>
+    
+    <input type="file" id="imageLoader" accept="image/*" hidden>
+    <button class="btn" onclick="document.getElementById('imageLoader').click()">📸 CHOOSE A MEAL</button>
+    
+    <img id="preview">
+    <button id="scanBtn" class="btn" style="display:none; background: #00d2ff; margin-top:10px;">🔍 ANALYZE NOW</button>
+    
+    <div id="status">Analyzing pixels... ⚙️</div>
+
+    <div id="result">
+        <h2 id="res-food" style="margin-top:0; color: #fff; font-size: 1.2rem;">Scanning...</h2>
+        <div class="macro-row"><span class="label">Calories</span> <span class="value" id="res-cal">0 kcal</span></div>
+        <div class="macro-row"><span class="label">Protein</span> <span class="value" id="res-pro">0g</span></div>
+        <div class="macro-row"><span class="label">Fats</span> <span class="value" id="res-fat">0g</span></div>
+        <div class="macro-row"><span class="label">Carbs</span> <span class="value" id="res-carb">0g</span></div>
+    </div>
+</div>
+
+<script>
+    // 1. YOUR CONFIGURATION
+    const STEP_API_KEY = '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';
+    const STEP_BASE_URL = 'https://api.stepfun.com/v1/chat/completions';
+    const MODEL_NAME = 'step-1v-8k'; // You can also use 'step-1v-32k' or 'step-1o-turbo-vision'
+
+    const loader = document.getElementById('imageLoader');
+    const preview = document.getElementById('preview');
+    const scanBtn = document.getElementById('scanBtn');
+    const statusText = document.getElementById('status');
+    const resultDiv = document.getElementById('result');
+
+    loader.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                preview.src = reader.result;
+                preview.style.display = 'block';
+                scanBtn.style.display = 'block';
+                resultDiv.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    scanBtn.onclick = async () => {
+        statusText.style.display = 'block';
+        scanBtn.disabled = true;
+        
+        const base64Image = preview.src; // Full Data URL (Stepfun accepts this in the message)
+
+        try {
+            const response = await fetch(STEP_BASE_URL, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${STEP_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "model": MODEL_NAME,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                { "type": "text", "text": "Identify the food and estimate macros based on portion. Output ONLY valid JSON: {\"food\":\"\", \"kcal\":0, \"pro\":0, \"fat\":0, \"carb\":0}" },
+                                { "type": "image_url", "image_url": { "url": base64Image } }
+                            ]
+                        }
+                    ],
+                    "response_format": { "type": "json_object" } // Ensures we get a clean JSON response
+                })
+            });
+
+            const data = await response.json();
+            const nutrition = JSON.parse(data.choices[0].message.content);
+
+            document.getElementById('res-food').innerText = nutrition.food;
+            document.getElementById('res-cal').innerText = nutrition.kcal + ' kcal';
+            document.getElementById('res-pro').innerText = nutrition.pro + 'g';
+            document.getElementById('res-fat').innerText = nutrition.fat + 'g';
+            document.getElementById('res-carb').innerText = nutrition.carb + 'g';
+
+            resultDiv.style.display = 'block';
+        } catch (error) {
+            console.error(error);
+            alert("Stepfun Analysis Failed. Check your key and credits.");
+        } finally {
+            statusText.style.display = 'none';
+            scanBtn.disabled = false;
+        }
+    };
+</script>
+
+</body>
+</html>

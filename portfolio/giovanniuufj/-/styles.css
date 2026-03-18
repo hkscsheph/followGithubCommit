@@ -1,0 +1,64 @@
+body {
+  margin: 0;
+  overflow: hidden; /* 防止滾動條影響 */
+  background: transparent;
+}
+
+#pet-container {
+  position: absolute;
+  width: 150px; /* 根據素材調整大小 */
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.2s ease;
+  z-index: 9999;
+}
+
+#pet-container:active {
+  cursor: grabbing;
+}
+
+#pet-img {
+  width: 100%;
+  height: auto;
+}
+
+/* 對話氣泡樣式 */
+#dialog-bubble {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 2px solid #333;
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hidden {
+  display: none;
+}
+
+/* 簡單的漂浮動畫 */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.pet-idle {
+  animation: float 3s ease-in-out infinite;
+}
+#pet-img {
+  width: 100px;
+  height: 100px;
+  background: url('abby-sprites.png') no-repeat;
+  /* steps(幀數) 讓動畫跳轉而不是平滑滑動 */
+  animation: play-sprites 0.8s steps(5) infinite;
+}
+
+@keyframes play-sprites {
+  from { background-position: 0px; }
+  to { background-position: -500px; }
+}

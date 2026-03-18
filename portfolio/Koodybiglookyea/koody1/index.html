@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Global Mortality Tracker</title>
+    <style>
+      body {
+          background-color: #0d1117;
+          color: #e6edf3;
+          font-family: 'Segoe UI', sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh
+          margin: 0;
+      }
+      .counter-container {
+          text-align: center;
+          border: 1px solid #30363d;
+          padding: 3rem;
+          border-radius: 12px;
+          background: #161b22;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      }
+      h1 { font-weight: 300; color: #8b949e; }
+      #death-count {
+          font-size: 5rem;
+          font-weight: bold;
+          color: #ff7b72;
+          margin: 1rem 0;
+          font-variant-numeric: tabular-nums;
+      }
+      p { color: #484f58; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <div class="counter-container">
+      <h1>Global Deaths This Year</h1>
+      <div id="death-count">0</div>
+      <p>Estimated based on WHO & UN 2024-2026 Projections</p>
+    </div>
+
+    <script>
+      // Configuration
+      const deathsPerYear = 61240000;
+      const msInYear = 31536000000;
+      const deathsPerMs = deathsPerYear / msInYear;
+
+      function updateCounter() {
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const elapsedMs = now - startOfYear;
+
+        // Calculate deaths since Jan 1st
+        const currentDeaths = Math.floor(elapsedMs * deathsPerMs);
+
+        // Update the display with commas
+        document.getElementById('death-count').innerText =
+          currentDeaths.toLocaleString();
+      }
+
+      // Update every 500ms for a smooth "live" feel
+      setInterval(updateCounter, 500);
+      updateCounter();
+    </script>
+  </body>
+</html>

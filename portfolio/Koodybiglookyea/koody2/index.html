@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HK Property Hub | 2026 Market</title>
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            --primary: #1a1a1a;
+            --accent: #c5a059; /* Gold for HK luxury aesthetic */
+            --bg: #f4f4f7;
+            --white: #ffffff;
+            --text-gray: #666;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--primary);
+            line-height: 1.6;
+        }
+
+        header {
+            background: var(--white);
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; }
+        .logo span { color: var(--accent); }
+
+        .hero {
+            height: 350px;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url('https://images.unsplash.com/photo-1506354666786-959d6d497f1a?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .search-box {
+            margin-top: 20px;
+            display: flex;
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 5px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .search-box button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .search-box button:hover { opacity: 0.9; }
+
+        .container { padding: 40px 5%; }
+
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover { transform: translateY(-10px); }
+
+        .card img { width: 100%; height: 220px; object-fit: cover; }
+
+        .card-info { padding: 20px; }
+
+        .price {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #eee;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .buy-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .buy-btn:hover { background: #333; }
+
+        /* Checkout Modal */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">HK<span>ESTATE</span></div>
+        <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-gray);">MARCH 2026 MARKET DATA</div>
+    </header>
+
+    <section class="hero">
+        <h1>Live Where You Dream</h1>
+        <p>Explore verified apartment listings across Hong Kong</p>
+        <div class="search-box">
+            <input type="text" id="propertySearch" placeholder="Enter District (e.g. Central, Wan Chai, TKO)...">
+            <button onclick="handleSearch()">Search</button>
+        </div>
+    </section>
+
+    <div class="container">
+        <h2 id="resultTitle">Featured Listings</h2>
+        <div class="property-grid" id="grid">
+            </div>
+    </div>
+
+    <div id="modal">
+        <div style="background: white; color: black; padding: 40px; border-radius: 15px; text-align: center; max-width: 400px;">
+            <h2>Secure Purchase</h2>
+            <p>You are initiating the purchase process for this property. Would you like to proceed to legal documentation?</p>
+            <button class="buy-btn" onclick="closeModal()">Proceed with Lawyer</button>
+            <p style="font-size: 0.8rem; margin-top: 15px; color: gray;" onclick="closeModal()">Cancel</p>
+        </div>
+    </div>
+
+    <script>
+        /* --- JAVASCRIPT LOGIC --- */
+
+        // Sample Data for 2026
+        const propertyData = [
+            { id: 1, name: "The Pavilia Farm", district: "Sha Tin", price: "HK$ 9,800,000", size: "450 sq.ft", img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400" },
+            { id: 2, name: "Victoria Harbour View", district: "Central", price: "HK$ 45,000,000", size: "1,200 sq.ft", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400" },
+            { id: 3, name: "Grand Central Flat", district: "Kwun Tong", price: "HK$ 12,200,000", size: "620 sq.ft", img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=400" },
+            { id: 4, name: "Mount Pavilion", district: "Sai Kung", price: "HK$ 18,500,000", size: "900 sq.ft", img: "https://images.unsplash.com/photo-1600607687940-47a04f6e3a73?auto=format&fit=crop&w=400" },
+            { id: 5, name: "Island Residence", district: "Wan Chai", price: "HK$ 7,900,000", size: "310 sq.ft", img: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400" },
+            { id: 6, name: "Northern Metropark", district: "Yuen Long", price: "HK$ 5,400,000", size: "400 sq.ft", img: "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=400" }
+        ];
+
+        function renderGrid(items) {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            items.forEach(item => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <img src="${item.img}" alt="${item.name}">
+                        <div class="card-info">
+                            <span class="tag">${item.district}</span>
+                            <p class="price">${item.price}</p>
+                            <h3 style="margin: 10px 0 5px 0;">${item.name}</h3>
+                            <p style="color: var(--text-gray); font-size: 0.9rem;">Gross Area: ${item.size}</p>
+                            <button class="buy-btn" onclick="openModal()">Buy This Property</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('propertySearch').value.toLowerCase();
+            const filtered = propertyData.filter(p => 
+                p.district.toLowerCase().includes(query) || 
+                p.name.toLowerCase().includes(query)
+            );
+            
+            document.getElementById('resultTitle').innerText = query ? `Results for "${query}"` : "Featured Listings";
+            renderGrid(filtered);
+        }
+
+        function openModal() {
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Initial Load
+        renderGrid(propertyData);
+    </script>
+</body>
+</html>

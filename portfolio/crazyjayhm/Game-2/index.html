@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>運動場圈鍵盤鬥快</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="top">
+        <h1>運動場圈鍵盤鬥快</h1>s
+        <p>你要喺運動場跑一個圈，狂撳指定鍵，鬥快贏電腦。</p>
+      </header>
+
+      <section class="hud">
+        <div class="panel">
+          <span class="label">目標按鍵</span>
+          <strong id="targetKey">A</strong>
+        </div>
+        <div class="panel">
+          <span class="label">倒數</span>
+          <strong id="countdown">3</strong>
+        </div>
+        <div class="panel">
+          <span class="label">你嘅次數</span>
+          <strong id="hits">0</strong>
+        </div>
+        <div class="panel">
+          <span class="label">難度</span>
+          <strong id="difficultyText">普通</strong>
+        </div>
+      </section>
+
+      <section class="controls">
+        <label>
+          電腦速度
+          <select id="difficulty">
+            <option value="easy">易</option>
+            <option value="normal" selected>普通</option>
+            <option value="hard">難</option>
+          </select>
+        </label>
+        <button id="startBtn">開始</button>
+        <button id="resetBtn" class="ghost">重置</button>
+      </section>
+
+      <section class="stadium-wrap">
+        <div class="stadium">
+          <div class="track outer-line"></div>
+          <div class="track lane lane-1"></div>
+          <div class="track lane lane-2"></div>
+          <div class="track lane lane-3"></div>
+          <div class="field"></div>
+          <div class="finish-line"></div>
+
+          <div class="runner you" id="youRunner">
+            <span>🏃</span>
+            <small>你</small>
+          </div>
+
+          <div class="runner cpu" id="cpuRunner">
+            <span>💻</span>
+            <small>電腦</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="bottom-info">
+        <div class="status" id="status">撳開始準備起跑</div>
+        <div class="bars">
+          <div>
+            <div class="bar-title">你嘅圈速進度</div>
+            <div class="bar">
+              <div class="fill you-fill" id="youFill"></div>
+            </div>
+          </div>
+          <div>
+            <div class="bar-title">電腦圈速進度</div>
+            <div class="bar">
+              <div class="fill cpu-fill" id="cpuFill"></div>
+            </div>
+          </div>
+        </div>
+        <p class="tips">
+          玩法：倒數完之後，見到咩鍵就撳咩鍵。每次撳中，角色會沿住運動場跑道前進一截。
+        </p>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Food Delivery Tracking</title>
+    
+    <!-- 引入 Tailwind CSS 用於快速和精確的 UI 佈局 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 Leaflet CSS 用於地圖顯示 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- 引入 Phosphor Icons 用於圖標 -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* 隱藏地圖預設的縮放控制按鈕，讓畫面更像原生 App */
+        .leaflet-control-container .leaflet-top,
+        .leaflet-control-container .leaflet-bottom {
+            display: none;
+        }
+
+        /* 使用者當前位置的自訂標記樣式 (藍色呼吸燈效果) */
+        .user-marker {
+            background-color: #3b82f6;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* 餐廳目的地標記樣式 (紅色圓底白字) */
+        .restaurant-marker {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 16px;
+        }
+
+        /* 底部清單的平滑過渡動畫 */
+        #bottom-sheet {
+            transition: transform 0.3s ease-out;
+        }
+
+        /* 自訂滾動條讓清單更美觀 */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 overflow-hidden select-none font-sans text-gray-800">
+
+    <div id="app" class="relative h-screen w-full">
+        <!-- 地圖容器 -->
+        <div id="map" class="absolute inset-0 z-0"></div>
+
+        <!-- 頂部 ETA 面板 (預設隱藏，選擇餐廳後顯示) -->
+        <div id="eta-panel" class="absolute top-10 left-4 right-4 z-20 hidden transform transition-all duration-500 translate-y-[-20px] opacity-0">
+            <div class="bg-white rounded-2xl shadow-lg p-4 flex items-center justify-between border border-gray-100">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-red-50 text-red-500 p-3 rounded-full flex-shrink-0">
+                        <i class="ph-fill ph-clock text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900" id="eta-time">ETA --:--</h2>
+                        <div class="flex items-center text-sm text-gray-500 mt-1 space-x-2">
+                            <span id="eta-distance">Distance: -- km</span>
+                            <span class="text-gray-300">•</span>
+                            <span id="eta-wait">Wait time: -- mins</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 返回定位按鈕 -->
+        <button id="recenter-btn" class="absolute bottom-[40vh] right-4 z-20 bg-white p-3 rounded-full shadow-md text-gray-700 hover:bg-gray-50 focus:outline-none hidden">
+            <i class="ph ph-navigation-arrow text-xl"></i>
+        </button>
+
+        <!-- 底部餐廳清單 (Bottom Sheet) -->
+        <div id="bottom-sheet" class="absolute bottom-0 w-full z-20 bg-white rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)] h-[40vh] flex flex-col">
+            <!-- 頂部拖曳指示條 (裝飾用) -->
+            <div class="w-full flex justify-center pt-3 pb-1">
+                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            </div>
+            
+            <div class="px-6 py-3 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900">Available Restaurants</h3>
+            </div>
+
+            <!-- 餐廳列表 -->
+            <div id="restaurant-list" class="flex-1 overflow-y-auto p-2">
+                <!-- 列表內容將透過 JavaScript 動態生成 -->
+            </div>
+        </div>
+        
+        <!-- 載入中遮罩 (取得定位時顯示) -->
+        <div id="loading-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-red-500 border-t-transparent mb-4"></div>
+            <p class="text-gray-600 font-medium">Getting your location...</p>
+        </div>
+    </div>
+
+    <!-- 引入 Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // 應用程式狀態
+        let map;
+        let userLocation = null;
+        let userMarker = null;
+        let destinationMarker = null;
+        let routeLayer = null;
+        let selectedRestaurant = null;
+
+        // 預設餐廳資料 (將根據使用者位置動態計算座標)
+        const restaurantsData = [
+            { id: 1, name: "Pizza Hut", waitTime: 10, color: "bg-red-500", icon: "ph-pizza", latOffset: 0.005, lngOffset: 0.004 },
+            { id: 2, name: "KFC", waitTime: 15, color: "bg-red-600", icon: "ph-hamburger", latOffset: -0.008, lngOffset: 0.006 },
+            { id: 3, name: "McDonald's", waitTime: 5, color: "bg-yellow-500", icon: "ph-hamburger", latOffset: 0.003, lngOffset: -0.007 },
+        ];
+        
+        // 生成的實際餐廳列表
+        let restaurants = [];
+
+        // 初始化應用程式
+        function initApp() {
+            // 初始化地圖，設定一個預設視角 (香港)
+            map = L.map('map', { zoomControl: false }).setView([22.3193, 114.1694], 13);
+            
+            // 使用類似原生地圖的淺色底圖 (CartoDB Positron)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            }).addTo(map);
+
+            // 請求使用者位置
+            requestLocation();
+
+            // 綁定返回定位按鈕事件
+            document.getElementById('recenter-btn').addEventListener('click', () => {
+                if (userLocation) {
+                    map.setView(userLocation, 15);
+                }
+            });
+        }
+
+        // 請求地理位置
+        function requestLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // 成功取得位置
+                        userLocation = [position.coords.latitude, position.coords.longitude];
+                        handleLocationFound();
+                    },
+                    (error) => {
+                        // 失敗或拒絕授權，使用預設位置 (例如：將軍澳培成花園附近，以符合截圖情境)
+                        console.warn("Location access denied or failed. Using default location.");
+                        userLocation = [22.316, 114.259]; 
+                        handleLocationFound();
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            } else {
+                // 瀏覽器不支援
+                userLocation = [22.316, 114.259];
+                handleLocationFound();
+            }
+        }
+
+        // 處理取得位置後的邏輯
+        function handleLocationFound() {
+            // 隱藏載入動畫
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('recenter-btn').classList.remove('hidden');
+
+            // 設置地圖中心
+            map.setView(userLocation, 15);
+
+            // 添加使用者標記 (藍色呼吸點)
+            const userIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div class='user-marker w-4 h-4'></div>",
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+            userMarker = L.marker(userLocation, { icon: userIcon }).addTo(map);
+
+            // 根據使用者位置產生附近的餐廳
+            generateRestaurants();
+            
+            // 渲染列表
+            renderRestaurantList();
+        }
+
+        // 產生餐廳座標 (相對於使用者)
+        function generateRestaurants() {
+            restaurants = restaurantsData.map(res => {
+                return {
+                    ...res,
+                    lat: userLocation[0] + res.latOffset,
+                    lng: userLocation[1] + res.lngOffset
+                };
+            });
+        }
+
+        // 渲染底部餐廳清單
+        function renderRestaurantList() {
+            const listContainer = document.getElementById('restaurant-list');
+            listContainer.innerHTML = '';
+
+            restaurants.forEach((restaurant, index) => {
+                // 簡單計算直線距離 (用於列表顯示，實際 ETA 會用路徑計算)
+                const distKm = (map.distance(userLocation, [restaurant.lat, restaurant.lng]) / 1000).toFixed(1);
+
+                const itemHtml = `
+                    <div class="restaurant-item p-4 mb-2 mx-2 rounded-xl border border-transparent hover:bg-gray-50 hover:border-gray-100 transition-colors cursor-pointer flex items-center justify-between" 
+                         onclick="selectRestaurant(${index})">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-full ${restaurant.color} text-white flex items-center justify-center shadow-sm">
+                                <i class="ph-fill ${restaurant.icon} text-2xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-lg">${restaurant.name}</h4>
+                                <div class="text-sm text-gray-500 mt-0.5 flex items-center space-x-2">
+                                    <span><i class="ph ph-map-pin mr-1"></i>${distKm} km</span>
+                                    <span>•</span>
+                                    <span class="text-orange-500 font-medium"><i class="ph ph-clock mr-1"></i>~${restaurant.waitTime} mins</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+                            <i class="ph ph-caret-right"></i>
+                        </div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+        // 選擇餐廳
+        async function selectRestaurant(index) {
+            selectedRestaurant = restaurants[index];
+            const dest = [selectedRestaurant.lat, selectedRestaurant.lng];
+
+            // 1. 添加/更新目的地標記
+            if (destinationMarker) map.removeLayer(destinationMarker);
+            
+            const destIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class='restaurant-marker w-8 h-8'>A</div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+            destinationMarker = L.marker(dest, { icon: destIcon }).addTo(map);
+
+            // 2. 獲取並繪製路線
+            await drawRoute(userLocation, dest);
+
+            // 3. 更新並顯示 ETA 面板
+            showETAPanel(selectedRestaurant);
+        }
+
+        // 呼叫 OSRM API 取得路徑並繪製
+        async function drawRoute(start, end) {
+            try {
+                // 由於 Leaflet 使用 [lat, lng]，OSRM API 需要 [lng, lat]
+                const url = `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.code === 'Ok' && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    
+                    // 清除舊路線
+                    if (routeLayer) map.removeLayer(routeLayer);
+
+                    // 繪製新路線 (紅色粗線，符合截圖)
+                    routeLayer = L.geoJSON(route.geometry, {
+                        style: {
+                            color: '#ef4444', // Tailwind red-500
+                            weight: 5,
+                            opacity: 0.9,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }
+                    }).addTo(map);
+
+                    // 調整地圖視角以包含整條路線，並預留底部清單的空間
+                    map.fitBounds(routeLayer.getBounds(), {
+                        paddingTopLeft: [50, 150], // 預留頂部 ETA 空間
+                        paddingBottomRight: [50, window.innerHeight * 0.45] // 預留底部清單空間
+                    });
+
+                    // 將路線資料儲存起來供計算 ETA 使用
+                    selectedRestaurant.routeDistance = (route.distance / 1000).toFixed(1);
+                    selectedRestaurant.routeDuration = Math.ceil(route.duration / 60); // 分鐘
+                }
+            } catch (error) {
+                console.error("Error fetching route:", error);
+                // 發生錯誤時的備用方案：畫一條直線
+                if (routeLayer) map.removeLayer(routeLayer);
+                routeLayer = L.polyline([start, end], {color: '#ef4444', weight: 5}).addTo(map);
+                map.fitBounds(routeLayer.getBounds(), { paddingBottomRight: [0, window.innerHeight * 0.4] });
+                
+                selectedRestaurant.routeDistance = (map.distance(start, end) / 1000).toFixed(1);
+            }
+        }
+
+        // 顯示頂部的 ETA 面板
+        function showETAPanel(restaurant) {
+            const panel = document.getElementById('eta-panel');
+            const timeEl = document.getElementById('eta-time');
+            const distEl = document.getElementById('eta-distance');
+            const waitEl = document.getElementById('eta-wait');
+
+            // 計算預計抵達時間 (當前時間 + 路線時間 + 等待時間)
+            const now = new Date();
+            const totalMinutesToAdd = (restaurant.routeDuration || 5) + restaurant.waitTime;
+            now.setMinutes(now.getMinutes() + totalMinutesToAdd);
+            
+            // 格式化時間 (例: 04:08 PM)
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 12小時制 0 變 12
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            const timeString = `${hours < 10 ? '0'+hours : hours}:${minutes} ${ampm}`;
+
+            // 更新內容
+            timeEl.textContent = `ETA ${timeString}`;
+            distEl.textContent = `Distance: ${restaurant.routeDistance || '1.0'} km`;
+            waitEl.textContent = `Wait time: ~${restaurant.waitTime} mins`;
+
+            // 顯示面板 (加入平滑的進場動畫)
+            panel.classList.remove('hidden');
+            // 使用 setTimeout 確保 display:block 生效後再觸發 transition
+            setTimeout(() => {
+                panel.classList.remove('translate-y-[-20px]', 'opacity-0');
+                panel.classList.add('translate-y-0', 'opacity-100');
+            }, 10);
+        }
+
+        // 網頁載入完成後啟動
+        window.onload = initApp;
+    </script>
+</body>
+</html>

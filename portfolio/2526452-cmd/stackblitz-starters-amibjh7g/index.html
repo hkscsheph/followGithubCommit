@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業請假自動生成系統 V2.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --whatsapp: #25D366;
+            --bg: #ecf0f1;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        
+        h1 { text-align: center; color: var(--primary); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .tab-btn { padding: 10px 20px; border: none; background: #ddd; cursor: pointer; border-radius: 20px; font-weight: bold; }
+        .tab-btn.active { background: var(--accent); color: white; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+        
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        
+        /* 簽名板樣式 */
+        .signature-wrapper { border: 2px dashed #ccc; border-radius: 8px; position: relative; height: 150px; background: #fffcf5; }
+        canvas { width: 100%; height: 100%; }
+        .clear-sig { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-gen { background: var(--primary); }
+        .btn-pdf { background: #e74c3c; display: none; } /* 初始隱藏 */
+        .btn-copy { background: #f39c12; display: none; }
+        .btn-wa { background: var(--whatsapp); display: none; }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* 預覽區域 - 模擬 A4 紙張 */
+        #previewSection { 
+            display: none; 
+            margin-top: 30px; 
+            background: #fff; 
+            padding: 40px; 
+            border: 1px solid #ddd; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        /* 列印/PDF 專用樣式 */
+        .official-doc { font-family: 'Times New Roman', serif; line-height: 1.8; color: #000; }
+        .doc-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .doc-title { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
+        .doc-body { margin-bottom: 40px; white-space: pre-wrap; }
+        .doc-footer { display: flex; justify-content: space-between; margin-top: 50px; }
+        .sign-area { text-align: center; }
+        .sign-img { max-height: 60px; display: block; margin: 0 auto; }
+
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .btn-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📄 智慧請假系統 V2.0</h1>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="setMode('formal')">正式公文模式</button>
+        <button class="tab-btn" onclick="setMode('chat')">通訊軟體模式</button>
+    </div>
+
+    <form id="mainForm">
+        <div class="form-grid">
+            <div>
+                <label>申請人姓名</label>
+                <input type="text" id="name" placeholder="王小明">
+            </div>
+            <div>
+                <label>所屬部門</label>
+                <input type="text" id="dept" placeholder="業務部">
+            </div>
+            
+            <div>
+                <label>開始日期</label>
+                <input type="date" id="startDate">
+            </div>
+            <div>
+                <label>結束日期</label>
+                <input type="date" id="endDate">
+            </div>
+
+            <div class="full-width">
+                <label>請假類別</label>
+                <select id="type">
+                    <option value="sick">病假 (需休養)</option>
+                    <option value="personal">事假 (私人事務)</option>
+                    <option value="annual">特休/年假 (放鬆充電)</option>
+                    <option value="wfh">居家辦公申請 (WFH)</option>
+                </select>
+            </div>
+
+            <div class="full-width">
+                <label>請假原因 (輸入關鍵字，AI 自動擴寫)</label>
+                <textarea id="reason" rows="3" placeholder="例如：吃壞肚子、要去銀行辦事、小孩學校有活動..."></textarea>
+            </div>
+
+            <div class="full-width" id="sigContainer">
+                <label>手寫簽名 (請在下方方框內簽名)</label>
+                <div class="signature-wrapper">
+                    <canvas id="signature-pad"></canvas>
+                    <button type="button" class="clear-sig" onclick="clearSignature()">清除重簽</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button type="button" class="btn btn-gen" onclick="generateDocument()">⚡ 生成預覽</button>
+            <button type="button" class="btn btn-pdf" id="btnPdf" onclick="downloadPDF()">📥 下載 PDF</button>
+            <button type="button" class="btn btn-copy" id="btnCopy" onclick="copyText()">📋 複製文字</button>
+            <button type="button" class="btn btn-wa" id="btnWa" onclick="shareToWhatsApp()">💬 傳送 WhatsApp</button>
+        </div>
+    </form>
+
+    <div id="previewSection">
+        <div class="official-doc" id="docContent">
+            <div class="doc-header">
+                <div class="doc-title">請 假 申 請 單</div>
+                <div style="font-size: 14px; margin-top:5px;">Leave Application Form</div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong>致 主管/人資部：</strong>
+            </div>
+
+            <div class="doc-body" id="finalBody">
+                </div>
+
+            <div class="doc-footer">
+                <div>
+                    <p>審核主管：_________________</p>
+                </div>
+                <div class="sign-area">
+                    <p>申請人簽名：</p>
+                    <img id="finalSig" class="sign-img" alt="簽名" />
+                    <p id="finalDate" style="font-size: 12px; margin-top: 5px;"></p>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:20px; font-size:10px; color:#999; text-align:center; border-top:1px solid #eee; padding-top:5px;">
+            本文件由自動化系統生成，內容之真實性由申請人負責。
+        </div>
+    </div>
+</div>
+
+<script>
+    // 初始化簽名板
+    const canvas = document.getElementById('signature-pad');
+    const signaturePad = new SignaturePad(canvas);
+
+    // 處理視窗大小改變時 canvas 的調整
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear(); // 調整大小需清除，否則座標會跑掉
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function clearSignature() {
+        signaturePad.clear();
+    }
+
+    let currentMode = 'formal';
+
+    function setMode(mode) {
+        currentMode = mode;
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if (mode === 'chat') {
+            document.getElementById('sigContainer').style.display = 'none';
+            document.getElementById('previewSection').style.display = 'none';
+        } else {
+            document.getElementById('sigContainer').style.display = 'block';
+        }
+        
+        // 重置按鈕狀態
+        document.getElementById('btnPdf').style.display = 'none';
+        document.getElementById('btnCopy').style.display = 'none';
+        document.getElementById('btnWa').style.display = 'none';
+    }
+
+    function generateDocument() {
+        const name = document.getElementById('name').value;
+        const dept = document.getElementById('dept').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        const type = document.getElementById('type').value;
+        const rawReason = document.getElementById('reason').value;
+
+        if(!name || !start || !end) {
+            alert("請填寫完整資訊");
+            return;
+        }
+
+        // 簡單規則邏輯 (模擬 AI 潤飾)
+        let polishedReason = "";
+        let subject = "";
+
+        if (type === 'sick') {
+            subject = "病假申請";
+            polishedReason = rawReason 
+                ? `本人因${rawReason}，身體不適。經評估後建議在家休養，以避免病情加重或影響同事健康。`
+                : "本人因突發性身體不適，需請病假在家休養。";
+        } else if (type === 'personal') {
+            subject = "事假申請";
+            polishedReason = rawReason 
+                ? `本人因${rawReason}，屬必要之私人事務，需親自處理，故無法於當日出勤。`
+                : "本人因有重要私人行程需處理，擬請事假。";
+        } else if (type === 'wfh') {
+            subject = "居家辦公(WFH)申請";
+            polishedReason = `本人因${rawReason || "個人行程安排"}，擬申請居家辦公。期間將保持網路通暢，不影響公務聯繫與專案進度。`;
+        } else {
+            subject = "特休申請";
+            polishedReason = "為調節身心平衡，擬申請年度特別休假。";
+        }
+
+        const dateRange = start === end ? `${start} (1天)` : `${start} 至 ${end}`;
+
+        if (currentMode === 'formal') {
+            // 正式模式：生成 HTML 預覽
+            const bodyHtml = `
+                <p><strong>申請人：</strong> ${name} (${dept})</p>
+                <p><strong>請假期間：</strong> ${dateRange}</p>
+                <p><strong>假別：</strong> ${subject}</p>
+                <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
+                <p><strong>事由說明：</strong></p>
+                <p>${polishedReason}</p>
+                <p>休假期間若有緊急公務，請以 Email 或電話聯繫。懇請 批准。</p>
+            `;
+            
+            document.getElementById('finalBody').innerHTML = bodyHtml;
+            document.getElementById('finalDate').innerText = "日期：" + new Date().toISOString().slice(0,10);
+
+            // 處理簽名
+            if (!signaturePad.isEmpty()) {
+                document.getElementById('finalSig').src = signaturePad.toDataURL();
+                document.getElementById('finalSig').style.display = 'block';
+            } else {
+                document.getElementById('finalSig').style.display = 'none';
+            }
+
+            document.getElementById('previewSection').style.display = 'block';
+            document.getElementById('btnPdf').style.display = 'block'; // 顯示 PDF 按鈕
+            
+            // 滾動到預覽
+            document.getElementById('previewSection').scrollIntoView({behavior: "smooth"});
+
+        } else {
+            // 聊天模式：生成文字
+            const chatText = `【${subject}】\n主管您好，我是${dept}的${name}。\n\n${polishedReason}\n\n日期：${dateRange}\n\n麻煩您了，謝謝！`;
+            
+            // 存儲全域變數供按鈕使用
+            window.generatedChatText = chatText;
+            
+            document.getElementById('btnCopy').style.display = 'block';
+            document.getElementById('btnWa').style.display = 'block';
+            alert("短訊息內容已生成，請點擊下方按鈕複製或傳送！");
+        }
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('previewSection');
+        const opt = {
+            margin:       10,
+            filename:     `請假單_${document.getElementById('name').value}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function copyText() {
+        navigator.clipboard.writeText(window.generatedChatText);
+        alert("文字已複製！");
+    }
+
+    function shareToWhatsApp() {
+        const text = encodeURIComponent(window.generatedChatText);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+</script>
+
+</body>
+</html>

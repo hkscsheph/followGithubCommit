@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Style Chat</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --bg-color: #f0f2f5;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        
+        /* 聊天容器 */
+        .chat-container { width: 90%; max-width: 500px; height: 80vh; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* 標題欄 */
+        .chat-header { background: var(--primary-color); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; }
+        
+        /* 訊息顯示區 */
+        #chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* 訊息氣泡樣式 */
+        .msg { max-width: 80%; padding: 10px 15px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; position: relative; }
+        .msg.received { align-self: flex-start; background: #e9ecef; color: #333; border-bottom-left-radius: 2px; }
+        .msg.sent { align-self: flex-end; background: var(--primary-color); color: white; border-bottom-right-radius: 2px; }
+        .msg-info { font-size: 0.7rem; margin-bottom: 4px; opacity: 0.7; }
+
+        /* 輸入區域 */
+        .input-area { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; background: white; }
+        input { border: 1px solid #ddd; padding: 10px; border-radius: 20px; outline: none; transition: 0.3s; }
+        #username { width: 80px; }
+        #content { flex-grow: 1; }
+        input:focus { border-color: var(--primary-color); }
+        button { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">即時聊天室</div>
+    <div id="chat-box"></div>
+    <div class="input-area">
+        <input type="text" id="username" placeholder="用戶名" value="訪客">
+        <input type="text" id="content" placeholder="輸入訊息..." autocomplete="off">
+        <button id="send-btn">發送</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+</body>
+</html>

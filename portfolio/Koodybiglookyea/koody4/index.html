@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UFC Archive | History & Fighter Pay</title>
+    <style>
+        :root {
+            --ufc-red: #d20a0a;
+            --ufc-black: #111111;
+            --ufc-gold: #c5a059;
+            --text-light: #f4f4f4;
+            --card-bg: #1e1e1e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--ufc-black);
+            color: var(--text-light);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1595079676339-1534801ad6cf?auto=format&fit=crop&q=80&w=1000');
+            background-size: cover;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 4px solid var(--ufc-red);
+        }
+
+        h1 { font-size: 3rem; margin-bottom: 0; text-transform: uppercase; letter-spacing: 2px; }
+        .subtitle { color: var(--ufc-red); font-weight: bold; text-transform: uppercase; }
+
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 20px; }
+
+        section { margin-bottom: 4rem; }
+
+        h2 { border-left: 5px solid var(--ufc-red); padding-left: 15px; text-transform: uppercase; }
+
+        /* Salary Table Styling */
+        .salary-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th {
+            background-color: #2a2a2a;
+            color: var(--ufc-gold);
+            text-align: left;
+            padding: 12px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        tr:hover { background-color: #252525; }
+
+        .pay-high { color: #4caf50; font-weight: bold; }
+        
+        .badge {
+            background: var(--ufc-red);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            vertical-align: middle;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.8rem;
+            color: #666;
+            border-top: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>UFC HISTORY & PAY</h1>
+        <p class="subtitle">The Evolution of the Octagon</p>
+    </header>
+
+    <div class="container">
+        
+        <section id="history">
+            <h2>The Evolution</h2>
+            <p>From its brutal beginnings at UFC 1 in 1993 to becoming a multi-billion dollar global powerhouse under TKO Group Holdings, the UFC has redefined combat sports. The 2026 transition to the Paramount+ broadcast era marked the final step in turning MMA into a mainstream seasonal sport.</p>
+        </section>
+
+        <section id="champions">
+            <h2>Hall of Fame Icons</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div class="salary-card">
+                    <h3>Jon Jones</h3>
+                    <p>The consensus GOAT. Undefeated Heavyweight and Light Heavyweight champion with a record 16 title fight wins.</p>
+                </div>
+                <div class="salary-card">
+                    <h3>Amanda Nunes</h3>
+                    <p>The "Lioness" retired as the first woman to hold and defend two titles simultaneously.</p>
+                </div>
+                <div class="salary-card">
+                    <h3>Georges St-Pierre</h3>
+                    <p>The pioneer of the "complete fighter" era, mastering wrestling and striking in tandem.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="salaries">
+            <h2>Fighter Salaries & Tiers (2026 Estimates)</h2>
+            <div class="salary-card">
+                <p>Post-2026 contracts have shifted away from PPV points toward performance-based engagement bonuses.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fighter Tier</th>
+                            <th>Avg. Base Pay</th>
+                            <th>Win Bonus / Incentives</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Entry Level</strong></td>
+                            <td>$12,000</td>
+                            <td>$12,000</td>
+                            <td>Standard "12/12" rookie contract.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ranked Veteran</strong></td>
+                            <td>$85,000</td>
+                            <td>$85,000</td>
+                            <td>Top 15 contenders.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Main Event Star</strong></td>
+                            <td>$500,000</td>
+                            <td>Flat Rate</td>
+                            <td>Negotiated flat fees; no win bonus.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Undisputed Champion</strong></td>
+                            <td class="pay-high">$1.5M - $3M</td>
+                            <td>Engagement Bonus</td>
+                            <td>Includes "Paramount+ Sub" bonuses. <span class="badge">ELITE</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2026 UFC Fan Archive. For educational purposes only.</p>
+    </footer>
+
+</body>
+</html>

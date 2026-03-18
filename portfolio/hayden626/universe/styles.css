@@ -1,0 +1,40 @@
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: sans-serif; perspective: 1500px; }
+#starCanvas { position: absolute; z-index: 1; pointer-events: none; }
+.vignette { position: fixed; width: 100%; height: 100%; background: radial-gradient(circle, transparent 20%, #000 120%); pointer-events: none; z-index: 5; }
+
+/* 太陽 */
+#sun-core {
+    position: absolute; top: 50%; left: 50%; width: 25px; height: 25px;
+    background: #fff; border-radius: 50%; transform: translate(-50%, -50%);
+    box-shadow: 0 0 60px 20px #ffcc00, 0 0 120px 40px #ff6600;
+    z-index: 3; animation: sunPulse 4s infinite ease-in-out;
+}
+@keyframes sunPulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.2); } }
+
+/* 三大星球 */
+#solar-system { position: absolute; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
+.orbit-planet { position: absolute; border-radius: 50%; transform-style: preserve-3d; box-shadow: inset -15px -15px 40px rgba(0,0,0,0.8); }
+
+.type-forest { background: radial-gradient(circle at 30% 30%, #2d5a27, #1e3a1a); box-shadow: inset -15px -15px 40px rgba(0,0,0,0.8), 0 0 20px rgba(0,255,0,0.2); }
+.type-ocean { background: radial-gradient(circle at 30% 30%, #1e90ff, #003366); box-shadow: inset -15px -15px 40px rgba(0,0,0,0.8), 0 0 20px rgba(0,100,255,0.2); }
+.type-lava { background: radial-gradient(circle at 30% 30%, #ff4500, #4b0000); box-shadow: inset -15px -15px 40px rgba(0,0,0,0.9), 0 0 25px #ff4500; }
+
+.planet-tag { position: absolute; bottom: -35px; width: 100px; left: calc(50% - 50px); text-align: center; color: white; font-size: 12px; letter-spacing: 1px; opacity: 0.6; }
+
+/* Lux 3D */
+#scene-3d { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; pointer-events: none; z-index: 100; }
+.aurora-sprite { position: absolute; width: 60px; height: 80px; transform-style: preserve-3d; pointer-events: auto; transform: translate(-50%, -50%); }
+.name-label { position: absolute; top: -45px; width: 100px; left: -20px; color: #fff; text-align: center; text-shadow: 0 0 10px var(--glow); font-weight: bold; }
+.sprite-head { width: 28px; height: 28px; background: #fff; border-radius: 50%; position: absolute; left: 16px; box-shadow: 0 0 30px #fff, 0 0 60px var(--glow, #00d4ff); transform: translateZ(30px); }
+.sprite-body { width: 16px; height: 32px; background: rgba(255,255,255,0.8); border-radius: 10px; position: absolute; left: 22px; top: 22px; transform: translateZ(15px); }
+.sprite-wing { width: 30px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50% 50% 0 80%; position: absolute; top: 15px; transform-origin: top center; backdrop-filter: blur(4px); }
+.left { left: 4px; } .right { right: 4px; transform: scaleX(-1); }
+
+.bubble-chat { background: rgba(0,0,0,0.85); color: #fff; padding: 12px 18px; border-radius: 18px; position: absolute; left: 80px; top: -30px; opacity: 0; transition: 0.5s; min-width: 220px; border: 1px solid rgba(255,255,255,0.1); line-height: 1.5; font-size: 14px; }
+
+/* UI */
+.name-control { position: absolute; top: 20px; left: 20px; z-index: 250; }
+#nameInput { background: none; border: none; border-bottom: 1px solid #fff; color: #fff; outline: none; padding: 5px; }
+.scene-menu { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 200; }
+button { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 30px; cursor: pointer; transition: 0.3s; backdrop-filter: blur(5px); }
+button:hover { background: #fff; color: #000; box-shadow: 0 0 20px #fff; }

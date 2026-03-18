@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Warp Lab v6</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #050505;
+            color: white;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        #drop-zone {
+            width: 80%; height: 150px;
+            border: 2px dashed #333;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; transition: 0.3s;
+            border-radius: 20px; cursor: pointer;
+            z-index: 10; background: rgba(18, 18, 18, 0.8);
+        }
+        #drop-zone.hover { border-color: #00ffcc; background: rgba(0, 255, 204, 0.05); }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .controls { margin-top: 20px; color: #aaa; font-size: 0.8em; text-align: center; line-height: 1.5; z-index: 10; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; border: 1px solid #222; }
+        b { color: #00ffcc; }
+        .status { position: absolute; bottom: 20px; color: #00ffcc; font-family: monospace; z-index: 10; font-size: 1.1em; text-shadow: 0 0 5px black; }
+    </style>
+</head>
+<body>
+
+    <canvas id="visualizer"></canvas>
+    <div id="drop-zone">Drop audio here</div>
+    
+    <div class="controls">
+        <b>[Move Mouse]</b> Pitch | <b>[Wheel]</b> ±0.10 Speed (or FX Amt) | <b>[Q]</b> Distortion | <b>[F]</b> Redux<br>
+        <b>[G]</b> Grain | <b>[E]</b> Reverse Local | <b>[,] [.] [/]</b> Filters | <b>[Esc]</b> Kill FX | <b>[C]</b> Reset
+    </div>
+
+    <div id="stats" class="status">Ready</div>
+
+<script>
+    let audioCtx, source, panner, delay, dryGain, wetGain, analyser, filter, distortionNode;
+    let audioBuffer = null, startTime = 0;
+    let currentSpeed = 1.0, currentPan = 0, wheelValue = 0.5;
+    let activeEffect = null; 
+
+    const dropZone = document.getElementById('drop-zone');
+    const stats = document.getElementById('stats');
+    const canvas = document.getElementById('visualizer');
+    const canvasCtx = canvas.getContext('2d');
+
+    function makeDistortionCurve(amount) {
+        const k = typeof amount === 'number' ? amount : 50;
+        const n_samples = 44100;
+        const curve = new Float32Array(n_samples);
+        const deg = Math.PI / 180;
+        for (let i = 0 ; i < n_samples; ++i ) {
+            const x = i * 2 / n_samples - 1;
+            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        }
+        return curve;
+    }
+
+    function initAudio() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 1024;
+        
+        panner = audioCtx.createStereoPanner();
+        delay = audioCtx.createDelay(2.0);
+        delay.delayTime.value = 0.3;
+        
+        filter = audioCtx.createBiquadFilter();
+        filter.frequency.value = 20000;
+
+        distortionNode = audioCtx.createWaveShaper();
+        distortionNode.curve = makeDistortionCurve(0);
+        distortionNode.oversample = '4x';
+
+        wetGain = audioCtx.createGain();
+        dryGain = audioCtx.createGain();
+        wetGain.gain.value = 0; 
+
+        drawVisualizer();
+    }
+
+    async function handleFile(file) {
+        if (!audioCtx) initAudio();
+        const arrayBuffer = await file.arrayBuffer();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        startPlayback();
+        dropZone.innerText = "Loaded: " + file.name;
+    }
+
+    function startPlayback(offset = 0) {
+        if (source) source.stop();
+        source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.loop = true;
+        source.playbackRate.value = currentSpeed;
+        startTime = audioCtx.currentTime - offset;
+
+        source.connect(distortionNode);
+        distortionNode.connect(filter);
+        filter.connect(analyser);
+        analyser.connect(panner);
+        panner.connect(dryGain);
+        panner.connect(delay);
+        delay.connect(wetGain);
+        
+        dryGain.connect(audioCtx.destination);
+        wetGain.connect(audioCtx.destination);
+
+        source.start(0, offset % audioBuffer.duration);
+        updateStats();
+    }
+
+    function reverseLocalSegment() {
+        if (!audioBuffer) return;
+        const playTime = (audioCtx.currentTime - startTime) % audioBuffer.duration;
+        const sampleRate = audioBuffer.sampleRate;
+        const startSample = Math.floor(playTime * sampleRate);
+        const segmentLength = Math.floor(sampleRate * 1.5);
+
+        for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
+            const data = audioBuffer.getChannelData(ch);
+            const segment = data.slice(startSample, startSample + segmentLength);
+            segment.reverse();
+            data.set(segment, startSample);
+        }
+        stats.innerText = "Reversed Segment!";
+    }
+
+    function killEffects() {
+        activeEffect = null;
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(20000, audioCtx.currentTime);
+        wetGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        distortionNode.curve = makeDistortionCurve(0);
+        updateStats();
+    }
+
+    function updateStats() {
+        const contextLabel = activeEffect ? `FX Amt: ${(wheelValue*100).toFixed(0)}%` : `Speed: ${currentSpeed.toFixed(2)}x`;
+        stats.innerText = `Active: ${activeEffect || 'None'} | ${contextLabel}`;
+    }
+
+    // --- Interaction ---
+
+    window.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        if (activeEffect) {
+            // Smooth FX control
+            wheelValue = Math.min(Math.max(0, wheelValue - e.deltaY * 0.001), 1);
+            if (activeEffect === 'redux') filter.frequency.value = 100 + (wheelValue * 4000);
+            if (activeEffect === 'grain') delay.delayTime.value = wheelValue * 0.1;
+            if (activeEffect === 'distortion') distortionNode.curve = makeDistortionCurve(wheelValue * 400);
+            if (activeEffect.includes('pass')) filter.frequency.value = 20 + (wheelValue * 15000);
+        } else {
+            // Stepped Audio Speed control (±0.10)
+            if (e.deltaY > 0) {
+                currentSpeed = Math.max(0.1, currentSpeed - 0.10);
+            } else {
+                currentSpeed = Math.min(4.0, currentSpeed + 0.10);
+            }
+            if (source) source.playbackRate.value = currentSpeed;
+        }
+        updateStats();
+    }, { passive: false });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!source) return;
+        source.detune.value = (0.5 - (e.clientY / window.innerHeight)) * 2400;
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (!audioCtx) return;
+        const key = e.key.toLowerCase();
+
+        if (e.code === 'Space') audioCtx.state === 'running' ? audioCtx.suspend() : audioCtx.resume();
+        if (e.code === 'Escape') killEffects();
+        if (key === 'c') location.reload();
+        if (key === 'e') reverseLocalSegment();
+        if (key === 'r') {
+            wetGain.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.1);
+            setTimeout(() => wetGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5), 2000);
+        }
+
+        // Mode Switching
+        if (key === ',') { activeEffect = 'lowpass'; filter.type = 'lowpass'; wheelValue = 0.3; }
+        if (key === '.') { activeEffect = 'highpass'; filter.type = 'highpass'; wheelValue = 0.7; }
+        if (key === '/') { activeEffect = 'bandpass'; filter.type = 'bandpass'; wheelValue = 0.5; }
+        if (key === 'g') { activeEffect = 'grain'; wetGain.gain.value = 0.6; wheelValue = 0.2; }
+        if (key === 'f') { activeEffect = 'redux'; wheelValue = 0.5; }
+        if (key === 'q') { activeEffect = 'distortion'; wheelValue = 0.5; }
+
+        updateStats();
+    });
+
+    function drawVisualizer() {
+        requestAnimationFrame(drawVisualizer);
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteTimeDomainData(dataArray);
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        canvasCtx.fillStyle = 'rgba(5, 5, 5, 0.3)';
+        canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+        canvasCtx.lineWidth = 3; 
+        canvasCtx.strokeStyle = activeEffect ? '#ff0055' : '#00ffcc';
+        canvasCtx.beginPath();
+        let x = 0, slice = canvas.width / bufferLength;
+        for (let i = 0; i < bufferLength; i++) {
+            let y = (dataArray[i] / 128.0) * canvas.height / 2;
+            i === 0 ? canvasCtx.moveTo(x, y) : canvasCtx.lineTo(x, y);
+            x += slice;
+        }
+        canvasCtx.stroke();
+    }
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('hover'); });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault(); dropZone.classList.remove('hover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('audio/')) handleFile(file);
+    });
+</script>
+</body>
+</html>
