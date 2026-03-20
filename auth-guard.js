@@ -6,7 +6,39 @@
 class AuthGuard {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
-    this.allowedDomains = ['@creativehk.edu.hk', '@student.creativehk.edu.hk'];
+    this.allowedEmails = [];
+    this.whitelistLoaded = false;
+  }
+
+  /**
+   * Load whitelist of allowed emails
+   */
+  async loadWhitelist() {
+    if (this.whitelistLoaded) return;
+    
+    try {
+      const response = await fetch('/whitelist.json');
+      const data = await response.json();
+      this.allowedEmails = data.allowedEmails || [];
+      this.whitelistLoaded = true;
+    } catch (error) {
+      console.error('Failed to load whitelist:', error);
+      this.allowedEmails = [];
+      this.whitelistLoaded = true;
+    }
+  }
+
+  /**
+   * Check if email is in whitelist
+   * @param {string} email - Email to check
+   * @returns {boolean} True if email is allowed
+   */
+  isEmailAllowed(email) {
+    if (!email) return false;
+    const normalizedEmail = email.toLowerCase().trim();
+    return this.allowedEmails.some(allowed => 
+      allowed.toLowerCase() === normalizedEmail
+    );
   }
 
   /**
@@ -15,6 +47,9 @@ class AuthGuard {
    */
   async checkAuth() {
     try {
+      // Load whitelist first
+      await this.loadWhitelist();
+
       const { data: { session }, error } = await this.supabase.auth.getSession();
 
       if (error) {
@@ -26,6 +61,14 @@ class AuthGuard {
       if (!session) {
         // Not authenticated
         this.redirectToLogin();
+        return false;
+      }
+
+      // Check if email is in whitelist
+      const email = session.user.email;
+      if (!this.isEmailAllowed(email)) {
+        console.warn('Email not in whitelist:', email);
+        await this.signOut();
         return false;
       }
 

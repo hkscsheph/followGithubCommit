@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>驗證中...</title>
+    <style>
+      :root {
+        --bg-color: #0d1117;
+        --card-bg: #161b22;
+        --text-main: #c9d1d9;
+        --text-secondary: #8b949e;
+        --accent: #58a6ff;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+          Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .container {
+        text-align: center;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(88, 166, 255, 0.3);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 20px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+
+      p {
+        color: var(--text-secondary);
+        margin-top: 10px;
+      }
+
+      .error {
+        color: #da3633;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: rgba(218, 54, 51, 0.1);
+        border-radius: 6px;
+        display: none;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="spinner"></div>
+      <h1>驗證中...</h1>
+      <p>請稍候</p>
+      <div class="error" id="errorMsg"></div>
+    </div>
+
+    <script>
+      const SUPABASE_URL = 'https://wnvgjuhxxwnihmjfrcvk.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_MR0Q28M6SwAHDyy5iqdQXA_U26L7s6b';
+      
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Load whitelist
+      let allowedEmails = [];
+      async function loadWhitelist() {
+        try {
+          const response = await fetch('/whitelist.json');
+          const data = await response.json();
+          allowedEmails = data.allowedEmails || [];
+        } catch (error) {
+          console.error('Failed to load whitelist:', error);
+        }
+      }
+
+      // Check if email is allowed
+      function isEmailAllowed(email) {
+        if (!email) return false;
+        const normalizedEmail = email.toLowerCase().trim();
+        return allowedEmails.some(allowed => 
+          allowed.toLowerCase() === normalizedEmail
+        );
+      }
+
+      // Handle OAuth callback
+      async function handleCallback() {
+        try {
+          await loadWhitelist();
+
+          // Get the session from the URL hash
+          const { data: { session }, error } = await supabaseClient.auth.getSession();
+
+          if (error) {
+            throw error;
+          }
+
+          if (!session) {
+            throw new Error('No session found');
+          }
+
+          // Check if email is whitelisted
+          const email = session.user.email;
+          if (!isEmailAllowed(email)) {
+            // Sign out if not whitelisted
+            await supabaseClient.auth.signOut();
+            showError('您的電郵地址未被授權訪問此系統。');
+            setTimeout(() => {
+              window.location.href = '/login.html';
+            }, 3000);
+            return;
+          }
+
+          // Whitelisted, redirect to main page
+          window.location.href = '/index.html';
+        } catch (error) {
+          console.error('Callback error:', error);
+          showError(error.message || '驗證失敗，請稍後再試。');
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 3000);
+        }
+      }
+
+      function showError(message) {
+        const errorMsg = document.getElementById('errorMsg');
+        errorMsg.textContent = message;
+        errorMsg.style.display = 'block';
+      }
+
+      handleCallback();
+    </script>
+  </body>
+</html>

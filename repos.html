@@ -475,7 +475,8 @@
 
               card.onclick = (e) => {
                 if (!e.target.closest('.like-btn')) {
-                  window.open(`portfolio/${username}/${item.name}/index.html`, '_blank');
+                  const portfolioPath = `portfolio/${username}/${item.name}/index.html`;
+                  window.location.href = `/portfolio-wrapper.html?path=${encodeURIComponent(portfolioPath)}`;
                 }
               };
             } else {
