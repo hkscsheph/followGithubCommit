@@ -1,0 +1,9 @@
+# Protect portfolio directory with auth redirect
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  
+  # Redirect direct portfolio access to auth-protected wrapper
+  # Match: /portfolio/[username]/[project]/index.html or any file in portfolio
+  RewriteRule ^portfolio/([^/]+)/([^/]+)/(.*)$ /portfolio-wrapper.html?path=portfolio/$1/$2/$3 [L,QSA]
+  RewriteRule ^portfolio/([^/]+)/([^/]+)/?$ /portfolio-wrapper.html?path=portfolio/$1/$2/index.html [L,QSA]
+</IfModule>

@@ -64,9 +64,20 @@ This guide covers setting up Supabase for **Google OAuth Authentication** and **
 2. Click **使用 Google 登入** (Sign in with Google)
 3. You'll be redirected to Google's login page
 4. Sign in with your Google account
-5. You should be redirected back to `index.html`
-6. Verify you see your email and a "登出" (Sign Out) button in the header
-7. Try accessing `index.html` or `repos.html` directly - you should remain logged in
+5. If your email is in the whitelist, you'll be redirected to `index.html`
+6. If your email is not whitelisted, you'll see an error and be redirected back to login
+7. Verify you see your email and a "登出" (Sign Out) button in the header
+8. Try accessing `index.html`, `repos.html`, or portfolio pages directly - you should remain logged in if authenticated
+9. Try accessing portfolio pages directly (e.g., `/portfolio/username/project/index.html`) - you should be redirected to login if not authenticated
+
+### Step 6: Email Whitelist Configuration
+
+The system uses a whitelist to restrict access to specific emails:
+
+1. Edit `whitelist.json` in the root directory
+2. Add or remove email addresses from the `allowedEmails` array
+3. Changes take effect immediately on next login attempt
+4. All portfolio pages are protected and will redirect to login if accessed by non-whitelisted users
 
 ### Troubleshooting Google OAuth
 

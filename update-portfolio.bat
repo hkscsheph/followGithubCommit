@@ -67,8 +67,18 @@ if errorlevel 1 (
 )
 echo.
 
-REM Step 6: Commit and push
-echo [6/6] Committing changes...
+REM Step 6: Add auth protection to portfolio pages
+echo [6/7] Adding authentication protection to portfolio pages...
+node scripts\add-portfolio-auth.js
+if errorlevel 1 (
+  echo Error: Failed to add auth protection
+  pause
+  exit /b 1
+)
+echo.
+
+REM Step 7: Commit and push
+echo [7/7] Committing changes...
 git add .
 for /f "tokens=2-4 delims=/ " %%a in ('date /t') do (set mydate=%%c-%%a-%%b)
 git commit -m "Update portfolio: !mydate!"
