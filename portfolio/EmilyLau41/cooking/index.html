@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 神廚 - 外部 VDO Camera 模式</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        canvas { border: 3px solid #00ffcc; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,204,0.3); }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+<script>
+let video;
+let hands;
+let predictions = [];
+let foods = [];
+let effects = [];
+let score = 0;
+let lastX = 0, lastY = 0;
+
+async function setup() {
+  createCanvas(640, 480);
+
+  // --- 強制偵測並使用外部 VDO Camera ---
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter(d => d.kind === 'videoinput');
+  
+  // 邏輯：如果有外接鏡頭，通常會排在清單的後面
+  let targetId = videoDevices.length > 1 ? videoDevices[videoDevices.length - 1].deviceId : null;
+
+  const constraints = {
+    video: targetId ? { deviceId: { exact: targetId } } : true
+  };
+
+  video = createCapture(constraints);
+  video.size(640, 480);
+  video.hide();
+
+  // --- MediaPipe 核心設定 ---
+  hands = new Hands({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+  });
+
+  hands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.7
+  });
+
+  hands.onResults(onResults);
+
+  const camera = new Camera(video.elt, {
+    onFrame: async () => { await hands.send({image: video.elt}); },
+    width: 640, height: 480
+  });
+  camera.start();
+}
+
+function onResults(results) {
+  predictions = results.multiHandLandmarks;
+}
+
+function draw() {
+  // 1. 繪製 VDO Camera 畫面 (不使用鏡像 scale，保持攝影機原始方位)
+  image(video, 0, 0, width, height);
+
+  if (frameCount % 40 === 0) foods.push(new Food());
+
+  // 2. 顯示 Trace (追蹤痕跡) 並處理碰撞
+  if (predictions && predictions.length > 0) {
+    let hand = predictions[0];
+    
+    // 取得食指 (8) 與 拇指 (4) 座標
+    // 注意：外部攝影機通常不需要鏡像修正 (1 - x)，故直接乘寬度
+    let ix = hand[8].x * width; 
+    let iy = hand[8].y * height;
+    let tx = hand[4].x * width; 
+    let ty = hand[4].y * height;
+
+    let centerX = (ix + tx) / 2;
+    let centerY = (iy + ty) / 2;
+    let handSpeed = dist(centerX, centerY, lastX, lastY);
+
+    // --- 繪製 Trace ---
+    stroke(0, 255, 204);
+    strokeWeight(3);
+    line(ix, iy, tx, ty); // 指尖連線
+    noStroke();
+    fill(255, 0, 255); ellipse(ix, iy, 15, 15); // 食指
+    fill(0, 255, 255); ellipse(tx, ty, 15, 15); // 拇指
+
+    // 碰撞偵測 (No Afterimage)
+    for (let i = foods.length - 1; i >= 0; i--) {
+      // 偵測快速揮動或捏合碰撞
+      if (handSpeed > 18 && dist(centerX, centerY, foods[i].x, foods[i].y) < 60) {
+        score += 10;
+        effects.push(new FlashEffect(foods[i].x, foods[i].y));
+        foods.splice(i, 1); // 立即刪除食物
+      }
+    }
+    lastX = centerX;
+    lastY = centerY;
+  }
+
+  // 3. 渲染食材與特效
+  for (let f of foods) { f.update(); f.display(); }
+  for (let i = effects.length - 1; i >= 0; i--) {
+    effects[i].display();
+    if (effects[i].life <= 0) effects.splice(i, 1);
+  }
+  
+  // 清除掉出螢幕的食物
+  foods = foods.filter(f => f.y < height + 50);
+
+  drawUI();
+}
+
+class Food {
+  constructor() {
+    this.x = random(60, width - 60);
+    this.y = -50;
+    this.speed = random(3, 7);
+    this.type = random(['🍎', '🍋', '🍉', '🥦', '🥩', '🍞']);
+  }
+  update() { this.y += this.speed; }
+  display() {
+    textSize(50);
+    textAlign(CENTER, CENTER);
+    text(this.type, this.x, this.y);
+  }
+}
+
+class FlashEffect {
+  constructor(x, y) {
+    this.x = x; this.y = y; this.life = 255;
+  }
+  display() {
+    stroke(255, 255, 255, this.life);
+    strokeWeight(4);
+    noFill();
+    ellipse(this.x, this.y, (255 - this.life) / 2); // 擴散圓圈
+    this.life -= 30; // 快速消失
+  }
+}
+
+function drawUI() {
+  fill(0, 200);
+  noStroke();
+  rect(15, 15, 140, 45, 10);
+  fill(255);
+  textSize(22);
+  textAlign(LEFT);
+  text(`得分: ${score}`, 30, 45);
+}
+</script>
+</body>
+</html>

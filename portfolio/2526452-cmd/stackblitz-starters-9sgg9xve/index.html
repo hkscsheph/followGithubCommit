@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 手勢互動網頁</title>
+    <!-- 載入 Three.js 用於 3D 渲染 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 載入 p5.js 用於 2D 互動特效 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
+            color: white;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; /* Three.js 在底層 */
+        }
+
+        #p5-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 5; /* p5.js 在中間層 */
+            pointer-events: none; /* 讓滑鼠事件可以穿透 */
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10; /* UI 在最上層 */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .cam-container {
+            position: relative;
+            width: 400px; /* 從 320px 放大，看得更清楚 */
+            height: 300px; /* 從 240px 放大 */
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.4); /* 加深邊框顏色 */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            background: #000;
+        }
+
+        /* 鏡像翻轉視訊，讓使用者有照鏡子的直覺感 */
+        #webcam, #output_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #output_canvas {
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        .controls-panel {
+            background: rgba(20, 20, 35, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 280px;
+        }
+
+        h2 { margin: 0 0 15px 0; font-size: 20px; color: #00ffcc; letter-spacing: 1px; }
+        p { margin: 10px 0; font-size: 15px; color: #ddd; }
+        .highlight { color: #fff; font-weight: bold; }
+
+        #loading {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #00ffcc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        #error-msg {
+            color: #ff4444;
+            margin-top: 15px;
+            display: none;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        /* 新增：教學按鈕與彈出視窗樣式 */
+        #help-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            background: rgba(0, 255, 204, 0.2);
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            font-family: inherit;
+            font-weight: bold;
+        }
+
+        #help-btn:hover {
+            background: rgba(0, 255, 204, 0.5);
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+        }
+
+        #tutorial-modal {
+            display: none; /* 預設隱藏 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 35, 0.95);
+            border: 1px solid rgba(0, 255, 204, 0.5);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+        }
+
+        .modal-content h2 {
+            color: #00ffcc;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .modal-content h3 {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 5px;
+            margin-top: 20px;
+        }
+
+        .modal-content p, .modal-content li {
+            color: #ddd;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .modal-content ul {
+            padding-left: 20px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: color 0.3s;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: #ff4444;
+        }
+
+        /* 新增：生成生物的控制面板 */
+        #spawn-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+            background: rgba(20, 20, 35, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            flex-wrap: wrap;
+            max-width: 300px;
+            justify-content: center;
+        }
+        
+        #spawn-panel h3 {
+            width: 100%;
+            margin: 0 0 10px 0;
+            color: #00ffcc;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .spawn-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .spawn-btn:hover {
+            background: rgba(0, 255, 204, 0.3);
+            border-color: #00ffcc;
+            transform: translateY(-2px);
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <!-- 載入畫面 -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <div id="loading-text">正在載入 AI 視覺模型... 請允許瀏覽器存取您的相機。</div>
+        <div id="error-msg"></div>
+    </div>
+
+    <!-- UI 控制介面 -->
+    <div id="hud">
+        <div class="cam-container">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output_canvas"></canvas>
+        </div>
+        <div class="controls-panel">
+            <h2>互動手勢說明</h2>
+            <p>✋ <span class="highlight">張開手掌</span>：旋轉 3D 方塊</p>
+            <p>✊ <span class="highlight">握拳</span>：縮小方塊</p>
+            <p>✌️ <span class="highlight">YA 手勢</span>：變更方塊顏色</p>
+            <p>👍 <span class="highlight">比讚</span>：放大方塊</p>
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+            <p id="gesture-display" style="color: #00ffcc; font-weight: bold; font-size: 16px;">系統準備中...</p>
+        </div>
+    </div>
+
+    <!-- 新增：教學按鈕 -->
+    <button id="help-btn">📖 詳細教學</button>
+
+    <!-- 新增：教學彈出視窗 -->
+    <div id="tutorial-modal">
+        <div class="modal-content">
+            <button class="close-btn" id="close-modal">&times;</button>
+            <h2>🌟 如何使用這個網站？</h2>
+            
+            <h3>步驟一：允許相機權限 📷</h3>
+            <p>為了讓 AI 能夠看到並辨識您的手勢，當瀏覽器詢問時，請點擊「允許」使用相機。您的影像只會在您的瀏覽器內進行處理，非常安全！</p>
+            
+            <h3>步驟二：認識介面 🖥️</h3>
+            <p>左上角是您的「鏡像攝影機」，您可以把它當作一面鏡子。當您的手出現在畫面中時，AI 會畫出綠色的骨架，並在畫面上灑出漂亮的粒子軌跡！</p>
+            
+            <h3>步驟三：魔法手勢 ✨</h3>
+            <ul>
+                <li>✋ <strong>張開手掌：</strong> 在鏡頭前移動手掌，中間的 3D 方塊會跟著您的手旋轉。</li>
+                <li>✊ <strong>握拳：</strong> 試著用力握拳，方塊會變小並變成橘色。</li>
+                <li>✌️ <strong>YA 手勢：</strong> 比出勝利手勢（剪刀），方塊會變色成粉紅色。</li>
+                <li>👍 <strong>比讚：</strong> 給自己一個讚，方塊會巨大化並發出青色光芒！</li>
+            </ul>
+
+            <p style="color: #00ffcc; font-size: 14px; margin-top: 20px; font-weight: bold;">💡 小提示：請確保您的環境有足夠的光線，並讓手掌清楚地出現在左上角的畫面上喔！</p>
+        </div>
+    </div>
+
+    <!-- 新增：生成生物按鈕面板 -->
+    <div id="spawn-panel">
+        <h3>✨ 召喚超級中立生物 ✨</h3>
+        <button class="spawn-btn" id="btn-cat">🐱 貓咪</button>
+        <button class="spawn-btn" id="btn-penguin">🐧 企鵝</button>
+        <button class="spawn-btn" id="btn-sealion">🦭 海獅</button>
+        <button class="spawn-btn" id="btn-seal">🦦 海豹</button>
+    </div>
+
+    <!-- p5.js 畫布容器 (用於 2D 特效) -->
+    <div id="p5-container"></div>
+
+    <!-- Three.js 畫布容器 (用於 3D 渲染) -->
+    <div id="canvas-container"></div>
+
+    <!-- 應用程式邏輯 -->
+    <script type="module">
+        import {
+            GestureRecognizer,
+            FilesetResolver,
+            DrawingUtils
+        } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+
+        // DOM 元素
+        const video = document.getElementById("webcam");
+        const canvasElement = document.getElementById("output_canvas");
+        const canvasCtx = canvasElement.getContext("2d");
+        const gestureDisplay = document.getElementById("gesture-display");
+        const loadingScreen = document.getElementById("loading");
+        const errorMsg = document.getElementById("error-msg");
+
+        // 新增：教學視窗的 DOM 元素與邏輯
+        const helpBtn = document.getElementById("help-btn");
+        const tutorialModal = document.getElementById("tutorial-modal");
+        const closeModalBtn = document.getElementById("close-modal");
+
+        // 開啟教學視窗
+        helpBtn.addEventListener("click", () => {
+            tutorialModal.style.display = "flex";
+        });
+        
+        // 點擊 X 關閉教學視窗
+        closeModalBtn.addEventListener("click", () => {
+            tutorialModal.style.display = "none";
+        });
+        
+        // 點擊視窗外部背景也可以關閉視窗
+        window.addEventListener("click", (event) => {
+            if (event.target === tutorialModal) {
+                tutorialModal.style.display = "none";
+            }
+        });
+
+        // 應用程式狀態
+        let gestureRecognizer;
+        let runningMode = "VIDEO";
+        let lastVideoTime = -1;
+        
+        // 共用手部座標 (給 p5.js 讀取)
+        window.globalHandData = {
+            isVisible: false,
+            x: 0,
+            y: 0
+        };
+
+        // 繁體中文手勢對應表
+        const gestureTranslations = {
+            "Closed_Fist": "✊ 握拳 (縮小)",
+            "Victory": "✌️ YA 手勢 (變色)",
+            "Thumb_Up": "👍 比讚 (放大)",
+            "Open_Palm": "✋ 張開手掌 (旋轉)",
+            "None": "未辨識出指令"
+        };
+        
+        // 3D 目標狀態 (用於平滑過渡效果)
+        let targetRotation = { x: 0, y: 0 };
+        let targetScale = 1.0;
+        let targetColor = new THREE.Color(0x00ffcc);
+        const COLORS = {
+            default: new THREE.Color(0x00ffcc), // 青色
+            victory: new THREE.Color(0xff00aa), // 粉紅色
+            fist: new THREE.Color(0xffaa00)     // 橘色
+        };
+
+        // ==========================================
+        // 1. THREE.JS 設定 (3D 核心)
+        // ==========================================
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x1a1a2e, 0.05);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 8;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+        // 建立方塊
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const material = new THREE.MeshStandardMaterial({ 
+            color: 0x00ffcc,
+            roughness: 0.1,    // 表面更光滑
+            metalness: 0.3,    // 降低一點金屬感讓顏色更飽和
+            transparent: false, // 關閉透明度，讓方塊更實體、更清晰
+            emissive: 0x002222 // 加入微弱的自發光
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        
+        const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }); // 增強線框清晰度
+        const wireframe = new THREE.LineSegments(new THREE.WireframeGeometry(geometry), wireframeMaterial);
+        cube.add(wireframe);
+        scene.add(cube);
+
+        // 燈光 (增強亮度)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // 提高環境光
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 1.5); // 提高主光源
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+        
+        const pointLight2 = new THREE.PointLight(0x00ffcc, 1.2); // 提高副光源
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        // ==========================================
+        // 新增：超級中立生物系統 (使用 Emoji 建立 3D 精靈圖)
+        // ==========================================
+        const animals = []; // 存放所有生成的生物
+
+        // 產生帶有 Emoji 的 3D Sprite
+        function createEmojiSprite(emoji) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.font = '90px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // 繪製 Emoji
+            ctx.fillText(emoji, 64, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(1.5, 1.5, 1.5); // 設定大小
+            return sprite;
+        }
+
+        function spawnAnimal(emoji) {
+            const sprite = createEmojiSprite(emoji);
+            
+            // 隨機生成在方塊周圍的圓環上
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 3.5 + Math.random() * 3.5; // 距離中心 3.5 到 7 的距離
+            sprite.position.x = Math.cos(angle) * radius;
+            sprite.position.y = (Math.random() - 0.5) * 5; // 高低隨機
+            sprite.position.z = Math.sin(angle) * radius - 2;
+
+            scene.add(sprite);
+
+            // 記錄生物狀態，讓牠們可以和平地漂浮和環繞
+            animals.push({
+                mesh: sprite,
+                angle: angle,
+                radius: radius,
+                speed: 0.002 + Math.random() * 0.005, // 繞圈圈的悠閒速度
+                bobSpeed: 0.02 + Math.random() * 0.03, // 上下浮動的速度
+                bobPhase: Math.random() * Math.PI * 2,
+                baseY: sprite.position.y
+            });
+        }
+
+        // 綁定按鈕事件 (海豹與海獅在 Emoji 中常共用，這裡用不同圖示增加豐富度)
+        document.getElementById('btn-cat').addEventListener('click', () => spawnAnimal('🐱'));
+        document.getElementById('btn-penguin').addEventListener('click', () => spawnAnimal('🐧'));
+        document.getElementById('btn-sealion').addEventListener('click', () => spawnAnimal('🦭'));
+        document.getElementById('btn-seal').addEventListener('click', () => spawnAnimal('🦦')); 
+
+        // 視窗縮放處理
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // 2. P5.JS 設定 (2D 互動特效)
+        // ==========================================
+        const p5Sketch = (p) => {
+            let particles = [];
+
+            p.setup = () => {
+                let cnv = p.createCanvas(p.windowWidth, p.windowHeight);
+                cnv.parent('p5-container');
+                p.noStroke();
+            };
+
+            p.draw = () => {
+                p.clear(); // 讓背景保持透明
+                
+                // 如果手部有被偵測到，在手部位置產生粒子
+                if (window.globalHandData.isVisible) {
+                    let hx = window.globalHandData.x * p.width;
+                    let hy = window.globalHandData.y * p.height;
+                    
+                    // 新增粒子
+                    particles.push({
+                        x: hx, 
+                        y: hy, 
+                        vx: p.random(-3, 3), // 增加擴散範圍
+                        vy: p.random(-3, 3),
+                        alpha: 255,
+                        size: p.random(8, 20) // 放大粒子尺寸，看得更清楚
+                    });
+                }
+
+                // 繪製與更新粒子軌跡
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let pt = particles[i];
+                    pt.x += pt.vx;
+                    pt.y += pt.vy;
+                    pt.alpha -= 5; // 淡出效果
+
+                    p.fill(0, 255, 204, pt.alpha); // 青色拖尾
+                    p.circle(pt.x, pt.y, pt.size);
+
+                    if (pt.alpha <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            };
+
+            p.windowResized = () => {
+                p.resizeCanvas(p.windowWidth, p.windowHeight);
+            };
+        };
+        new p5(p5Sketch); // 啟動 p5.js 實例
+
+        // ==========================================
+        // 3. MEDIAPIPE AI 視覺辨識設定
+        // ==========================================
+        async function initializeAI() {
+            try {
+                const vision = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                );
+                
+                gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+                        delegate: "GPU"
+                    },
+                    runningMode: runningMode,
+                    numHands: 1
+                });
+                
+                startWebcam();
+            } catch (error) {
+                console.error("AI 載入錯誤:", error);
+                document.getElementById("loading-text").innerText = "無法載入 AI 模型。";
+                errorMsg.style.display = "block";
+                errorMsg.innerText = error.message;
+            }
+        }
+
+        // ==========================================
+        // 4. 網路攝影機與主循環
+        // ==========================================
+        async function startWebcam() {
+            const constraints = { video: true };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                video.addEventListener("loadeddata", predictWebcam);
+                
+                video.onloadedmetadata = () => {
+                    canvasElement.width = video.videoWidth;
+                    canvasElement.height = video.videoHeight;
+                    loadingScreen.style.opacity = "0";
+                    setTimeout(() => loadingScreen.style.display = "none", 500);
+                };
+            } catch (err) {
+                console.error("相機錯誤:", err);
+                document.getElementById("loading-text").innerText = "相機存取被拒絕";
+                errorMsg.style.display = "block";
+                errorMsg.innerText = "請確保您的裝置有相機，並已在瀏覽器中授予存取權限。";
+            }
+        }
+
+        async function predictWebcam() {
+            if (!video.videoWidth) {
+                requestAnimationFrame(predictWebcam);
+                return;
+            }
+
+            // 辨識手勢
+            if (video.currentTime !== lastVideoTime) {
+                lastVideoTime = video.currentTime;
+                const results = gestureRecognizer.recognizeForVideo(video, performance.now());
+                processGestures(results);
+            }
+
+            // 平滑過渡 (LERP) 更新 3D 方塊狀態
+            cube.rotation.x += (targetRotation.x - cube.rotation.x) * 0.1;
+            cube.rotation.y += (targetRotation.y - cube.rotation.y) * 0.1;
+            cube.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+            material.color.lerp(targetColor, 0.1);
+
+            // 更新所有超級中立生物的位置 (讓牠們和平地漂浮繞圈)
+            animals.forEach(animal => {
+                animal.angle += animal.speed; // 緩慢繞中心旋轉
+                animal.mesh.position.x = Math.cos(animal.angle) * animal.radius;
+                animal.mesh.position.z = Math.sin(animal.angle) * animal.radius - 2;
+                
+                animal.bobPhase += animal.bobSpeed; // 上下平靜地浮動
+                animal.mesh.position.y = animal.baseY + Math.sin(animal.bobPhase) * 0.5;
+            });
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(predictWebcam);
+        }
+
+        function processGestures(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            const drawingUtils = new DrawingUtils(canvasCtx);
+
+            if (results.landmarks && results.landmarks.length > 0) {
+                const landmarks = results.landmarks[0];
+                const gestureCategory = results.gestures[0][0].categoryName;
+                
+                // 顯示繁體中文手勢狀態
+                gestureDisplay.innerText = `目前指令：${gestureTranslations[gestureCategory] || gestureCategory}`;
+
+                // 在子母畫面繪製 MediaPipe 手部骨架 (加粗線條與節點)
+                drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, { color: "#00ffcc", lineWidth: 5 });
+                drawingUtils.drawLandmarks(landmarks, { color: "#ffffff", lineWidth: 3, radius: 5 });
+
+                // 計算手部中心點 (使用第 9 節點：中指關節)
+                const centerNode = landmarks[9];
+                
+                // 處理視訊鏡像翻轉的 X 座標
+                const mirroredX = 1.0 - centerNode.x;
+                const y = centerNode.y;
+
+                // 傳遞資料給 p5.js 繪製特效
+                window.globalHandData.isVisible = true;
+                window.globalHandData.x = mirroredX;
+                window.globalHandData.y = y;
+
+                // 將座標映射到 Three.js 旋轉角度 (-PI 到 PI)
+                targetRotation.y = (mirroredX - 0.5) * Math.PI * 3; 
+                targetRotation.x = (y - 0.5) * Math.PI * 3;
+
+                // 依據手勢執行邏輯
+                switch (gestureCategory) {
+                    case "Closed_Fist":
+                        targetScale = 0.4;
+                        targetColor = COLORS.fist;
+                        break;
+                    case "Victory":
+                        targetScale = 1.2;
+                        targetColor = COLORS.victory;
+                        break;
+                    case "Thumb_Up":
+                        targetScale = 1.8;
+                        targetColor = COLORS.default;
+                        break;
+                    case "Open_Palm":
+                    case "None":
+                    default:
+                        targetScale = 1.0;
+                        targetColor = COLORS.default;
+                        break;
+                }
+            } else {
+                // 未偵測到手部
+                gestureDisplay.innerText = "等待手部進入畫面...";
+                window.globalHandData.isVisible = false;
+                
+                // 方塊緩慢回歸預設狀態
+                targetRotation.x = 0;
+                targetRotation.y = 0;
+                targetScale = 1.0;
+                targetColor = COLORS.default;
+            }
+            
+            canvasCtx.restore();
+        }
+
+        // 啟動應用程式
+        initializeAI();
+    </script>
+</body>
+</html>

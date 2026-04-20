@@ -18,6 +18,11 @@
   ],
   "2526453": [
     {
+      "name": "alienmeow",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526453/alienmeow"
+    },
+    {
       "name": "chatroom-but-GREEEEEEEEEEEN",
       "type": "directory",
       "repoUrl": "https://github.com/2526453/chatroom-but-GREEEEEEEEEEEN"
@@ -119,6 +124,11 @@
       "repoUrl": "https://github.com/2526452-cmd/-"
     },
     {
+      "name": "-stackblitz-starters-59fe7jfm",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526452-cmd/-stackblitz-starters-59fe7jfm"
+    },
+    {
       "name": "-V2.0",
       "type": "directory",
       "repoUrl": "https://github.com/2526452-cmd/-V2.0"
@@ -127,6 +137,16 @@
       "name": "6-2-2026",
       "type": "directory",
       "repoUrl": "https://github.com/2526452-cmd/6-2-2026"
+    },
+    {
+      "name": "DIGITAL-CURATOR-SYSTEM",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526452-cmd/DIGITAL-CURATOR-SYSTEM"
+    },
+    {
+      "name": "hksc-interactive-map",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526452-cmd/hksc-interactive-map"
     },
     {
       "name": "leave-slip",
@@ -147,6 +167,16 @@
       "name": "Q4-HKSC-FRIEND",
       "type": "directory",
       "repoUrl": "https://github.com/2526452-cmd/Q4-HKSC-FRIEND"
+    },
+    {
+      "name": "stackblitz-starters-9sgg9xve",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526452-cmd/stackblitz-starters-9sgg9xve"
+    },
+    {
+      "name": "stackblitz-starters-eesshdh9",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526452-cmd/stackblitz-starters-eesshdh9"
     },
     {
       "name": "stackblitz-starters-sxl7h93b",
@@ -190,9 +220,19 @@
       "repoUrl": "https://github.com/2526470-collab/-messages"
     },
     {
+      "name": "3d",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526470-collab/3d"
+    },
+    {
       "name": "GAME",
       "type": "directory",
       "repoUrl": "https://github.com/2526470-collab/GAME"
+    },
+    {
+      "name": "gameeeee",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526470-collab/gameeeee"
     },
     {
       "name": "hk-public-holiday",
@@ -226,6 +266,11 @@
     }
   ],
   "BARON1118": [
+    {
+      "name": "cam",
+      "type": "directory",
+      "repoUrl": "https://github.com/BARON1118/cam"
+    },
     {
       "name": "cotd",
       "type": "directory",
@@ -289,6 +334,11 @@
       "repoUrl": "https://github.com/crazyjayhm/ai-2"
     },
     {
+      "name": "camera-01",
+      "type": "directory",
+      "repoUrl": "https://github.com/crazyjayhm/camera-01"
+    },
+    {
       "name": "game",
       "type": "directory",
       "repoUrl": "https://github.com/crazyjayhm/game"
@@ -304,11 +354,6 @@
       "repoUrl": "https://github.com/crazyjayhm/Game-2"
     },
     {
-      "name": "weather",
-      "type": "directory",
-      "repoUrl": "https://github.com/crazyjayhm/weather"
-    },
-    {
       "name": "weather-2",
       "type": "directory",
       "repoUrl": "https://github.com/crazyjayhm/weather-2"
@@ -319,6 +364,11 @@
       "name": "-",
       "type": "directory",
       "repoUrl": "https://github.com/EmilyLau41/-"
+    },
+    {
+      "name": "2D_Map",
+      "type": "directory",
+      "repoUrl": "https://github.com/EmilyLau41/2D_Map"
     },
     {
       "name": "buy_app",
@@ -341,9 +391,19 @@
       "repoUrl": "https://github.com/EmilyLau41/cheat-room"
     },
     {
+      "name": "cooking",
+      "type": "directory",
+      "repoUrl": "https://github.com/EmilyLau41/cooking"
+    },
+    {
       "name": "emotionapp",
       "type": "directory",
       "repoUrl": "https://github.com/EmilyLau41/emotionapp"
+    },
+    {
+      "name": "hksc-interactive-map",
+      "type": "directory",
+      "repoUrl": "https://github.com/EmilyLau41/hksc-interactive-map"
     },
     {
       "name": "kill_furit",
@@ -354,6 +414,16 @@
       "name": "Math-",
       "type": "directory",
       "repoUrl": "https://github.com/EmilyLau41/Math-"
+    },
+    {
+      "name": "Open_Day",
+      "type": "directory",
+      "repoUrl": "https://github.com/EmilyLau41/Open_Day"
+    },
+    {
+      "name": "Open_Day_checkpoint",
+      "type": "directory",
+      "repoUrl": "https://github.com/EmilyLau41/Open_Day_checkpoint"
     },
     {
       "name": "skyapp",
@@ -391,13 +461,18 @@
       "name": "simple-Hz-generator",
       "type": "directory",
       "repoUrl": "https://github.com/ethanhksc0930/simple-Hz-generator"
+    },
+    {
+      "name": "test-",
+      "type": "directory",
+      "repoUrl": "https://github.com/ethanhksc0930/test-"
     }
   ],
   "giovanniuufj": [
     {
-      "name": "-",
+      "name": "Aemeath",
       "type": "directory",
-      "repoUrl": "https://github.com/giovanniuufj/-"
+      "repoUrl": "https://github.com/giovanniuufj/Aemeath"
     },
     {
       "name": "pet",
@@ -417,9 +492,19 @@
       "repoUrl": "https://github.com/haha197/drawbroad"
     },
     {
+      "name": "drawbroad_hehe",
+      "type": "directory",
+      "repoUrl": "https://github.com/haha197/drawbroad_hehe"
+    },
+    {
       "name": "jslearning",
       "type": "directory",
       "repoUrl": "https://github.com/haha197/jslearning"
+    },
+    {
+      "name": "lasttex",
+      "type": "directory",
+      "repoUrl": "https://github.com/haha197/lasttex"
     },
     {
       "name": "new_chat",
@@ -437,6 +522,11 @@
       "name": "4M24",
       "type": "directory",
       "repoUrl": "https://github.com/hayden626/4M24"
+    },
+    {
+      "name": "cam",
+      "type": "directory",
+      "repoUrl": "https://github.com/hayden626/cam"
     },
     {
       "name": "game-BOS",
@@ -481,6 +571,11 @@
   ],
   "Koodybiglookyea": [
     {
+      "name": "camera-project",
+      "type": "directory",
+      "repoUrl": "https://github.com/Koodybiglookyea/camera-project"
+    },
+    {
       "name": "game2.0",
       "type": "directory",
       "repoUrl": "https://github.com/Koodybiglookyea/game2.0"
@@ -514,6 +609,11 @@
       "name": "KOODY5",
       "type": "directory",
       "repoUrl": "https://github.com/Koodybiglookyea/KOODY5"
+    },
+    {
+      "name": "koody6",
+      "type": "directory",
+      "repoUrl": "https://github.com/Koodybiglookyea/koody6"
     },
     {
       "name": "stackblitz-starters-dvua41te",
@@ -555,6 +655,21 @@
       "name": "1",
       "type": "directory",
       "repoUrl": "https://github.com/v1ann/1"
+    },
+    {
+      "name": "chatroom",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/chatroom"
+    },
+    {
+      "name": "chatroom1",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/chatroom1"
+    },
+    {
+      "name": "stackblitz-starters-hkqewboi",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-starters-hkqewboi"
     }
   ]
 }

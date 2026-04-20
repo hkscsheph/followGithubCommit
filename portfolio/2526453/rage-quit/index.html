@@ -1,292 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Heli-Evasion: Sector 4</title>
+<head>
+    <meta charset="UTF-8">
+    <title>*** HELI-STRIKE 2000: SPECIAL EDITION ***</title>
     <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background-color: #020406;
-        font-family: 'Consolas', monospace;
-      }
-      #ui {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        color: #00ff41;
-        pointer-events: none;
-        text-transform: uppercase;
-      }
-      #hud-center {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: #ff0044;
-        font-weight: bold;
-        text-align: center;
-        pointer-events: none;
-        display: none;
-        font-size: 1.5rem;
-        text-shadow: 0 0 10px #ff0044;
-      }
-      .status-bar {
-        width: 200px;
-        height: 10px;
-        border: 1px solid #00ff41;
-        margin-top: 5px;
-      }
-      #health-fill {
-        width: 100%;
-        height: 100%;
-        background: #00ff41;
-        transition: 0.2s;
-      }
-      canvas {
-        display: block;
-        cursor: none;
-      }
+        body { 
+            margin: 0; overflow: hidden; background-color: #000080; 
+            background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            font-family: "Times New Roman", Times, serif; cursor: crosshair;
+        }
+        canvas { display: block; image-rendering: pixelated; }
+
+        /* Win95 Style Screens */
+        .overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .win95-window {
+            background: #c0c0c0; border: 2px outset #eee; padding: 2px; box-shadow: 2px 2px 0 #000;
+            width: 450px; text-align: center; color: #000;
+        }
+        .win95-title { background: linear-gradient(90deg, #000080, #1084d0); color: white; padding: 3px 10px; font-weight: bold; text-align: left; }
+        
+        .btn { 
+            padding: 10px 30px; font-weight: bold; background: #c0c0c0; 
+            border: 2px outset #eee; cursor: pointer; font-family: inherit;
+        }
+        .btn:active { border: 2px inset #eee; }
+
+        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; z-index: 100; display: none; }
+        #bank-container { font-size: 4rem; color: #0f0; background: #000; border: 3px double #0f0; padding: 10px; transition: 0.1s; }
+        .shake { animation: shake 0.1s infinite; }
+        @keyframes shake { 0% { transform: translate(3px, 3px); } 50% { transform: translate(-3px, -3px); } }
+
+        #contract-stack { position: absolute; top: 100px; right: 10px; width: 220px; display: flex; flex-direction: column; gap: 10px; }
+        .contract-card { background: #ff00ff; color: #fff; border: 3px solid #0ff; padding: 8px; font-size: 12px; transform: rotate(-1deg); }
+
+        blink { animation: blinker 0.6s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
     </style>
-    <script src="/portfolio-auth-check.js"></script>
+  <script src="/portfolio-auth-check.js"></script>
   </head>
-  <body>
-    <div id="ui">
-      <div>[ PILOT: SPECTER-1 ]</div>
-      <div>ARMOR STATUS:</div>
-      <div class="status-bar"><div id="health-fill"></div></div>
-      <div id="threat-level" style="margin-top: 10px">THREAT: LOW</div>
+<body>
+
+<div id="start-screen" class="overlay">
+    <div class="win95-window">
+        <div class="win95-title">SYSTEM_BOOT.EXE</div>
+        <div style="padding: 20px;">
+            <h1 style="margin:0;">HELI-STRIKE 2K</h1>
+            <p>*** LICENSED TO: ELITE_MERCENARY ***</p>
+            <hr>
+            <p style="text-align:left; font-size: 14px;">
+                > Bullet: 3 hits to kill<br>
+                > Missile: 1 hit to kill (MESSY)<br>
+                > Penalty: -$3000 for wrong target
+            </p>
+            <button class="btn" onclick="initGame()">[ ENTER ]</button>
+        </div>
     </div>
+</div>
 
-    <div id="hud-center">MISSILE LOCK</div>
+<div id="death-screen" class="overlay" style="display:none;">
+    <div class="win95-window" style="border-color: #f00;">
+        <div class="win95-title" style="background: #800000;">FATAL_ERROR_0x0008.SYS</div>
+        <div style="padding: 30px;">
+            <h2 style="color: #f00;"><blink>!!! MISSION FAILED !!!</blink></h2>
+            <p>YOUR BANK ACCOUNT HAS BEEN SEIZED.</p>
+            <p>FINAL BALANCE: $<span id="final-score">0</span></p>
+            <button class="btn" onclick="resetGame()">RETRY_SYSTEM_RESTORE</button>
+        </div>
+    </div>
+</div>
 
-    <canvas id="mapCanvas"></canvas>
+<div id="ui">
+    <div id="bank-container">
+        <div style="font-size: 12px; color: #0f0;">>> SECURE_BANK_LINK</div>
+        $<span id="bank-val">000000</span>
+    </div>
+    <div class="win95-window" style="margin-top: 10px; width: 200px; background: #000; color: #0f0;">
+        HULL: <span id="hp-text">100</span>% | AMMO: <span id="ammo-text">25</span>
+    </div>
+</div>
 
-    <script>
-      const canvas = document.getElementById('mapCanvas');
-      const ctx = canvas.getContext('2d');
+<div id="contract-stack"></div>
+<canvas id="mapCanvas"></canvas>
 
-      let width,
-        height,
-        health = 100;
-      let keys = {};
-      let mouse = { x: 0, y: 0, down: false };
-      let cam = {
-        x: 0,
-        y: 0,
-        zoom: 1,
-        currentZoom: 1,
-        rot: 0,
-        tilt: 0,
-        bob: 0,
-      };
-      let buildings = [],
-        npcs = [],
-        missiles = [],
-        debris = [];
+<script>
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
 
-      function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-      }
+let gameActive = false, bank = 0, health = 100, ammo = 25;
+let keys = {}, mouse = { x: 0, y: 0 };
+let cam = { x: 0, y: 0, curZoom: 1 };
+let buildings = [], missiles = [], fx = [], contracts = [];
 
-      class Missile {
-        constructor() {
-          // Spawns off-screen and moves toward the helicopter (center)
-          const angle = Math.random() * Math.PI * 2;
-          const dist = 1000;
-          this.x = -cam.x + Math.cos(angle) * dist;
-          this.y = -cam.y + Math.sin(angle) * dist;
-          this.speed = 4;
-          this.alive = true;
-        }
-        update() {
-          const targetX = -cam.x;
-          const targetY = -cam.y;
-          const dx = targetX - this.x;
-          const dy = targetY - this.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+class Building {
+    constructor(gx, gy) {
+        const space = 200;
+        this.x = gx * space + (Math.random()*20 - 10);
+        this.y = gy * space + (Math.random()*20 - 10);
+        this.w = 130; this.h = 150 + Math.random() * 300;
+        this.hits = 3; // Bullet durability
+        this.destroyed = false;
+        this.targetCount = 0;
+        this.flash = 0;
+    }
+    draw() {
+        const z = cam.curZoom;
+        const bx = (this.x + cam.x) * z + canvas.width/2;
+        const by = (this.y + cam.y) * z + canvas.height/2;
+        if (bx < -300 || bx > canvas.width + 300 || by < -300 || by > canvas.height + 300) return;
 
-          this.x += (dx / dist) * this.speed;
-          this.y += (dy / dist) * this.speed;
+        const rx = bx + (bx - canvas.width/2) * (this.h/2500) * z;
+        const ry = by + (by - canvas.height/2) * (this.h/2500) * z;
+        const hw = (this.w * z) / 2;
 
-          if (dist < 20) {
-            health -= 25;
-            this.alive = false;
-            createExplosion(this.x, this.y, '#ff0000');
-          }
-        }
-        draw() {
-          ctx.fillStyle = '#ff0044';
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
-          ctx.fill();
-          // Smoke trail
-          ctx.strokeStyle = 'rgba(255, 0, 68, 0.3)';
-          ctx.beginPath();
-          ctx.moveTo(this.x, this.y);
-          ctx.lineTo(
-            this.x - (-cam.x - this.x) * 0.1,
-            this.y - (-cam.y - this.y) * 0.1
-          );
-          ctx.stroke();
-        }
-      }
+        ctx.lineWidth = this.targetCount > 0 ? 5 : 1;
+        let color = this.targetCount > 0 ? "#ff0" : "#0f0";
+        if (this.flash > 0) { color = "#fff"; this.flash--; }
+        ctx.strokeStyle = this.destroyed ? "#222" : color;
 
-      class Building {
-        constructor(x, y) {
-          this.x = x;
-          this.y = y;
-          this.w = 100;
-          this.h = 100;
-          this.destroyed = false;
-        }
-        draw() {
-          ctx.strokeStyle = this.destroyed ? '#222' : '#00ff41';
-          ctx.strokeRect(this.x, this.y, this.w, this.h);
-          if (!this.destroyed) {
-            ctx.fillStyle = 'rgba(0, 255, 65, 0.05)';
-            ctx.fillRect(this.x, this.y, this.w, this.h);
-          }
-        }
-      }
-
-      function createExplosion(x, y, color = '#00ff41') {
-        for (let i = 0; i < 15; i++) {
-          debris.push({
-            x,
-            y,
-            vx: (Math.random() - 0.5) * 15,
-            vy: (Math.random() - 0.5) * 15,
-            life: 1.0,
-            color,
-          });
-        }
-      }
-
-      function init() {
-        resize();
-        for (let i = 0; i < 15; i++)
-          buildings.push(
-            new Building(
-              (Math.random() - 0.5) * 2000,
-              (Math.random() - 0.5) * 2000
-            )
-          );
-      }
-
-      function update() {
-        if (health <= 0) {
-          alert('HELI DOWN - MISSION FAILED');
-          health = 100;
-          return;
-        }
-
-        // WASD Movement
-        const spd = 10 / cam.currentZoom;
-        if (keys['w']) cam.y += spd;
-        if (keys['s']) cam.y -= spd;
-        if (keys['a']) cam.x += spd;
-        if (keys['d']) cam.x -= spd;
-
-        cam.zoom = mouse.down ? 2 : 1;
-        cam.currentZoom += (cam.zoom - cam.currentZoom) * 0.1;
-        cam.bob = Math.sin(Date.now() * 0.002) * 5;
-
-        // Missile Spawning
-        if (Math.random() < 0.01) missiles.push(new Missile());
-
-        missiles.forEach((m, i) => {
-          m.update();
-          if (!m.alive) missiles.splice(i, 1);
-        });
-
-        debris.forEach((d, i) => {
-          d.x += d.vx;
-          d.y += d.vy;
-          d.life -= 0.02;
-          if (d.life <= 0) debris.splice(i, 1);
-        });
-
-        // UI Updates
-        document.getElementById('health-fill').style.width = health + '%';
-        const lockWarning = document.getElementById('hud-center');
-        if (missiles.length > 0) {
-          lockWarning.style.display = 'block';
-          document.getElementById('threat-level').innerText =
-            'THREAT: MISSILE INBOUND';
-          document.getElementById('threat-level').style.color = '#ff0044';
-        } else {
-          lockWarning.style.display = 'none';
-          document.getElementById('threat-level').innerText = 'THREAT: LOW';
-          document.getElementById('threat-level').style.color = '#00ff41';
-        }
-      }
-
-      function draw() {
-        ctx.fillStyle = '#020406';
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.save();
-        ctx.translate(width / 2, height / 2);
-        ctx.scale(cam.currentZoom, cam.currentZoom);
-        ctx.translate(cam.x, cam.y + cam.bob);
-
-        buildings.forEach((b) => b.draw());
-        missiles.forEach((m) => m.draw());
-        debris.forEach((d) => {
-          ctx.globalAlpha = d.life;
-          ctx.fillStyle = d.color;
-          ctx.fillRect(d.x, d.y, 4, 4);
-        });
-
-        ctx.restore();
-
-        // Crosshair
-        ctx.strokeStyle = '#00ff41';
-        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(width / 2, height / 2, 30, 0, Math.PI * 2);
-        ctx.moveTo(width / 2 - 40, height / 2);
-        ctx.lineTo(width / 2 + 40, height / 2);
-        ctx.moveTo(width / 2, height / 2 - 40);
-        ctx.lineTo(width / 2, height / 2 + 40);
-        ctx.stroke();
-      }
-
-      function deployExplosion() {
-        const wx = -cam.x;
-        const wy = -cam.y;
-        buildings.forEach((b) => {
-          const dx = wx - (b.x + b.w / 2);
-          const dy = wy - (b.y + b.h / 2);
-          if (Math.sqrt(dx * dx + dy * dy) < 100) {
-            b.destroyed = true;
-            createExplosion(b.x + b.w / 2, b.y + b.h / 2, '#666');
-          }
+        [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(c => {
+            ctx.moveTo(bx + c[0]*hw, by + c[1]*hw); ctx.lineTo(rx + c[0]*hw, ry + c[1]*hw);
         });
-      }
+        ctx.stroke();
+        ctx.strokeRect(rx - hw, ry - hw, hw*2, hw*2);
+    }
+}
 
-      window.addEventListener('keydown', (e) => {
-        keys[e.key.toLowerCase()] = true;
-        if (e.key === 'Enter') deployExplosion();
-      });
-      window.addEventListener(
-        'keyup',
-        (e) => (keys[e.key.toLowerCase()] = false)
-      );
-      window.addEventListener('mousedown', () => (mouse.down = true));
-      window.addEventListener('mouseup', () => (mouse.down = false));
-      window.addEventListener('resize', resize);
+class Effect {
+    constructor(x, y, type) {
+        this.x = x; this.y = y; this.r = 0; 
+        this.maxR = type === 'exp' ? 60 : 15;
+        this.life = 1.0; this.type = type;
+    }
+    update() {
+        this.r += 15; this.life -= 0.1;
+        buildings.forEach(b => {
+            if(b.destroyed) return;
+            if(Math.hypot(b.x - this.x, b.y - this.y) < this.r) {
+                if (this.type === 'exp') {
+                    this.destroyBuilding(b);
+                } else if (this.type === 'bullet') {
+                    b.hits--;
+                    b.flash = 3;
+                    if (b.hits <= 0) this.destroyBuilding(b);
+                    this.life = 0; // Bullet disappears on hit
+                }
+            }
+        });
+    }
+    destroyBuilding(b) {
+        b.destroyed = true;
+        if(b.targetCount > 0) {
+            updateBank(5000);
+            b.targetCount = 0;
+            contracts = contracts.filter(c => {
+                if(c.targets.includes(b)) {
+                    c.targets = c.targets.filter(t => t !== b);
+                    if(c.targets.length === 0) { document.getElementById(c.id)?.remove(); return false; }
+                }
+                return true;
+            });
+        } else {
+            updateBank(-3000);
+            for(let i=0; i<10; i++) missiles.push(new Missile(true));
+        }
+        fx.push(new Effect(b.x, b.y, 'exp'));
+    }
+    draw() {
+        const z = cam.curZoom;
+        ctx.beginPath();
+        ctx.arc((this.x + cam.x)*z + canvas.width/2, (this.y + cam.y)*z + canvas.height/2, this.r * z, 0, Math.PI*2);
+        ctx.strokeStyle = this.type === 'exp' ? "#f00" : "#fff";
+        ctx.stroke();
+    }
+}
 
-      init();
-      function loop() {
-        update();
-        draw();
-        requestAnimationFrame(loop);
-      }
-      loop();
-    </script>
-  </body>
+class Missile {
+    constructor(f = false) {
+        const a = Math.random() * Math.PI * 2;
+        this.x = -cam.x + Math.cos(a) * 1200; this.y = -cam.y + Math.sin(a) * 1200;
+        this.vx = (Math.random()-0.5) * (f ? 45 : 15); this.vy = (Math.random()-0.5) * (f ? 45 : 15);
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+        if(Math.hypot(this.x - (-cam.x), this.y - (-cam.y)) < 30) { health -= 20; this.x = 999999; }
+    }
+    draw() {
+        const z = cam.curZoom; ctx.fillStyle = "#f00";
+        ctx.fillRect((this.x + cam.x)*z + canvas.width/2 - 10, (this.y + cam.y)*z + canvas.height/2 - 10, 20, 20);
+    }
+}
+
+function updateBank(amt) {
+    bank += amt; document.getElementById('bank-val').innerText = bank.toString().padStart(6, '0');
+    const el = document.getElementById('bank-container');
+    el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 400);
+}
+
+function createContract() {
+    if (!gameActive) return;
+    const id = "id" + Math.random().toString(16).slice(2);
+    const b = buildings[Math.floor(Math.random()*buildings.length)];
+    if(b.destroyed) return;
+    const contract = { id, targets: [b], accepted: false };
+    contracts.push(contract);
+    const card = document.createElement('div');
+    card.id = id; card.className = "contract-card";
+    card.innerHTML = `<b>-- NEW WORK --</b><br>BOUNTY: $$$<br><blink>PRESS [SPACE]</blink>`;
+    document.getElementById('contract-stack').appendChild(card);
+    setTimeout(() => { if(!contract.accepted) { contracts = contracts.filter(c => c.id !== id); card.remove(); }}, 8000);
+}
+
+function initGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('ui').style.display = 'block';
+    gameActive = true;
+    resetState();
+    loop();
+}
+
+function resetGame() {
+    document.getElementById('death-screen').style.display = 'none';
+    resetState();
+}
+
+function resetState() {
+    bank = 0; health = 100; ammo = 25; buildings = []; missiles = []; fx = []; contracts = [];
+    document.getElementById('contract-stack').innerHTML = '';
+    document.getElementById('bank-val').innerText = "000000";
+    for(let i=-12; i<12; i++) for(let j=-12; j<12; j++) buildings.push(new Building(i, j));
+}
+
+function update() {
+    if (!gameActive) return;
+    const spd = 18 / cam.curZoom;
+    if(keys['w']) cam.y += spd; if(keys['s']) cam.y -= spd;
+    if(keys['a']) cam.x += spd; if(keys['d']) cam.x -= spd;
+    if(keys[' ']) {
+        let u = contracts.find(c => !c.accepted);
+        if(u) { u.accepted = true; u.targets.forEach(t => t.targetCount++); document.getElementById(u.id).style.background = "#000"; }
+        keys[' '] = false;
+    }
+    if(keys['b'] && bank >= 500) { bank -= 500; ammo += 20; updateBank(0); keys['b'] = false; }
+    
+    if(Math.random() < 0.04) missiles.push(new Missile());
+    missiles.forEach(m => m.update());
+    fx.forEach((e, i) => { e.update(); if(e.life <= 0) fx.splice(i, 1); });
+    
+    document.getElementById('hp-text').innerText = health;
+    document.getElementById('ammo-text').innerText = ammo;
+
+    if(health <= 0) {
+        gameActive = false;
+        document.getElementById('final-score').innerText = bank;
+        document.getElementById('death-screen').style.display = 'flex';
+    }
+}
+
+function draw() {
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    contracts.forEach(c => {
+        if(c.accepted) {
+            c.targets.forEach(t => {
+                ctx.setLineDash([2, 8]); ctx.strokeStyle = "#ff0";
+                ctx.beginPath(); ctx.moveTo(canvas.width/2, canvas.height/2);
+                ctx.lineTo((t.x + cam.x)*cam.curZoom + canvas.width/2, (t.y + cam.y)*cam.curZoom + canvas.height/2);
+                ctx.stroke();
+            });
+        }
+    });
+    ctx.setLineDash([]);
+    buildings.forEach(b => b.draw());
+    fx.forEach(e => e.draw());
+    missiles.forEach(m => m.draw());
+    ctx.strokeStyle = "#f0f"; ctx.lineWidth = 3;
+    ctx.strokeRect(canvas.width/2 - 25, canvas.height/2 - 25, 50, 50);
+}
+
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+window.addEventListener('mousedown', e => {
+    if(!gameActive || ammo <= 0) return;
+    if(e.button === 0) fx.push(new Effect(-cam.x, -cam.y, 'bullet'));
+    if(e.button === 2) fx.push(new Effect(-cam.x, -cam.y, 'exp'));
+    ammo--;
+});
+window.oncontextmenu = e => e.preventDefault();
+window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
+setInterval(createContract, 3000);
+function loop() { if(gameActive) { update(); draw(); } requestAnimationFrame(loop); }
+</script>
+</body>
 </html>

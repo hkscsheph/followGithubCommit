@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>手勢控制 3D 方塊</title>
+    <style>
+      /* CSS 部分 */
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #0a0a0a;
+        font-family: 'Microsoft JhengHei', sans-serif;
+      }
+
+      #ui-layer {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: white;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 15px;
+        border-radius: 10px;
+        pointer-events: none;
+      }
+
+      #video_preview {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 200px;
+        /* 鏡像翻轉，讓操作直覺 */
+        transform: scaleX(-1);
+        border: 2px solid #444;
+        border-radius: 8px;
+        background: #000;
+      }
+
+      #status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: red;
+        margin-right: 5px;
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div id="ui-layer">
+      <h2>手勢控制 3D 示範</h2>
+      <p>
+        <span id="status-dot"></span> 狀態:
+        <span id="status-text">初始化中...</span>
+      </p>
+      <small>提示：將手掌面向鏡頭，方塊會跟隨移動</small>
+    </div>
+
+    <video id="input_video" style="display: none"></video>
+    <canvas id="video_preview"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+      /* JavaScript 部分 */
+      const videoElement = document.getElementById('input_video');
+      const canvasElement = document.getElementById('video_preview');
+      const canvasCtx = canvasElement.getContext('2d');
+      const statusText = document.getElementById('status-text');
+      const statusDot = document.getElementById('status-dot');
+
+      // --- 1. 初始化 Three.js 場景 ---
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // 建立一個彩虹漸層方塊
+      const geometry = new THREE.BoxGeometry(2, 2, 2);
+      const material = new THREE.MeshNormalMaterial();
+      const cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
+
+      camera.position.z = 5;
+
+      // --- 2. 手勢偵測回傳處理 ---
+      function onResults(results) {
+        // 在右下角畫布繪製手部影像
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(
+          results.image,
+          0,
+          0,
+          canvasElement.width,
+          canvasElement.height
+        );
+
+        if (
+          results.multiHandLandmarks &&
+          results.multiHandLandmarks.length > 0
+        ) {
+          statusText.innerText = '已偵測到手部';
+          statusDot.style.background = '#00ff00'; // 變綠燈
+
+          // 取得手掌中心點 (Landmark 9)
+          const hand = results.multiHandLandmarks[0][9];
+
+          // 座標轉換邏輯：
+          // MediaPipe x (0~1) 映射到 Three.js (-6~6)
+          // 由於是鏡像，所以使用 (0.5 - hand.x)
+          const targetX = (0.5 - hand.x) * 12;
+          const targetY = (0.5 - hand.y) * 8;
+
+          // 平滑移動 (Lerp)
+          cube.position.x += (targetX - cube.position.x) * 0.15;
+          cube.position.y += (targetY - cube.position.y) * 0.15;
+
+          // 讓方塊根據位置產生旋轉感
+          cube.rotation.x = cube.position.y * 0.3;
+          cube.rotation.y = cube.position.x * 0.3;
+        } else {
+          statusText.innerText = '等待手部進入...';
+          statusDot.style.background = 'red';
+        }
+        canvasCtx.restore();
+        renderer.render(scene, camera);
+      }
+
+      // --- 3. 配置 MediaPipe Hands ---
+      const hands = new Hands({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      hands.onResults(onResults);
+
+      // --- 4. 啟動攝影機 ---
+      const cameraInput = new Camera(videoElement, {
+        onFrame: async () => {
+          await hands.send({ image: videoElement });
+        },
+        width: 640,
+        height: 480,
+      });
+
+      cameraInput
+        .start()
+        .then(() => {
+          statusText.innerText = '攝影機已就緒';
+        })
+        .catch((err) => {
+          statusText.innerText = '錯誤: 無法開啟攝影機 (' + err.name + ')';
+          console.error(err);
+        });
+
+      // 處理視窗縮放
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>

@@ -1,372 +1,394 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <title>專業圖層繪圖板 - 拖拽排序版</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業級 HTML5 圖層繪圖板</title>
     <style>
-      :root {
-        --primary: #007bff;
-        --bg: #f0f2f5;
-      }
-      body {
-        font-family: sans-serif;
-        background: var(--bg);
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-      }
+        :root {
+            --primary: #007bff;
+            --bg: #f4f7f9;
+            --panel: #ffffff;
+            --border: #dcdfe6;
+        }
 
-      /* 工具欄 */
-      .header {
-        background: white;
-        padding: 10px 20px;
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        z-index: 10;
-      }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-      .main-container {
-        display: flex;
-        flex: 1;
-        padding: 20px;
-        gap: 20px;
-        overflow: hidden;
-      }
+        /* 上方工具欄 */
+        .header {
+            background: var(--panel);
+            padding: 10px 25px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            z-index: 100;
+        }
 
-      #canvas-viewport {
-        position: relative;
-        flex: 1;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-      }
-      canvas {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        cursor: crosshair;
-        touch-action: none;
-        background: transparent;
-      }
+        .tool-group { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 
-      /* 圖層面板 */
-      .side-panel {
-        width: 280px;
-        background: white;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-      .panel-title {
-        padding: 15px;
-        font-weight: bold;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
+        /* 主區域 */
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
 
-      #layer-list {
-        flex: 1;
-        overflow-y: auto;
-        padding: 10px;
-      }
+        /* 畫布視窗 */
+        #canvas-viewport {
+            position: relative;
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
 
-      /* 拖拽項目的樣式 */
-      .layer-item {
-        display: flex;
-        align-items: center;
-        padding: 12px;
-        border: 2px solid #eee;
-        border-radius: 6px;
-        margin-bottom: 8px;
-        background: #fff;
-        cursor: grab;
-        transition: transform 0.2s, border-color 0.2s;
-        user-select: none;
-      }
-      .layer-item:active {
-        cursor: grabbing;
-      }
-      .layer-item.active {
-        border-color: var(--primary);
-        background: #f0f7ff;
-      }
-      .layer-item.dragging {
-        opacity: 0.5;
-        transform: scale(0.95);
-        border: 2px dashed #ccc;
-      }
-      .layer-item .drag-handle {
-        margin-right: 10px;
-        color: #ccc;
-        font-size: 18px;
-      }
+        canvas {
+            position: absolute;
+            cursor: crosshair;
+            touch-action: none;
+        }
 
-      .layer-controls {
-        display: flex;
-        gap: 5px;
-        margin-left: auto;
-      }
-      button {
-        padding: 5px 10px;
-        cursor: pointer;
-        border-radius: 4px;
-        border: 1px solid #ddd;
-        background: white;
-      }
-      button.active {
-        background: var(--primary);
-        color: white;
-      }
+        /* 右側圖層面板 */
+        .side-panel {
+            width: 280px;
+            background: var(--panel);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        .panel-title {
+            padding: 15px;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #layer-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        /* 圖層項目與拖拽樣式 */
+        .layer-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #fff;
+            border: 2px solid #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .layer-item.active {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+
+        .layer-item.dragging {
+            opacity: 0.4;
+            border: 2px dashed var(--primary);
+        }
+
+        .layer-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 5px;
+        }
+
+        /* 按鈕基礎樣式 */
+        button {
+            padding: 7px 14px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        button:hover { background: #f5f7fa; }
+        button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        button.save-btn { background: #28a745; color: white; border: none; }
+        button.save-btn:hover { background: #218838; }
     </style>
-    <script src="/portfolio-auth-check.js"></script>
+  <script src="/portfolio-auth-check.js"></script>
   </head>
-  <body>
+<body>
+
     <div class="header">
-      <input type="color" id="colorPicker" value="#000000" />
-      <input type="range" id="lineWidth" min="1" max="50" value="5" />
-      <button id="drawBtn" class="active">🖌️ 畫筆</button>
-      <button id="eraseBtn">🧽 橡皮擦</button>
-      <button id="undoBtn">↩️ 復原</button>
-      <button
-        id="saveBtn"
-        style="background: #28a745; color: white; border: none"
-      >
-        💾 下載全部
-      </button>
+        <div class="tool-group">
+            <label>顏色</label>
+            <input type="color" id="colorPicker" value="#000000">
+        </div>
+        <div class="tool-group">
+            <label>粗細</label>
+            <input type="range" id="lineWidth" min="1" max="50" value="5">
+            <span id="widthVal">5</span>
+        </div>
+        <div class="tool-group" style="margin-left: 10px;">
+            <button id="drawBtn" class="active">🖌️ 畫筆</button>
+            <button id="eraseBtn">🧽 橡皮擦</button>
+            <button id="undoBtn">↩️ 復原 (Undo)</button>
+        </div>
+        <button id="saveBtn" class="save-btn">💾 導出圖片</button>
     </div>
 
     <div class="main-container">
-      <div id="canvas-viewport"></div>
+        <div id="canvas-viewport">
+            </div>
 
-      <div class="side-panel">
-        <div class="panel-title">
-          圖層 (可拖拽排序)
-          <button onclick="addLayer()">+ 新增</button>
+        <div class="side-panel">
+            <div class="panel-title">
+                圖層管理 (可拖拽排序)
+                <button onclick="addNewLayer()" style="font-size: 12px;">+ 新增</button>
+            </div>
+            <div id="layer-list">
+                </div>
         </div>
-        <div id="layer-list"></div>
-      </div>
     </div>
 
     <script>
-      const viewport = document.getElementById('canvas-viewport');
-      const layerList = document.getElementById('layer-list');
-      const colorPicker = document.getElementById('colorPicker');
-      const lineWidthInput = document.getElementById('lineWidth');
+        const viewport = document.getElementById('canvas-viewport');
+        const layerList = document.getElementById('layer-list');
+        const colorPicker = document.getElementById('colorPicker');
+        const lineWidthInput = document.getElementById('lineWidth');
+        const widthVal = document.getElementById('widthVal');
+        
+        let layers = []; 
+        let currentLayerIndex = 0;
+        let isEraser = false;
+        let painting = false;
+        let dragSrcEl = null;
 
-      let layers = [];
-      let currentLayerIndex = 0;
-      let isEraser = false;
-      let painting = false;
-      let dragSrcEl = null; // 儲存拖拽中的元素
+        const W = 800; 
+        const H = 600;
 
-      const W = 800,
-        H = 600;
+        // 初始化
+        function init() {
+            addNewLayer("背景層");
+            const bg = layers[0];
+            bg.ctx.fillStyle = "#ffffff";
+            bg.ctx.fillRect(0, 0, W, H);
+            saveState(bg); // 儲存初始白色狀態
+            
+            addNewLayer("繪圖層 1");
+        }
 
-      function addLayer(name = `圖層 ${layers.length + 1}`) {
-        const canvas = document.createElement('canvas');
-        canvas.width = W;
-        canvas.height = H;
+        // --- 圖層核心功能 ---
+        function addNewLayer(name = `圖層 ${layers.length + 1}`) {
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            
+            const layer = {
+                id: 'id_' + Math.random().toString(36).substr(2, 9),
+                name: name,
+                canvas: canvas,
+                ctx: canvas.getContext('2d'),
+                visible: true,
+                history: [] 
+            };
 
-        const layer = {
-          id: 'layer_' + Math.random().toString(36).substr(2, 9),
-          name: name,
-          canvas: canvas,
-          ctx: canvas.getContext('2d'),
-          visible: true,
-          history: [],
-        };
+            layer.ctx.lineCap = 'round';
+            layer.ctx.lineJoin = 'round';
+            
+            layers.push(layer);
+            viewport.appendChild(canvas);
+            
+            currentLayerIndex = layers.length - 1;
+            saveState(layer); // 初始空白狀態
+            renderUI();
+            bindDrawingEvents(canvas);
+        }
 
-        layer.ctx.lineCap = 'round';
-        layer.ctx.lineJoin = 'round';
+        function renderUI() {
+            layerList.innerHTML = '';
+            // 介面由上往下顯示 (陣列後方的在最上面)
+            [...layers].reverse().forEach((layer, revIdx) => {
+                const realIdx = layers.length - 1 - revIdx;
+                const item = document.createElement('div');
+                item.className = `layer-item ${realIdx === currentLayerIndex ? 'active' : ''}`;
+                item.draggable = true;
+                item.dataset.index = realIdx;
 
-        layers.push(layer);
-        viewport.appendChild(canvas);
-
-        currentLayerIndex = layers.length - 1;
-        renderUI();
-        bindDrawingEvents(canvas);
-      }
-
-      // --- 核心：渲染與拖拽邏輯 ---
-      function renderUI() {
-        layerList.innerHTML = '';
-        // 圖層陣列後面的會在上面，所以 UI 要反過來顯示
-        [...layers].reverse().forEach((layer, revIdx) => {
-          const realIdx = layers.length - 1 - revIdx;
-          const item = document.createElement('div');
-          item.className = `layer-item ${
-            realIdx === currentLayerIndex ? 'active' : ''
-          }`;
-          item.draggable = true;
-          item.dataset.index = realIdx;
-
-          item.innerHTML = `
-                    <span class="drag-handle">☰</span>
-                    <span>${layer.name}</span>
+                item.innerHTML = `
+                    <span style="margin-right:10px; color:#ccc;">☰</span>
+                    <span style="flex:1">${layer.name}</span>
                     <div class="layer-controls">
-                        <button onclick="toggleVis(${realIdx}, event)">${
-            layer.visible ? '👁️' : '🕶️'
-          }</button>
-                        <button onclick="deleteLayer(${realIdx}, event)">×</button>
+                        <button onclick="toggleVis(${realIdx}, event)">${layer.visible ? '👁️' : '🕶️'}</button>
+                        <button onclick="deleteLayer(${realIdx}, event)" style="color:red">×</button>
                     </div>
                 `;
 
-          // 拖拽事件監聽
-          item.addEventListener('dragstart', handleDragStart);
-          item.addEventListener('dragover', handleDragOver);
-          item.addEventListener('drop', handleDrop);
-          item.addEventListener('dragend', handleDragEnd);
-          item.onclick = () => {
-            currentLayerIndex = realIdx;
-            renderUI();
-          };
+                // 拖拽事件
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+                
+                item.onclick = () => { currentLayerIndex = realIdx; renderUI(); };
 
-          layerList.appendChild(item);
-
-          // 同步畫布外觀
-          layer.canvas.style.display = layer.visible ? 'block' : 'none';
-          layer.canvas.style.zIndex = realIdx; // 陣列索引即為層級
-          layer.canvas.style.pointerEvents =
-            realIdx === currentLayerIndex ? 'auto' : 'none';
-        });
-      }
-
-      // --- 拖拽處理函數 ---
-      function handleDragStart(e) {
-        dragSrcEl = this;
-        this.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-      }
-
-      function handleDragOver(e) {
-        e.preventDefault();
-        return false;
-      }
-
-      function handleDrop(e) {
-        e.stopPropagation();
-        const fromIndex = parseInt(dragSrcEl.dataset.index);
-        const toIndex = parseInt(this.dataset.index);
-
-        if (fromIndex !== toIndex) {
-          // 重新排列陣列
-          const movedItem = layers.splice(fromIndex, 1)[0];
-          layers.splice(toIndex, 0, movedItem);
-
-          // 更新當前選中項目的索引
-          currentLayerIndex = toIndex;
-          renderUI();
+                layerList.appendChild(item);
+                
+                // 同步 Canvas 顯示
+                layer.canvas.style.display = layer.visible ? 'block' : 'none';
+                layer.canvas.style.zIndex = realIdx;
+                layer.canvas.style.pointerEvents = (realIdx === currentLayerIndex) ? 'auto' : 'none';
+            });
         }
-        return false;
-      }
 
-      function handleDragEnd() {
-        this.classList.remove('dragging');
-      }
+        // --- 拖拽排序邏輯 ---
+        function handleDragStart(e) {
+            dragSrcEl = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        function handleDragOver(e) { e.preventDefault(); return false; }
+        function handleDrop(e) {
+            e.stopPropagation();
+            const from = parseInt(dragSrcEl.dataset.index);
+            const to = parseInt(this.dataset.index);
+            if (from !== to) {
+                const item = layers.splice(from, 1)[0];
+                layers.splice(to, 0, item);
+                currentLayerIndex = to;
+                renderUI();
+            }
+            return false;
+        }
+        function handleDragEnd() { this.classList.remove('dragging'); }
 
-      // --- 繪圖邏輯 ---
-      function bindDrawingEvents(cvs) {
-        const getPos = (e) => {
-          const r = cvs.getBoundingClientRect();
-          const x = (e.clientX || e.touches?.[0].clientX) - r.left;
-          const y = (e.clientY || e.touches?.[0].clientY) - r.top;
-          return { x, y };
+        // --- 繪圖邏輯 ---
+        function bindDrawingEvents(cvs) {
+            const getPos = (e) => {
+                const r = cvs.getBoundingClientRect();
+                const clientX = e.clientX || e.touches?.[0].clientX;
+                const clientY = e.clientY || e.touches?.[0].clientY;
+                return { x: clientX - r.left, y: clientY - r.top };
+            };
+
+            const start = (e) => { 
+                painting = true; 
+                draw(e); 
+            };
+            const stop = () => {
+                if (painting) {
+                    layers[currentLayerIndex].ctx.beginPath();
+                    saveState(layers[currentLayerIndex]); // 繪畫結束儲存歷史
+                }
+                painting = false;
+            };
+            const draw = (e) => {
+                if (!painting) return;
+                const { x, y } = getPos(e);
+                const l = layers[currentLayerIndex];
+                
+                l.ctx.lineWidth = lineWidthInput.value;
+                l.ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+                l.ctx.strokeStyle = colorPicker.value;
+
+                l.ctx.lineTo(x, y);
+                l.ctx.stroke();
+                l.ctx.beginPath();
+                l.ctx.moveTo(x, y);
+            };
+
+            cvs.addEventListener('mousedown', start);
+            window.addEventListener('mouseup', stop);
+            cvs.addEventListener('mousemove', draw);
+            cvs.addEventListener('touchstart', (e) => { e.preventDefault(); start(e.touches[0]); });
+            cvs.addEventListener('touchend', stop);
+            cvs.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+        }
+
+        // --- 復原 (Undo) 邏輯 ---
+        function saveState(layer) {
+            // 限制歷史步數為 20 步
+            if (layer.history.length >= 20) layer.history.shift();
+            layer.history.push(layer.canvas.toDataURL());
+        }
+
+        function undo() {
+            const layer = layers[currentLayerIndex];
+            if (layer.history.length > 1) {
+                layer.history.pop(); // 移除目前的
+                const img = new Image();
+                img.src = layer.history[layer.history.length - 1];
+                img.onload = () => {
+                    layer.ctx.clearRect(0, 0, W, H);
+                    const oldOp = layer.ctx.globalCompositeOperation;
+                    layer.ctx.globalCompositeOperation = 'source-over';
+                    layer.ctx.drawImage(img, 0, 0);
+                    layer.ctx.globalCompositeOperation = oldOp;
+                };
+            }
+        }
+
+        // --- 介面功能 ---
+        function toggleVis(idx, e) { e.stopPropagation(); layers[idx].visible = !layers[idx].visible; renderUI(); }
+        function deleteLayer(idx, e) {
+            e.stopPropagation();
+            if (layers.length <= 1) return;
+            viewport.removeChild(layers[idx].canvas);
+            layers.splice(idx, 1);
+            currentLayerIndex = Math.max(0, layers.length - 1);
+            renderUI();
+        }
+
+        lineWidthInput.oninput = () => widthVal.innerText = lineWidthInput.value;
+        document.getElementById('undoBtn').onclick = undo;
+        document.getElementById('drawBtn').onclick = () => { isEraser = false; updateBtn(); };
+        document.getElementById('eraseBtn').onclick = () => { isEraser = true; updateBtn(); };
+        function updateBtn() {
+            document.getElementById('drawBtn').className = isEraser ? '' : 'active';
+            document.getElementById('eraseBtn').className = isEraser ? 'active' : '';
+        }
+
+        document.getElementById('saveBtn').onclick = () => {
+            const temp = document.createElement('canvas');
+            temp.width = W; temp.height = H;
+            const tCtx = temp.getContext('2d');
+            // 填底色
+            tCtx.fillStyle = "white"; tCtx.fillRect(0,0,W,H);
+            // 由底層向上繪製
+            layers.forEach(l => { if(l.visible) tCtx.drawImage(l.canvas, 0, 0); });
+            const link = document.createElement('a');
+            link.download = `作品_${Date.now()}.png`;
+            link.href = temp.toDataURL();
+            link.click();
         };
 
-        const start = (e) => {
-          painting = true;
-          draw(e);
-        };
-        const stop = () => {
-          if (painting) {
-            layers[currentLayerIndex].ctx.beginPath();
-          }
-          painting = false;
-        };
-        const draw = (e) => {
-          if (!painting) return;
-          const { x, y } = getPos(e);
-          const l = layers[currentLayerIndex];
-          l.ctx.lineWidth = lineWidthInput.value;
-          l.ctx.globalCompositeOperation = isEraser
-            ? 'destination-out'
-            : 'source-over';
-          l.ctx.strokeStyle = colorPicker.value;
-          l.ctx.lineTo(x, y);
-          l.ctx.stroke();
-          l.ctx.beginPath();
-          l.ctx.moveTo(x, y);
-        };
-
-        cvs.addEventListener('mousedown', start);
-        window.addEventListener('mouseup', stop);
-        cvs.addEventListener('mousemove', draw);
-        cvs.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          start(e.touches[0]);
-        });
-        cvs.addEventListener('touchend', stop);
-      }
-
-      function toggleVis(idx, e) {
-        e.stopPropagation();
-        layers[idx].visible = !layers[idx].visible;
-        renderUI();
-      }
-
-      function deleteLayer(idx, e) {
-        e.stopPropagation();
-        if (layers.length <= 1) return;
-        viewport.removeChild(layers[idx].canvas);
-        layers.splice(idx, 1);
-        currentLayerIndex = Math.max(0, layers.length - 1);
-        renderUI();
-      }
-
-      document.getElementById('drawBtn').onclick = () => {
-        isEraser = false;
-        updateBtn();
-      };
-      document.getElementById('eraseBtn').onclick = () => {
-        isEraser = true;
-        updateBtn();
-      };
-      function updateBtn() {
-        document.getElementById('drawBtn').className = isEraser ? '' : 'active';
-        document.getElementById('eraseBtn').className = isEraser
-          ? 'active'
-          : '';
-      }
-
-      document.getElementById('saveBtn').onclick = () => {
-        const temp = document.createElement('canvas');
-        temp.width = W;
-        temp.height = H;
-        const tCtx = temp.getContext('2d');
-        tCtx.fillStyle = 'white';
-        tCtx.fillRect(0, 0, W, H);
-        layers.forEach((l) => {
-          if (l.visible) tCtx.drawImage(l.canvas, 0, 0);
-        });
-        const a = document.createElement('a');
-        a.download = 'art.png';
-        a.href = temp.toDataURL();
-        a.click();
-      };
-
-      // 初始建立背景與一個繪圖層
-      addLayer('背景');
-      const bg = layers[0].ctx;
-      bg.fillStyle = '#ffffff';
-      bg.fillRect(0, 0, W, H);
-      addLayer('繪圖層 1');
+        init();
     </script>
-  </body>
+</body>
 </html>

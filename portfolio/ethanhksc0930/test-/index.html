@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hand Gesture 3D Cube</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; }
+        #video-container { position: absolute; bottom: 10px; right: 10px; width: 200px; border: 2px solid white; border-radius: 8px; overflow: hidden; transform: scaleX(-1); }
+        video { width: 100%; height: auto; display: block; }
+        canvas.output_canvas { display: none; } /* Hide the mediapipe canvas */
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="video-container">
+        <video id="input_video"></video>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <script>
+        const videoElement = document.getElementById('input_video');
+        
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        const material = new THREE.MeshNormalMaterial();
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        camera.position.z = 5;
+
+        // --- MediaPipe Hand Tracking Setup ---
+        function onResults(results) {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const hand = results.multiHandLandmarks[0];
+                
+                // Index Finger Tip is Landmark 8
+                const indexTip = hand[8];
+
+                // Map normalized coordinates (0 to 1) to Three.js world space
+                // X: 0 (left) to 1 (right) -> -5 to 5
+                // Y: 0 (top) to 1 (bottom) -> 3 to -3
+                const targetX = (indexTip.x - 0.5) * -10; // Inverted for mirror effect
+                const targetY = (indexTip.y - 0.5) * -6;
+
+                // Smoothly move the cube toward the finger
+                cube.position.x += (targetX - cube.position.x) * 0.1;
+                cube.position.y += (targetY - cube.position.y) * 0.1;
+                
+                // Rotate based on hand movement
+                cube.rotation.x += 0.05;
+                cube.rotation.y += 0.05;
+            }
+            renderer.render(scene, camera);
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        const cameraFeed = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        cameraFeed.start();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

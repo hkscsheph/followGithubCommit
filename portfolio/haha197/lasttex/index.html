@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>打字之王</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div
+      id="instruction-modal"
+      class="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="instruction-title"
+      hidden
+    >
+      <div class="modal-card" role="document">
+        <h2 id="instruction-title">說明</h2>
+        <ol class="instruction-list">
+          <li>先使用書院 Google 帳號登入。</li>
+          <li>按「開始」後，依序輸入畫面中的中英文段落。</li>
+          <li>不可貼上文字，系統會即時顯示時間。</li>
+          <li>完成所有段落後，成績會自動上傳。</li>
+          <li>你可以無限次數地進行挑戰。</li>
+        </ol>
+        <button id="instruction-close-btn" type="button">
+          我知道了，開始挑戰
+        </button>
+      </div>
+    </div>
+    <main id="app-shell">
+      <h1>打字之王</h1>
+      <p id="subtitle">挑戰你的速度</p>
+      <section id="auth-panel" aria-live="polite">
+        <p id="auth-status">請先使用書院 Google 帳號登入後再開始遊戲。</p>
+        <div id="google-signin"></div>
+        <button id="logout-btn" type="button" hidden>登出</button>
+        <p id="sync-status" hidden aria-live="polite"></p>
+      </section>
+      <div id="game-container">
+        <div id="sentence-display" aria-live="polite"></div>
+        <input
+          type="text"
+          id="input-box"
+          name="typing-king-input-x"
+          placeholder="在這裡輸入句子..."
+          autocomplete="new-password"
+          data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          autofocus
+          disabled
+        />
+        <div id="stats-panel">
+          <div class="stat-card">
+            <span class="stat-title">時間</span>
+            <div id="timer">時間: 0</div>
+          </div>
+          <div class="stat-card" style="display: none">
+            <span class="stat-title">WPM</span>
+            <div id="wpm">WPM: 0</div>
+          </div>
+          <div class="stat-card" style="display: none">
+            <span class="stat-title">準確率</span>
+            <div id="accuracy">準確率: 0.00%</div>
+          </div>
+        </div>
+        <div id="controls">
+          <button id="start-btn">開始</button>
+          <button id="reset-btn">重設</button>
+          <button
+            id="leaderboard-btn"
+            type="button"
+            onclick="window.open('https://docs.google.com/spreadsheets/d/e/2PACX-1vQe1cQjJ6kmyRWWY4C0qxsyYiZU5Y-JXZQQEHNfqypYK93h2Zw6ga2b582PyYW-Fp87zBi01Sj0LRV_/pubhtml?gid=160040060&single=true','_blank','noopener,noreferrer')"
+          >
+            整體紀錄
+          </button>
+        </div>
+        <section id="history-panel" aria-live="polite">
+          <div class="history-head">
+            <h2>個人紀錄</h2>
+            <button id="clear-history-btn" type="button">清除紀錄</button>
+          </div>
+          <ul id="history-list"></ul>
+        </section>
+      </div>
+    </main>
+    <script
+      src="https://accounts.google.com/gsi/client"
+      async
+      defer
+      onload="window.onGoogleLibraryLoad && window.onGoogleLibraryLoad()"
+    ></script>
+    <script src="script.js"></script>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
+      integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
+      data-cf-beacon='{"version":"2024.11.0","token":"7884e80c2191473399e54167c572167a","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

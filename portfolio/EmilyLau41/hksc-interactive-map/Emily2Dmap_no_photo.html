@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>3D 校園導覽 - 2D no photo 地圖</title>
+    <style>
+      body {
+        margin: 0;
+        background: #121212;
+        font-family: -apple-system, sans-serif;
+        overflow: hidden;
+        touch-action: none;
+      }
+
+      /* 底部樓層按鈕 */
+      #ui-layer {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(15px);
+        padding: 8px;
+        border-radius: 20px;
+        z-index: 100;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        width: 90%;
+        max-width: 400px;
+      }
+      .floor-btn {
+        flex: 1;
+        margin: 0 4px;
+        padding: 12px 0;
+        border: none;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .active {
+        background: #007aff !important;
+        box-shadow: 0 0 15px #007aff;
+      }
+    </style>

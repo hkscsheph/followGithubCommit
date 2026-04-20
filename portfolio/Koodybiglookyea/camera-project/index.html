@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Control 3D Cube</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #050505; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        #video-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            border: 2px solid #00f2ff;
+            border-radius: 12px;
+            overflow: hidden;
+            transform: scaleX(-1); /* Mirror view */
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+            z-index: 10;
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        #status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00f2ff;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border-left: 4px solid #00f2ff;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        canvas { display: block; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="status">Starting Camera & AI...</div>
+    
+    <div id="video-container">
+        <video id="input_video"></video>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('input_video');
+        const statusElement = document.getElementById('status');
+
+        // --- THREE.JS SETUP ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Create Cube with a "Tech" look
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const material = new THREE.MeshNormalMaterial({ wireframe: false });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        // Add a wireframe overlay for extra 3D depth
+        const wireframe = new THREE.Mesh(
+            new THREE.BoxGeometry(2.05, 2.05, 2.05),
+            new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true, transparent: true, opacity: 0.3 })
+        );
+        scene.add(wireframe);
+
+        camera.position.z = 5;
+
+        // Variables for smoothing
+        let targetRotX = 0;
+        let targetRotY = 0;
+
+        // --- MEDIAPIPE LOGIC ---
+        function onResults(results) {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                statusElement.innerText = "Hand Detected - Move to Rotate";
+                statusElement.style.borderColor = "#00ff88";
+                
+                // Landmark 9 is the middle finger base (very stable)
+                const hand = results.multiHandLandmarks[0][9];
+                
+                // Map coords (0 to 1) to rotation (approx -4 to 4 radians)
+                // Note: we flip X because of the mirrored video
+                targetRotY = (0.5 - hand.x) * 10;
+                targetRotX = (hand.y - 0.5) * 10;
+            } else {
+                statusElement.innerText = "Wave your hand at the camera";
+                statusElement.style.borderColor = "#ffcc00";
+            }
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+
+        hands.onResults(onResults);
+
+        const cameraFeed = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        cameraFeed.start();
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Linear Interpolation (Lerp) for silky smooth movement
+            cube.rotation.x += (targetRotX - cube.rotation.x) * 0.1;
+            cube.rotation.y += (targetRotY - cube.rotation.y) * 0.1;
+            
+            wireframe.rotation.x = cube.rotation.x;
+            wireframe.rotation.y = cube.rotation.y;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle Resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神罰：極致毀滅與血肉飛濺 (巨棍降臨版)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; padding: 20px 0; background-color: #050505; color: #ecf0f1;
+            font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column;
+            align-items: center; min-height: 100vh; user-select: none; box-sizing: border-box;
+            transition: background-color 2s ease;
+        }
+
+        body.apocalypse-mode { background-color: #1a0000; }
+
+        h1 { font-size: 20px; margin-bottom: 10px; text-shadow: 2px 2px 0px #000; color: #ff3333; transition: color 2s ease; }
+        body.apocalypse-mode h1 { color: #880000; }
+
+        #stats { margin-bottom: 15px; font-size: 12px; color: #f1c40f; text-shadow: 1px 1px 0px #000; }
+
+        #viewport {
+            width: 800px; height: 540px; max-width: 95vw; background-color: #000;
+            border: 4px solid #222; border-radius: 4px; box-shadow: 0 10px 50px rgba(0,0,0,0.9);
+            position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden;
+        }
+        
+        body.apocalypse-mode #viewport { border-color: #4a0000; box-shadow: 0 10px 50px rgba(255,0,0,0.2); }
+
+        canvas {
+            image-rendering: -moz-crisp-edges; image-rendering: -webkit-crisp-edges; image-rendering: pixelated; image-rendering: crisp-edges;
+            display: block; background-color: #000; cursor: crosshair;
+        }
+
+        #crt-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.6) 100%),
+                        linear-gradient(rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.03) 50%);
+            background-size: 100% 100%, 100% 4px;
+            z-index: 10; opacity: 0.8;
+        }
+
+        #log-panel {
+            width: 800px; max-width: 95vw; height: 150px; background-color: #111;
+            border: 4px solid #222; border-radius: 4px; margin-top: 15px; padding: 10px; overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold;
+            box-sizing: border-box; box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #333; padding-bottom: 4px; line-height: 1.4; text-shadow: 1px 1px 0 #000; }
+
+        .controls { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 850px; }
+        button {
+            font-family: 'Press Start 2P', monospace; background-color: #444; color: #ddd;
+            border: none; padding: 10px; font-size: 10px; cursor: pointer;
+            border-bottom: 4px solid #222; border-right: 4px solid #222; transition: all 0.1s; text-shadow: 1px 1px 0 #000;
+        }
+        button:active { transform: translate(2px, 2px); border-bottom: 2px solid #222; border-right: 2px solid #222; }
+
+        button.active-brush { background-color: #27ae60; border-bottom-color: #1e8449; border-right-color: #1e8449; color: white; }
+        button.weapon-btn { background-color: #d35400; border-bottom-color: #a04000; border-right-color: #a04000; }
+        button.weapon-btn.active-brush { background-color: #c0392b; border-bottom-color: #922b21; border-right-color: #922b21; }
+        
+        button.lewd-btn { background-color: #f39c12; border-bottom-color: #d68910; border-right-color: #d68910; color: #fff; }
+        button.lewd-btn.active-brush { background-color: #ff9ff3; border-bottom-color: #f368e0; border-right-color: #f368e0; color: #000; text-shadow: none; }
+        
+        button.tentacle-btn { background-color: #8e44ad; border-bottom-color: #5b2c6f; border-right-color: #5b2c6f; }
+        button.sys-btn { background-color: #2980b9; border-bottom-color: #1f618d; border-right-color: #1f618d; }
+        .divider { width: 100%; height: 2px; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <h1>⚔️ 神罰：巨棍降臨與繁衍狂熱</h1>
+    <div id="stats">讀取中...</div>
+    
+    <div id="viewport">
+        <canvas id="gameCanvas" width="800" height="540"></canvas>
+        <div id="crt-overlay"></div>
+    </div>
+
+    <div id="log-panel"></div>
+
+    <div class="controls">
+        <button class="brush-btn active-brush" data-brush="WALL">🧱 建牆</button>
+        <button class="brush-btn" data-brush="FOOD">🍎 賜糧</button>
+        <button class="brush-btn" data-brush="WATER">💧 挖水</button>
+        <button class="brush-btn" data-brush="LAND">🌱 填海</button>
+        
+        <button class="brush-btn weapon-btn" data-brush="NUKE">☢️ 核彈</button>
+        <button class="brush-btn weapon-btn" data-brush="FIRE">🔥 火焰</button>
+        
+        <!-- 新增：巨棍降臨按鈕 -->
+        <button class="brush-btn lewd-btn" data-brush="LIQUID">🍌 巨棍降臨</button>
+        
+        <button class="tentacle-btn" onclick="spawnTentacleHell()">🐙 觸手地獄</button>
+        
+        <div class="divider"></div>
+        <button class="sys-btn" onclick="initWorld()">🌍 重建世界</button>
+        <button class="sys-btn" onclick="spawnAgent(true)">👾 強制降臨</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const statsDisplay = document.getElementById('stats');
+        const logPanel = document.getElementById('log-panel');
+
+        const LOGICAL_TILE_SIZE = 32; 
+        let COLS = 25; let ROWS = 16;
+        let currentScale = 1; let offsetX = 0; let offsetY = 0;
+        
+        const bgCanvas = document.createElement('canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        const splatterCanvas = document.createElement('canvas');
+        const splatterCtx = splatterCanvas.getContext('2d');
+        
+        bgCanvas.width = splatterCanvas.width = COLS * LOGICAL_TILE_SIZE;
+        bgCanvas.height = splatterCanvas.height = ROWS * LOGICAL_TILE_SIZE;
+        bgCtx.imageSmoothingEnabled = false; splatterCtx.imageSmoothingEnabled = false;
+
+        let screenShake = 0; let globalFlash = 0;
+        const TERRAIN = { LAND: 0, WATER: 1, WALL: 2, SCORCHED: 3 };
+        const BRUSH = { WALL: 'WALL', FOOD: 'FOOD', WATER: 'WATER', LAND: 'LAND', NUKE: 'NUKE', FIRE: 'FIRE', GRENADE: 'GRENADE', LIQUID: 'LIQUID' };
+        
+        const COLOR_MAP = { '#e74c3c': '血紅', '#3498db': '深藍', '#f1c40f': '閃黃', '#9b59b6': '暗紫', '#ffffff': '純白', '#e67e22': '狂橘' };
+        const BEGGING_QUOTES = ["啊啊啊啊我的腿！", "腸子...我的腸子...", "救命！好燙！", "神啊救救我！"];
+        const LEWD_QUOTES = ["這白色的黏液是什麼...啊！", "不要射了！身體...好奇怪...", "神啊...求您停下來...嗯啊...", "造物主的恩賜...把我填滿了！", "不行了...腦袋要融化了...我要繁衍！", "好燙...這白濁的液體...啊啊！"];
+
+        let grid = []; let agents = []; let foods = []; let tentacleZones = [];
+        let particles = []; let goreBits = []; let explosions = []; let shockwaves = [];
+        let currentBrush = BRUSH.WALL; let isDragging = false; let frameCount = 0;
+        let isApocalypse = false; let apocalypseTimer = 0; let whyTexts = [];
+
+        function logEvent(msg, color = '#ecf0f1') {
+            const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = 'log-entry'; entry.style.color = color;
+            entry.innerHTML = `<span style="color:#7f8c8d">[${time}]</span> ${msg}`;
+            logPanel.appendChild(entry);
+            logPanel.scrollTop = logPanel.scrollHeight;
+            if (logPanel.children.length > 80) logPanel.removeChild(logPanel.firstChild);
+        }
+
+        function updateViewportScale() {
+            const scaleX = canvas.width / (COLS * LOGICAL_TILE_SIZE);
+            const scaleY = canvas.height / (ROWS * LOGICAL_TILE_SIZE);
+            currentScale = Math.min(scaleX, scaleY);
+            const actualWidth = COLS * LOGICAL_TILE_SIZE * currentScale;
+            const actualHeight = ROWS * LOGICAL_TILE_SIZE * currentScale;
+            offsetX = (canvas.width - actualWidth) / 2; offsetY = (canvas.height - actualHeight) / 2;
+        }
+
+        document.querySelectorAll('.brush-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active-brush'));
+                e.target.classList.add('active-brush'); currentBrush = BRUSH[e.target.dataset.brush];
+            });
+        });
+
+        function getLogicalMousePos(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const physicalX = (clientX - rect.left) / (rect.width / canvas.width);
+            const physicalY = (clientY - rect.top) / (rect.height / canvas.height);
+            const x = Math.floor((physicalX - offsetX) / (LOGICAL_TILE_SIZE * currentScale));
+            const y = Math.floor((physicalY - offsetY) / (LOGICAL_TILE_SIZE * currentScale));
+            return { x, y };
+        }
+
+        canvas.addEventListener('mousedown', (e) => { isDragging = true; handlePointer(e); });
+        canvas.addEventListener('mousemove', (e) => { if (isDragging) handlePointer(e); });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        function handlePointer(e) {
+            const pos = getLogicalMousePos(e.clientX, e.clientY);
+            if (pos.x < 0 || pos.x >= COLS || pos.y < 0 || pos.y >= ROWS) return;
+
+            if (['NUKE', 'FIRE', 'GRENADE', 'LIQUID'].includes(currentBrush)) {
+                if (currentBrush === 'FIRE' && frameCount % 3 !== 0) return; 
+                if (currentBrush === 'LIQUID' && frameCount % 2 !== 0) return; // 控制液體噴射頻率
+                if (currentBrush === 'NUKE' && e.type === 'mousemove') return; 
+                triggerWeapon(pos.x, pos.y, currentBrush);
+            } else {
+                applyConstruction(pos.x, pos.y);
+            }
+        }
+
+        function applyConstruction(x, y) {
+            let changed = false;
+            if (currentBrush === BRUSH.WALL && grid[y][x] !== TERRAIN.WALL) { grid[y][x] = TERRAIN.WALL; removeFoodAt(x, y); changed = true; } 
+            else if (currentBrush === BRUSH.WATER && grid[y][x] !== TERRAIN.WATER) { grid[y][x] = TERRAIN.WATER; removeFoodAt(x, y); changed = true; } 
+            else if (currentBrush === BRUSH.LAND && grid[y][x] !== TERRAIN.LAND) { grid[y][x] = TERRAIN.LAND; changed = true; } 
+            else if (currentBrush === BRUSH.FOOD) { if ((grid[y][x] === TERRAIN.LAND || grid[y][x] === TERRAIN.SCORCHED) && !hasFoodAt(x, y)) foods.push({ x: x, y: y }); }
+            
+            if (changed) {
+                renderSingleTileToBg(x, y, grid[y][x]);
+                if (y < ROWS - 1) renderSingleTileToBg(x, y + 1, grid[y+1][x]); 
+                splatterCtx.save();
+                splatterCtx.globalCompositeOperation = 'destination-out';
+                splatterCtx.fillRect(x * LOGICAL_TILE_SIZE, y * LOGICAL_TILE_SIZE, LOGICAL_TILE_SIZE, LOGICAL_TILE_SIZE);
+                splatterCtx.restore();
+            }
+        }
+
+        function hasFoodAt(x, y) { return foods.some(f => f.x === x && f.y === y); }
+        function removeFoodAt(x, y) { foods = foods.filter(f => !(f.x === x && f.y === y)); }
+
+        function renderSingleTileToBg(x, y, type) {
+            const px = x * LOGICAL_TILE_SIZE, py = y * LOGICAL_TILE_SIZE;
+            const seed = (x * 13 + y * 7); 
+            bgCtx.clearRect(px, py, LOGICAL_TILE_SIZE, LOGICAL_TILE_SIZE);
+
+            if (type === TERRAIN.LAND) {
+                bgCtx.fillStyle = '#27ae60'; bgCtx.fillRect(px, py, LOGICAL_TILE_SIZE, LOGICAL_TILE_SIZE);
+                bgCtx.fillStyle = '#229954';
+                if (seed % 2 === 0) bgCtx.fillRect(px + 4, py + 4, 8, 4);
+                if (seed % 3 === 0) bgCtx.fillRect(px + 20, py + 16, 4, 8);
+                bgCtx.fillStyle = '#1e8449'; 
+                if (seed % 5 === 0) { bgCtx.fillRect(px + 8, py + 20, 2, 6); bgCtx.fillRect(px + 12, py + 22, 2, 4); }
+            } else if (type === TERRAIN.SCORCHED) {
+                bgCtx.fillStyle = '#2c3e50'; bgCtx.fillRect(px, py, LOGICAL_TILE_SIZE, LOGICAL_TILE_SIZE);
+                bgCtx.fillStyle = '#1a252f'; 
+                if (seed % 2 === 0) bgCtx.fillRect(px + 2, py + 8, 12, 8);
+                if (seed % 3 === 0) bgCtx.fillRect(px + 16, py + 4, 8, 12);
+                bgCtx.fillStyle = '#000000'; bgCtx.fillRect(px + (seed%20), py + (seed%15), 6, 6);
+            } else if (type === TERRAIN.WATER) {
+                bgCtx.fillStyle = '#2980b9'; bgCtx.fillRect(px, py, LOGICAL_TILE_SIZE, LOGICAL_TILE_SIZE);
+                bgCtx.fillStyle = 'rgba(255, 255, 255, 0.15)'; bgCtx.fillRect(px, py, LOGICAL_TILE_SIZE, 3); 
+            } else if (type === TERRAIN.WALL) {
+                bgCtx.fillStyle = '#7f8c8d'; bgCtx.fillRect(px, py, LOGICAL_TILE_SIZE, LOGICAL_TILE_SIZE);
+                bgCtx.fillStyle = '#95a5a6'; bgCtx.fillRect(px, py, LOGICAL_TILE_SIZE, 4); 
+                bgCtx.fillStyle = '#34495e'; bgCtx.fillRect(px, py + 28, LOGICAL_TILE_SIZE, 4); 
+                bgCtx.fillRect(px + 14, py, 4, LOGICAL_TILE_SIZE); 
+            }
+            if (type !== TERRAIN.WALL && y > 0 && grid[y-1][x] === TERRAIN.WALL) {
+                bgCtx.fillStyle = 'rgba(0,0,0,0.4)'; bgCtx.fillRect(px, py, LOGICAL_TILE_SIZE, 8);
+            }
+        }
+
+        function renderFullBackground() {
+            for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) renderSingleTileToBg(x, y, grid[y][x]);
+        }
+
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type; this.life = 1.0;
+                if (type === 'fire') {
+                    this.vx = (Math.random() - 0.5) * 2; this.vy = -Math.random() * 3 - 1;
+                    this.size = Math.random() * 10 + 5; this.decay = Math.random() * 0.05 + 0.02;
+                    this.color = ['#ff0000', '#ff5500', '#ffaa00'][Math.floor(Math.random()*3)];
+                } else if (type === 'smoke') {
+                    this.vx = (Math.random() - 0.5) * 1; this.vy = -Math.random() * 2 - 0.5;
+                    this.size = Math.random() * 15 + 10; this.decay = Math.random() * 0.02 + 0.01;
+                    let c = 30 + Math.random() * 50; this.color = `rgb(${c},${c},${c})`;
+                } else if (type === 'liquid') { // 新增液體粒子
+                    this.vx = (Math.random() - 0.5) * 6; this.vy = Math.random() * 3 + 1; // 往下噴射
+                    this.size = Math.random() * 6 + 3; this.decay = Math.random() * 0.03 + 0.01;
+                    this.color = 'rgba(255, 255, 255, 0.9)'; // 白濁色
+                }
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy; this.life -= this.decay;
+                if (this.type === 'fire' && this.life < 0.4) { this.color = '#555'; this.type = 'smoke'; } 
+                if (this.type === 'smoke') this.size += 0.2;
+                if (this.type === 'liquid') { this.vy += 0.3; /* 重力 */ }
+                else { this.vx *= 0.95; this.vy *= 0.95; }
+            }
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        // GoreBit 類別略微簡化，保持不變
+        class GoreBit {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type; 
+                let angle = Math.random() * Math.PI * 2; let force = Math.random() * 12 + 4;
+                this.vx = Math.cos(angle) * force; this.vy = Math.sin(angle) * force;
+                this.rotation = Math.random() * Math.PI * 2; this.rotSpeed = (Math.random() - 0.5) * 0.5;
+                this.friction = 0.85; this.life = type === 'blood' ? Math.random() * 30 + 10 : 100;
+                this.settled = false;
+                if(type === 'blood') { this.color = ['#ff0000', '#aa0000', '#660000'][Math.floor(Math.random()*3)]; this.size = Math.random()*3+2; }
+                if(type === 'meat') { this.color = ['#8b0000', '#5a0000', '#cc0000'][Math.floor(Math.random()*3)]; this.size = Math.random()*6+4; }
+                if(type === 'bone') { this.color = '#e0e0e0'; this.width = Math.random()*2+2; this.length = Math.random()*6+4; }
+            }
+            update() {
+                if (this.settled) return;
+                this.x += this.vx; this.y += this.vy; this.rotation += this.rotSpeed;
+                this.vx *= this.friction; this.vy *= this.friction;
+                let tx = Math.floor(this.x / LOGICAL_TILE_SIZE); let ty = Math.floor(this.y / LOGICAL_TILE_SIZE);
+                if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS || (grid[ty] && grid[ty][tx] === TERRAIN.WALL)) {
+                    this.vx *= -0.5; this.vy *= -0.5; this.x += this.vx; this.y += this.vy;
+                }
+                if (Math.abs(this.vx) < 0.2 && Math.abs(this.vy) < 0.2) {
+                    this.settled = true;
+                    if (this.type !== 'blood' || Math.random() > 0.5) this.bakeToTexture(splatterCtx);
+                }
+                if (this.type === 'blood') this.life--;
+            }
+            bakeToTexture(ctxTarget) {
+                ctxTarget.save(); ctxTarget.translate(this.x, this.y); ctxTarget.rotate(this.rotation);
+                if (this.type === 'blood' || this.type === 'meat') {
+                    ctxTarget.fillStyle = this.color;
+                    if (this.type === 'meat') { ctxTarget.fillRect(-this.size/2, -this.size/2, this.size, this.size*0.8); ctxTarget.fillRect(-this.size/4, this.size/4, this.size*0.6, this.size*0.6); } 
+                    else { ctxTarget.fillRect(-this.size/2, -this.size/2, this.size, this.size); }
+                } else if (this.type === 'bone') {
+                    ctxTarget.fillStyle = this.color; ctxTarget.fillRect(-this.length/2, -this.width/2, this.length, this.width);
+                } else if (this.type === 'skull') {
+                    ctxTarget.fillStyle = '#e0e0e0'; ctxTarget.fillRect(-4, -4, 8, 6); ctxTarget.fillRect(-2, 2, 4, 3);
+                    ctxTarget.fillStyle = '#000'; ctxTarget.fillRect(-3, -2, 2, 2); ctxTarget.fillRect(1, -2, 2, 2);
+                }
+                ctxTarget.restore();
+            }
+            draw(ctx) { if (!this.settled) this.bakeToTexture(ctx); }
+        }
+
+        function spawnGore(x, y, amountFactor = 1) {
+            let px = x * LOGICAL_TILE_SIZE + 16; let py = y * LOGICAL_TILE_SIZE + 16;
+            goreBits.push(new GoreBit(px, py, 'skull')); 
+            for(let i=0; i<3*amountFactor; i++) goreBits.push(new GoreBit(px, py, 'bone'));
+            for(let i=0; i<6*amountFactor; i++) goreBits.push(new GoreBit(px, py, 'meat'));
+            for(let i=0; i<20*amountFactor; i++) goreBits.push(new GoreBit(px, py, 'blood'));
+        }
+
+        class Shockwave {
+            constructor(x, y, maxRadius, speed, color) {
+                this.x = x * LOGICAL_TILE_SIZE + 16; this.y = y * LOGICAL_TILE_SIZE + 16;
+                this.radius = 0; this.maxRadius = maxRadius * LOGICAL_TILE_SIZE;
+                this.speed = speed; this.color = color; this.thickness = 15;
+            }
+            update() { this.radius += this.speed; this.thickness *= 0.9; }
+            draw(ctx) {
+                if (this.radius > this.maxRadius || this.thickness < 0.5) return;
+                ctx.save(); ctx.globalAlpha = Math.max(0, 1 - (this.radius / this.maxRadius));
+                ctx.strokeStyle = this.color; ctx.lineWidth = this.thickness;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+            }
+        }
+
+        class Explosion {
+            constructor(x, y, radius, color, duration, type) {
+                this.x = x * LOGICAL_TILE_SIZE + 16; this.y = y * LOGICAL_TILE_SIZE + 16; 
+                this.maxRadius = radius * LOGICAL_TILE_SIZE; this.radius = 0;
+                this.color = color; this.life = 1.0; this.decay = 1.0 / duration; this.type = type;
+            }
+            update() { 
+                this.life -= this.decay; 
+                if (this.radius < this.maxRadius) this.radius += (this.maxRadius - this.radius) * 0.2 + 2;
+                if (this.life > 0 && Math.random() > 0.3) particles.push(new Particle(this.x + (Math.random()-0.5)*this.radius, this.y + (Math.random()-0.5)*this.radius, this.type === 'NUKE' ? 'smoke' : 'fire'));
+            }
+            draw(ctx) {
+                ctx.save(); ctx.globalAlpha = Math.max(0, this.life); 
+                let grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.2, this.color); grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            }
+        }
+
+        function triggerWeapon(cx, cy, type) {
+            let px = cx * LOGICAL_TILE_SIZE + 16, py = cy * LOGICAL_TILE_SIZE + 16;
+
+            // 處理新增的液體噴射
+            if (type === 'LIQUID') {
+                for(let i=0; i<8; i++) particles.push(new Particle(px, py - 10, 'liquid'));
+                
+                let hitRadius = 2.5; // 噴射範圍
+                agents.forEach(a => {
+                    let dist = Math.sqrt((a.x - cx)**2 + (a.y - cy)**2);
+                    if (dist <= hitRadius && a.hunger > 0 && !a.isBound) {
+                        // 如果還沒發情，淋到液體就會開始發情求饒
+                        if (a.estrusTimer <= 0) {
+                            a.estrusTimer = 400; // 發情持續時間很長
+                            a.hunger = a.maxHunger; // 神聖能量補滿體力，避免做到一半死掉
+                            a.panicTimer = 0; // 忘記恐懼
+                            
+                            let quote = LEWD_QUOTES[Math.floor(Math.random() * LEWD_QUOTES.length)];
+                            logEvent(`💦 <span style="color:${a.color}">[${a.colorName}]</span> 被巨棍噴出的白濁液體淋滿全身，發出屈辱的嬌喘：「${quote}」`, '#ff9ff3');
+                            
+                            // 留下白色的痕跡在地上
+                            splatterCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                            splatterCtx.beginPath(); splatterCtx.arc(a.x*LOGICAL_TILE_SIZE+16, a.y*LOGICAL_TILE_SIZE+16, Math.random()*15+5, 0, Math.PI*2); splatterCtx.fill();
+                        }
+                    }
+                });
+                return; // 液體不引發爆炸
+            }
+
+            let radius = 0, color = '', duration = 0, damage = 0;
+            if (type === 'NUKE') { 
+                radius = 12; color = '#ffaa00'; duration = 60; damage = 2000; 
+                screenShake = Math.max(screenShake, 50); globalFlash = 1.0;
+                shockwaves.push(new Shockwave(cx, cy, radius + 5, 20, '#ffffff'));
+                for(let i=0; i<30; i++) particles.push(new Particle(px, py, 'smoke'));
+            } else if (type === 'FIRE') { 
+                radius = 2.5; color = '#ff5500'; duration = 20; damage = 45; 
+                screenShake = Math.max(screenShake, 5);
+                for(let i=0; i<5; i++) particles.push(new Particle(px, py, 'fire'));
+            }
+            explosions.push(new Explosion(cx, cy, radius, color, duration, type));
+
+            agents.forEach(a => {
+                if (a.hunger <= 0) return;
+                let dist = Math.sqrt((a.x - cx)**2 + (a.y - cy)**2);
+                if (dist <= radius) {
+                    a.hunger -= damage; 
+                    if (a.hunger <= 0) {
+                        a.killedByWeapon = true; spawnGore(a.x, a.y, type === 'NUKE' ? 2 : 1);
+                        logEvent(`💥 <span style="color:${a.color}">[${a.colorName}]</span> 被炸得血肉模糊！「${BEGGING_QUOTES[Math.floor(Math.random() * BEGGING_QUOTES.length)]}」`, '#ff6666');
+                    } else {
+                        for(let i=0; i<5; i++) goreBits.push(new GoreBit(a.x * LOGICAL_TILE_SIZE+16, a.y * LOGICAL_TILE_SIZE+16, 'blood')); 
+                        a.panicTimer = 40; a.moveInterval = Math.max(2, a.baseMoveInterval - 10); 
+                    }
+                }
+            });
+
+            foods = foods.filter(f => Math.sqrt((f.x - cx)**2 + (f.y - cy)**2) > radius);
+
+            if (type === 'NUKE') {
+                let destroyRadius = radius * 0.8; let terrainChanged = false;
+                for(let y = Math.max(0, Math.floor(cy - destroyRadius)); y <= Math.min(ROWS-1, Math.ceil(cy + destroyRadius)); y++) {
+                    for(let x = Math.max(0, Math.floor(cx - destroyRadius)); x <= Math.min(COLS-1, Math.ceil(cx + destroyRadius)); x++) {
+                        let d = Math.sqrt((x - cx)**2 + (y - cy)**2);
+                        if (d <= destroyRadius && (grid[y][x] === TERRAIN.WALL || grid[y][x] === TERRAIN.LAND)) { grid[y][x] = TERRAIN.SCORCHED; terrainChanged = true; }
+                    }
+                }
+                if (terrainChanged) {
+                    renderFullBackground();
+                    splatterCtx.save(); splatterCtx.globalCompositeOperation = 'destination-out';
+                    splatterCtx.beginPath(); splatterCtx.arc(px, py, destroyRadius * LOGICAL_TILE_SIZE, 0, Math.PI * 2); splatterCtx.fill(); splatterCtx.restore();
+                }
+            }
+        }
+
+        class TentacleZone {
+            constructor(cx, cy) {
+                this.cx = cx; this.cy = cy; this.radius = 4; this.life = 250; this.maxLife = 250;
+                this.idles = Array.from({length: 15}, () => ({ angle: Math.random() * Math.PI * 2, length: Math.random() * 2 + 2, phase: Math.random() * Math.PI * 2, speed: Math.random() * 0.1 + 0.05 }));
+            }
+            update() {
+                this.life--;
+                agents.forEach(a => {
+                    if(Math.sqrt((a.x - this.cx)**2 + (a.y - this.cy)**2) <= this.radius && a.hunger > 0) {
+                        a.isBound = true; a.hunger -= 3;    
+                        if (Math.random() > 0.6) goreBits.push(new GoreBit(a.x * LOGICAL_TILE_SIZE+16, a.y * LOGICAL_TILE_SIZE+16, 'blood'));
+                        if (a.hunger <= 0) {
+                            a.killedByWeapon = true; logEvent(`🐙 <span style="color:${a.color}">[${a.colorName}]</span> 被深淵觸手活生生撕裂！`, '#8e44ad'); spawnGore(a.x, a.y, 1.5); 
+                        }
+                    }
+                });
+            }
+            draw(ctx) {
+                let px = this.cx * LOGICAL_TILE_SIZE + 16; let py = this.cy * LOGICAL_TILE_SIZE + 16;
+                ctx.save(); ctx.globalAlpha = Math.min(1, this.life / 40) * 0.9;
+                let grad = ctx.createRadialGradient(px, py, 0, px, py, this.radius * LOGICAL_TILE_SIZE);
+                grad.addColorStop(0, '#000000'); grad.addColorStop(0.4, '#1a001a'); grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(px, py, this.radius * LOGICAL_TILE_SIZE, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+
+                this.idles.forEach(idle => {
+                    let sway = Math.sin(frameCount * idle.speed + idle.phase) * 1.2;
+                    let endX = px + Math.cos(idle.angle + sway) * idle.length * LOGICAL_TILE_SIZE; let endY = py + Math.sin(idle.angle + sway) * idle.length * LOGICAL_TILE_SIZE;
+                    ctx.strokeStyle = '#2c003e'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+                    ctx.beginPath(); ctx.moveTo(px, py);
+                    let cpX = px + (endX - px)*0.5 + Math.sin(frameCount*idle.speed + idle.phase)*25; let cpY = py + (endY - py)*0.5 + Math.cos(frameCount*idle.speed + idle.phase)*25;
+                    ctx.quadraticCurveTo(cpX, cpY, endX, endY); ctx.stroke();
+                    ctx.strokeStyle = '#5a1e75'; ctx.lineWidth = 2; ctx.stroke();
+                });
+
+                agents.forEach(a => {
+                    if(Math.sqrt((a.x - this.cx)**2 + (a.y - this.cy)**2) <= this.radius && a.isBound) {
+                        let apx = a.x * LOGICAL_TILE_SIZE + 16 + (Math.random() - 0.5)*6, apy = a.y * LOGICAL_TILE_SIZE + 16 + (Math.random() - 0.5)*6;
+                        ctx.strokeStyle = '#4a004a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(px, py);
+                        ctx.bezierCurveTo(px + (apx - px)*0.3 + Math.sin(frameCount*0.4)*20, py + (apy - py)*0.3 + Math.cos(frameCount*0.4)*20, px + (apx - px)*0.7 - Math.cos(frameCount*0.4)*20, py + (apy - py)*0.7 - Math.sin(frameCount*0.4)*20, apx, apy); ctx.stroke();
+                        ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.moveTo(apx - 12, apy - 8); ctx.lineTo(apx + 14, apy + 10); ctx.lineTo(apx + 8, apy + 14); ctx.fill();
+                    }
+                });
+            }
+        }
+
+        function spawnTentacleHell() {
+            let bestSpot = null, maxTargets = -1;
+            for (let i = 0; i < 30; i++) {
+                let rx = Math.floor(Math.random() * COLS), ry = Math.floor(Math.random() * ROWS);
+                let targets = agents.filter(a => Math.sqrt((a.x - rx)**2 + (a.y - ry)**2) <= 4).length;
+                if (targets > maxTargets) { maxTargets = targets; bestSpot = {x: rx, y: ry}; }
+            }
+            if (bestSpot) {
+                tentacleZones.push(new TentacleZone(bestSpot.x, bestSpot.y));
+                logEvent(`🐙 警告：深淵裂縫開啟，無數觸手破土而出進行屠殺！`, '#8e44ad'); screenShake = Math.max(screenShake, 40);
+            }
+        }
+
+        class Agent {
+            constructor(x, y, color = null) {
+                this.x = x; this.y = y;
+                if (color) { this.color = color; } else { const keys = Object.keys(COLOR_MAP); this.color = keys[Math.floor(Math.random() * keys.length)]; }
+                this.colorName = COLOR_MAP[this.color];
+                this.baseMoveInterval = Math.floor(Math.random() * 6) + 10; this.moveInterval = this.baseMoveInterval; this.moveTimer = 0; 
+                this.maxHunger = 300; this.hunger = 250; this.foodEaten = 0; this.happyTimer = 0; this.fightTimer = 0; this.panicTimer = 0; 
+                this.estrusTimer = 0; // 發情計時器
+                this.killedByWeapon = false; this.isBound = false; this.bob = 0;
+            }
+            update() {
+                if (this.happyTimer > 0) this.happyTimer--; 
+                if (this.fightTimer > 0) this.fightTimer--;
+                if (this.panicTimer > 0) { this.panicTimer--; if (this.panicTimer <= 0) this.moveInterval = this.baseMoveInterval; }
+                if (this.estrusTimer > 0) { this.estrusTimer--; this.moveInterval = Math.max(2, this.baseMoveInterval - 5); } // 發情時移動變快
+                
+                if (this.isBound) return;
+                this.moveTimer++;
+                if (this.moveTimer >= this.moveInterval) { this.moveTimer = 0; this.hunger -= 1; this.bob = this.bob === 0 ? -2 : 0; this.makeDecision(); }
+            }
+            makeDecision() {
+                // --- 發情狀態覆蓋一般邏輯 ---
+                if (this.estrusTimer > 0) {
+                    // 尋找最近的任何生物強制交配
+                    let nearest = null; let minDist = Infinity;
+                    agents.forEach(a => {
+                        if (a !== this && !a.isBound) {
+                            let d = Math.abs(a.x - this.x) + Math.abs(a.y - this.y);
+                            if (d < minDist) { minDist = d; nearest = a; }
+                        }
+                    });
+
+                    if (nearest) {
+                        if (minDist <= 1) {
+                            // 碰到了！強制繁殖
+                            logEvent(`💕 <span style="color:${this.color}">[${this.colorName}]</span> 瘋狂地撲向了 <span style="color:${nearest.color}">[${nearest.colorName}]</span> 進行繁衍！`, '#ff9ff3');
+                            this.reproduce(nearest.x, nearest.y, true); 
+                            this.estrusTimer -= 100; // 宣洩後減少發情時間
+                            nearest.estrusTimer = Math.max(nearest.estrusTimer, 100); // 傳染發情
+                            this.happyTimer = 60; nearest.happyTimer = 60;
+                            // 產出愛心特效
+                            for(let i=0; i<3; i++) particles.push(new Particle(this.x*LOGICAL_TILE_SIZE+16, this.y*LOGICAL_TILE_SIZE+16, 'spark'));
+                            return;
+                        } else {
+                            // 往目標移動
+                            const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+                            let validMoves = dirs.filter(d => { const nx = this.x + d.dx, ny = this.y + d.dy; return nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && grid[ny][nx] !== TERRAIN.WALL && grid[ny][nx] !== TERRAIN.WATER; });
+                            if (validMoves.length > 0) {
+                                validMoves.sort((a, b) => { return (Math.abs(nearest.x - (this.x + a.dx)) + Math.abs(nearest.y - (this.y + a.dy))) - (Math.abs(nearest.x - (this.x + b.dx)) + Math.abs(nearest.y - (this.y + b.dy))); });
+                                this.x += validMoves[0].dx; this.y += validMoves[0].dy;
+                            }
+                            return; // 發情時不找食物不打架
+                        }
+                    }
+                }
+
+                // 一般打架邏輯
+                let enemy = agents.find(a => a !== this && a.color !== this.color && Math.abs(a.x - this.x) + Math.abs(a.y - this.y) <= 1 && a.hunger > 0 && !a.isBound);
+                if (enemy) {
+                    this.fightTimer = 15; enemy.hunger -= 60; this.hunger -= 10;
+                    if (Math.random() > 0.5) goreBits.push(new GoreBit(enemy.x * LOGICAL_TILE_SIZE+16, enemy.y * LOGICAL_TILE_SIZE+16, 'blood'));
+                    if (enemy.hunger <= 0) {
+                        logEvent(`⚔️ <strong style="color:${this.color}">${this.colorName}</strong> 砍碎了 <span style="color:${enemy.color}">${enemy.colorName}</span>！`, '#ecf0f1');
+                        spawnGore(enemy.x, enemy.y, 0.5); 
+                        this.hunger = Math.min(this.maxHunger, this.hunger + 100); this.foodEaten++; this.happyTimer = 30;
+                        if (this.hunger > 200 && this.foodEaten >= 2 && agents.length < 200) this.reproduce(this.x, this.y); 
+                    }
+                    return; 
+                }
+
+                // 一般移動與找食物邏輯
+                const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+                let validMoves = dirs.filter(d => { const nx = this.x + d.dx, ny = this.y + d.dy; return nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && (grid[ny][nx] === TERRAIN.LAND || grid[ny][nx] === TERRAIN.SCORCHED); });
+                if (validMoves.length === 0) return;
+
+                if (foods.length > 0) {
+                    let nearestFood = null, minDist = Infinity;
+                    foods.forEach(f => { let dist = Math.abs(f.x - this.x) + Math.abs(f.y - this.y); if (dist < minDist) { minDist = dist; nearestFood = f; } });
+                    if (nearestFood && minDist < 15) {
+                        validMoves.sort((a, b) => { return (Math.abs(nearestFood.x - (this.x + a.dx)) + Math.abs(nearestFood.y - (this.y + a.dy))) - (Math.abs(nearestFood.x - (this.x + b.dx)) + Math.abs(nearestFood.y - (this.y + b.dy))); });
+                        this.x += validMoves[0].dx; this.y += validMoves[0].dy;
+                    } else { const m = validMoves[Math.floor(Math.random() * validMoves.length)]; this.x += m.dx; this.y += m.dy; }
+                } else { const m = validMoves[Math.floor(Math.random() * validMoves.length)]; this.x += m.dx; this.y += m.dy; }
+
+                const fIdx = foods.findIndex(f => f.x === this.x && f.y === this.y);
+                if (fIdx !== -1) { 
+                    foods.splice(fIdx, 1); this.hunger = Math.min(this.maxHunger, this.hunger + 100); this.foodEaten++; this.happyTimer = 30; 
+                    if (this.hunger > 200 && this.foodEaten >= 2 && agents.length < 200) this.reproduce(this.x, this.y); 
+                }
+            }
+
+            reproduce(originX, originY, forceMutant = false) {
+                const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+                let validSpots = dirs.map(d => ({ x: originX + d.dx, y: originY + d.dy })).filter(pos => pos.x >= 0 && pos.x < COLS && pos.y >= 0 && pos.y < ROWS && grid[pos.y][pos.x] !== TERRAIN.WALL);
+                if (validSpots.length > 0) {
+                    const spot = validSpots[Math.floor(Math.random() * validSpots.length)];
+                    // 如果是發情強制交配，有機會生出突變種（隨機顏色）
+                    let newColor = this.color;
+                    if (forceMutant && Math.random() > 0.5) {
+                        const keys = Object.keys(COLOR_MAP); newColor = keys[Math.floor(Math.random() * keys.length)];
+                    }
+                    agents.push(new Agent(spot.x, spot.y, newColor));
+                    this.foodEaten = 0; this.hunger -= 60; this.happyTimer = 60; 
+                }
+            }
+
+            draw(ctx) {
+                let px = this.x * LOGICAL_TILE_SIZE; let py = this.y * LOGICAL_TILE_SIZE;
+                
+                // 發情時的劇烈顫抖
+                if (this.estrusTimer > 0) {
+                    px += (Math.random() - 0.5) * 4; py += (Math.random() - 0.5) * 4;
+                } else if (this.isBound) { 
+                    px += (Math.random() - 0.5) * 8; py += (Math.random() - 0.5) * 8; 
+                }
+                
+                ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(px + 16, py + 28, 10, 4, 0, 0, Math.PI*2); ctx.fill();
+                py += this.bob; 
+
+                // 畫主體
+                ctx.fillStyle = this.color; ctx.fillRect(px + 10, py + 12, 12, 12);
+                ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(px + 10, py + 12, 12, 2); 
+                ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(px + 10, py + 22, 12, 2); 
+
+                // 臉部
+                if (this.estrusTimer > 0) ctx.fillStyle = '#ff9ff3'; // 發情時臉變粉紅
+                else ctx.fillStyle = '#ffcecc'; 
+                ctx.fillRect(px + 12, py + 4, 8, 8);
+                
+                // 眼睛
+                ctx.fillStyle = '#000'; 
+                if (this.estrusTimer > 0) {
+                    // 發情時的愛心眼或高潮眼
+                    ctx.font = '8px Arial'; ctx.fillStyle = '#c0392b'; ctx.fillText('♥', px+10, py+11); ctx.fillText('♥', px+15, py+11);
+                } else {
+                    ctx.fillRect(px + 14, py + 6, 2, 2); ctx.fillRect(px + 18, py + 6, 2, 2);
+                }
+
+                ctx.fillStyle = '#222'; ctx.fillRect(px + 10, py + 24, 4, 6); ctx.fillRect(px + 18, py + 24, 4, 6);
+                
+                const hpPercent = Math.max(0, this.hunger / this.maxHunger);
+                ctx.fillStyle = '#c0392b'; ctx.fillRect(px + 6, py - 6, 20, 4);
+                if (this.panicTimer > 0 && frameCount % 10 > 5) ctx.fillStyle = '#f1c40f'; else ctx.fillStyle = '#2ecc71'; 
+                ctx.fillRect(px + 6, py - 6, 20 * hpPercent, 4);
+
+                if (this.fightTimer > 0) { 
+                    ctx.fillStyle = '#eee'; ctx.save(); ctx.translate(px + 16, py + 16); 
+                    ctx.rotate((frameCount % 10) / 10 * Math.PI - Math.PI/2); ctx.fillRect(8, -2, 12, 4); ctx.restore(); 
+                }
+                if (this.happyTimer > 0 && this.fightTimer === 0 && this.estrusTimer <= 0) { 
+                    ctx.fillStyle = '#e84393'; ctx.fillRect(px + 12, py - 12, 4, 4); ctx.fillRect(px + 18, py - 12, 4, 4); 
+                }
+                
+                // 發情特效：大愛心漂浮
+                if (this.estrusTimer > 0) {
+                    let heartY = py - 15 - Math.sin(frameCount * 0.2) * 5;
+                    ctx.fillStyle = '#ff9ff3'; ctx.font = '14px Arial'; ctx.fillText('❤', px + 8, heartY);
+                }
+            }
+        }
+
+        function initWorld() {
+            document.body.classList.remove('apocalypse-mode');
+            isApocalypse = false; apocalypseTimer = 0; whyTexts = []; globalFlash = 0; screenShake = 0;
+            updateViewportScale();
+            grid = []; agents = []; foods = []; explosions = []; shockwaves = [];
+            goreBits = []; particles = []; tentacleZones = [];
+            
+            splatterCtx.clearRect(0, 0, splatterCanvas.width, splatterCanvas.height);
+            logPanel.innerHTML = ''; logEvent("🌟 世界重置。極致流暢的屠殺...與繁衍即將展開。", '#3498db');
+
+            for (let y = 0; y < ROWS; y++) { let row = []; for (let x = 0; x < COLS; x++) row.push(Math.random() > 0.45 ? TERRAIN.LAND : TERRAIN.WATER); grid.push(row); }
+            
+            for (let i = 0; i < 4; i++) {
+                let nextGrid = grid.map(row => [...row]);
+                for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+                    let count = 0;
+                    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+                        if(dx===0&&dy===0)continue; const nx=x+dx,ny=y+dy;
+                        if(nx<0||nx>=COLS||ny<0||ny>=ROWS) { if(TERRAIN.WATER===1) count++; } else if(grid[ny][nx]===TERRAIN.WATER) count++;
+                    }
+                    if (count > 4) nextGrid[y][x] = TERRAIN.WATER; else if (count < 4) nextGrid[y][x] = TERRAIN.LAND;
+                }
+                grid = nextGrid;
+            }
+            renderFullBackground();
+            Object.keys(COLOR_MAP).forEach(color => { spawnAgent(false, color); spawnAgent(false, color); });
+        }
+
+        function spawnAgent(manual = false, forceColor = null) {
+            if (isApocalypse && manual) { document.body.classList.remove('apocalypse-mode'); isApocalypse = false; whyTexts = []; }
+            for(let attempts=0; attempts<100; attempts++) {
+                const rx = Math.floor(Math.random() * COLS), ry = Math.floor(Math.random() * ROWS);
+                if (grid[ry][rx] === TERRAIN.LAND || grid[ry][rx] === TERRAIN.SCORCHED) {
+                    const newAgent = new Agent(rx, ry, forceColor); agents.push(newAgent);
+                    if (manual) logEvent(`⚡ 上帝強制丟下了一名 <span style="color:${newAgent.color}">${newAgent.colorName}</span>。`, '#9b59b6');
+                    break;
+                }
+            }
+        }
+
+        function generateApocalypseTexts() {
+            const queries = ["好痛", "血...", "為什麼要殺我們", "神啊...", "救命", "造物主是惡魔", "不公平"];
+            for(let i=0; i<35; i++) whyTexts.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: 14 + Math.random() * 40, rot: (Math.random() - 0.5) * 1.5, delay: Math.random() * 200, text: queries[Math.floor(Math.random() * queries.length)] });
+        }
+
+        function gameLoop() {
+            frameCount++;
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!isApocalypse && frameCount % 120 === 0 && agents.length < 150) spawnAgent(false);
+            if (agents.length === 0 && !isApocalypse && frameCount > 100) {
+                isApocalypse = true; apocalypseTimer = 0; screenShake = 150; globalFlash = 1.0;
+                document.body.classList.add('apocalypse-mode');
+                logEvent(`...徹底清空。這就是流暢的滅世體驗。`, '#cc0000'); generateApocalypseTexts();
+            }
+
+            agents.forEach(a => a.isBound = false); 
+            tentacleZones.forEach(tz => tz.update()); tentacleZones = tentacleZones.filter(tz => tz.life > 0);
+
+            ctx.save();
+            let shakeX = 0, shakeY = 0;
+            if (screenShake > 0) {
+                shakeX = (Math.random() - 0.5) * screenShake; shakeY = (Math.random() - 0.5) * screenShake;
+                screenShake *= isApocalypse ? 0.96 : 0.85; if (screenShake < 1) screenShake = 0;
+            }
+            ctx.translate(offsetX + shakeX, offsetY + shakeY); ctx.scale(currentScale, currentScale);
+
+            ctx.drawImage(bgCanvas, 0, 0); ctx.drawImage(splatterCanvas, 0, 0);
+
+            ctx.fillStyle = '#3498db';
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (grid[y][x] === TERRAIN.WATER) {
+                        let waveOffset = Math.sin(frameCount * 0.05 + x) * 2;
+                        ctx.fillRect(x * LOGICAL_TILE_SIZE + 4, y * LOGICAL_TILE_SIZE + 8 + waveOffset, 12, 4);
+                        ctx.fillRect(x * LOGICAL_TILE_SIZE + 20, y * LOGICAL_TILE_SIZE + 20 - waveOffset, 8, 4);
+                    }
+                }
+            }
+
+            let foodSpawnRate = Math.max(3, 15 - Math.floor(COLS/10));
+            if (!isApocalypse && frameCount % foodSpawnRate === 0 && foods.length < Math.floor((COLS * ROWS) / 10)) {
+                const rx = Math.floor(Math.random() * COLS), ry = Math.floor(Math.random() * ROWS);
+                if ((grid[ry][rx] === TERRAIN.LAND || grid[ry][rx] === TERRAIN.SCORCHED) && !hasFoodAt(rx, ry)) foods.push({ x: rx, y: ry });
+            }
+            foods.forEach(food => {
+                const px = food.x * LOGICAL_TILE_SIZE, py = food.y * LOGICAL_TILE_SIZE;
+                ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(px + 16, py + 24, 8, 3, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#c0392b'; ctx.fillRect(px + 8, py + 12, 16, 14); 
+                ctx.fillStyle = '#e74c3c'; ctx.fillRect(px + 10, py + 12, 6, 4); 
+                ctx.fillStyle = '#2ecc71'; ctx.fillRect(px + 14, py + 8, 4, 6); 
+            });
+
+            goreBits.forEach(gb => { gb.update(); gb.draw(ctx); });
+            goreBits = goreBits.filter(gb => !gb.settled && gb.life > 0);
+
+            agents = agents.filter(agent => {
+                if (agent.hunger <= 0 && !agent.killedByWeapon) {
+                    logEvent(`💀 <span style="color:${agent.color}">[${agent.colorName}]</span> 餓死了。`, '#95a5a6'); spawnGore(agent.x, agent.y, 0.2); return false;
+                }
+                return agent.hunger > 0;
+            });
+            agents.sort((a, b) => a.y - b.y).forEach(agent => { agent.update(); agent.draw(ctx); });
+
+            tentacleZones.forEach(tz => tz.draw(ctx));
+            particles.forEach(p => { p.update(); p.draw(ctx); }); particles = particles.filter(p => p.life > 0);
+            explosions.forEach(exp => { exp.update(); exp.draw(ctx); }); explosions = explosions.filter(exp => exp.life > 0);
+            shockwaves.forEach(sw => { sw.update(); sw.draw(ctx); }); shockwaves = shockwaves.filter(sw => sw.radius <= sw.maxRadius && sw.thickness >= 0.5);
+
+            ctx.restore();
+
+            if (globalFlash > 0) { ctx.fillStyle = `rgba(255, 255, 255, ${globalFlash})`; ctx.fillRect(0, 0, canvas.width, canvas.height); globalFlash -= 0.04; }
+
+            if (isApocalypse) {
+                apocalypseTimer++; const alpha = Math.min(0.7, apocalypseTimer / 100); ctx.fillStyle = `rgba(50, 0, 0, ${alpha})`; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                whyTexts.forEach(wt => {
+                    if (apocalypseTimer > wt.delay) {
+                        ctx.save(); ctx.translate(wt.x, wt.y); ctx.rotate(wt.rot);
+                        ctx.fillStyle = `rgba(255, 50, 50, ${Math.min(0.9, (apocalypseTimer - wt.delay) / 60)})`; ctx.font = `${wt.size}px "Courier New", monospace`; ctx.fillText(wt.text, 0, 0); ctx.restore();
+                    }
+                });
+                if (apocalypseTimer > 250) {
+                    const fAlpha = Math.min(1, (apocalypseTimer - 250) / 100);
+                    ctx.fillStyle = `rgba(255, 0, 0, ${fAlpha})`; ctx.font = '36px "Courier New", monospace'; ctx.fontWeight = 'bold'; ctx.fillText('世界已成煉獄', canvas.width/2, canvas.height/2);
+                    ctx.fillStyle = `rgba(150, 150, 150, ${fAlpha})`; ctx.font = '12px "Press Start 2P", monospace'; ctx.fillText('點擊 [強制降臨] 帶來新的活體祭品', canvas.width/2, canvas.height/2 + 50);
+                }
+            }
+
+            statsDisplay.innerText = `倖存者: ${agents.length} | 物資: ${foods.length} | 效能狀態: 極致流暢 60FPS`;
+            requestAnimationFrame(gameLoop);
+        }
+
+        initWorld(); gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Tracking 3D Cube</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            color: white;
+            font-family: sans-serif;
+        }
+        /* The 3D Canvas */
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        /* Small webcam preview in the corner */
+        .input_video {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            border-radius: 8px;
+            border: 2px solid #fff;
+            z-index: 2;
+            transform: scaleX(-1); /* Mirror the video */
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="ui-layer">
+        <h2>Hand Gesture Cube</h2>
+        <p id="status">Loading AI Models... Please wait.</p>
+    </div>
+
+    <video class="input_video" autoplay playsinline></video>
+    <div id="canvas-container"></div>
+
+    <script>
+        // ==========================================
+        // 1. THREE.JS SETUP (The 3D Cube)
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        
+        const scene = new THREE.Scene();
+        // Use threeCamera to avoid naming conflict with MediaPipe's Camera
+        const threeCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        // Create a colorful cube
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const material = new THREE.MeshNormalMaterial(); // Automatically gives cool rainbow colors based on light angles
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        threeCamera.position.z = 5;
+
+        // Animation Loop for Three.js
+        function animate() {
+            requestAnimationFrame(animate);
+            // Add a slow idle rotation if no hand is detected
+            if(!window.handDetected) {
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
+            }
+            renderer.render(scene, threeCamera);
+        }
+        animate();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            threeCamera.aspect = window.innerWidth / window.innerHeight;
+            threeCamera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // 2. MEDIAPIPE SETUP (The Hand Tracking)
+        // ==========================================
+        const videoElement = document.querySelector('.input_video');
+        const statusText = document.getElementById('status');
+        window.handDetected = false;
+
+        // Initialize MediaPipe Hands
+        const hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+
+        hands.setOptions({
+            maxNumHands: 1, // Track one hand for simplicity
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+
+        // What to do when a hand is found
+        hands.onResults((results) => {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                window.handDetected = true;
+                statusText.innerText = "Hand Detected! Move your index finger.";
+                
+                // Get the first hand detected
+                const landmarks = results.multiHandLandmarks[0];
+                
+                // Get the tip of the index finger (Landmark #8)
+                const indexFingerTip = landmarks[8]; 
+
+                // MediaPipe returns normalized coordinates (0.0 to 1.0)
+                // We map these coordinates to the cube's rotation
+                // Multiply by Math.PI * 2 to get a full 360-degree rotation range
+                
+                // Note: We invert the X axis because the webcam is mirrored
+                const targetRotationY = -(indexFingerTip.x - 0.5) * Math.PI * 2; 
+                const targetRotationX = (indexFingerTip.y - 0.5) * Math.PI * 2;
+
+                // Smoothly interpolate the cube's rotation toward the finger's position
+                cube.rotation.y += (targetRotationY - cube.rotation.y) * 0.1;
+                cube.rotation.x += (targetRotationX - cube.rotation.x) * 0.1;
+
+            } else {
+                window.handDetected = false;
+                statusText.innerText = "Show your hand to the camera...";
+            }
+        });
+
+        // Initialize WebCam and feed it to MediaPipe
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+
+        // Start the camera
+        camera.start()
+            .then(() => { statusText.innerText = "Show your hand to the camera..."; })
+            .catch((err) => { statusText.innerText = "Error accessing webcam. Please grant permissions."; console.error(err); });
+
+    </script>
+</body>
+</html>

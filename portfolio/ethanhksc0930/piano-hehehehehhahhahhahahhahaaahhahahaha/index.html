@@ -8,7 +8,7 @@
         :root {
             --bg: #121214;
             --panel: #1c1c22;
-            --accent: #ff0055; /* Hot Pink Default */
+            --accent: #ff0055;
             --text: #e0e0e0;
             --knob-bg: #2a2a35;
             --on: #00ff00;
@@ -33,15 +33,14 @@
             border-radius: 10px;
             box-shadow: 0 30px 60px rgba(0,0,0,0.8);
             border: 1px solid #333;
-            width: 950px; /* Widened slightly for the extra master controls */
+            width: 950px; 
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
 
-        /* --- VISUALIZER --- */
         .scope-container {
-            background: #000; /* Stays Black */
+            background: #000;
             border: 1px solid #444;
             border-radius: 6px;
             height: 120px;
@@ -56,7 +55,6 @@
             pointer-events: none;
         }
 
-        /* --- CONTROL PANEL --- */
         .controls {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -133,7 +131,6 @@
             padding: 2px;
         }
 
-        /* --- KEYBOARD --- */
         .keyboard {
             display: flex;
             justify-content: center;
@@ -154,6 +151,13 @@
             cursor: pointer;
             z-index: 1;
             position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            color: #888;
+            font-size: 10px;
+            font-weight: bold;
         }
 
         .key.black {
@@ -164,10 +168,11 @@
             margin-right: -12px;
             z-index: 2;
             border: 1px solid #333;
+            color: #555;
         }
 
-        .key:active, .key.active { background: var(--accent); transform: translateY(2px); border-color: var(--accent); }
-        .key.black:active, .key.black.active { background: var(--accent); }
+        .key:active, .key.active { background: var(--accent); transform: translateY(2px); border-color: var(--accent); color: white; }
+        .key.black:active, .key.black.active { background: var(--accent); color: white; }
 
     </style>
   <script src="/portfolio-auth-check.js"></script>
@@ -175,14 +180,12 @@
 <body>
 
 <div class="synth">
-    
     <div class="scope-container">
         <div class="scope-overlay">REAL-TIME SIGNAL PATH</div>
         <canvas id="scope"></canvas>
     </div>
 
     <div class="controls">
-        
         <div class="module">
             <div class="module-header"><span class="module-title">Oscillator</span></div>
             <div class="param">
@@ -216,16 +219,22 @@
         </div>
 
         <div class="module">
-            <div class="module-header"><span class="module-title">LFO (Mod)</span></div>
+            <div class="module-header">
+                <span class="module-title">LFO (Mod)</span>
+                <button id="lfoPower" class="toggle-btn active">ON</button>
+            </div>
             <div class="param">
                 <label>Target</label>
                 <select id="lfoTarget">
                     <option value="filter">Filter Cutoff</option>
                     <option value="pitch">Osc Pitch</option>
+                    <option value="res">Filter Res</option>
+                    <option value="volume">Volume (Tremolo)</option>
+                    <option value="noise">Noise Mix</option>
                 </select>
             </div>
             <div class="param"><label>Speed (Hz)</label><input type="range" id="lfoSpeed" min="0.1" max="20" step="0.1" value="5"></div>
-            <div class="param"><label>Depth (Amt)</label><input type="range" id="lfoDepth" min="0" max="1000" step="10" value="0"></div>
+            <div class="param"><label>Depth (Amt)</label><input type="range" id="lfoDepth" min="0" max="1000" step="1" value="200"></div>
             <div class="param">
                 <label>Shape</label>
                 <select id="lfoShape"><option value="sine">Sine</option><option value="square">Square</option></select>
@@ -273,7 +282,6 @@
             <div class="param"><label>Volume</label><input type="range" id="vol" min="0" max="1" step="0.01" value="0.6"></div>
             <div class="param"><label>Echo Mix</label><input type="range" id="dMix" min="0" max="0.7" step="0.05" value="0.2"></div>
         </div>
-
     </div>
 
     <div class="keyboard" id="keyboard"></div>
@@ -282,7 +290,7 @@
 <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
-    // --- BUFFERS (Noise) ---
+    // Noise Buffers
     const bufferSize = audioCtx.sampleRate * 2; 
     const buffers = {
         white: audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate),
@@ -315,7 +323,6 @@
         brData[i] = lastOut * 3.5;
     }
 
-    // --- GLOBAL NODES ---
     const masterGain = audioCtx.createGain();
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 2048;
@@ -331,7 +338,6 @@
     delayNode.connect(delayWet);
     delayWet.connect(masterGain);
 
-    // --- UI ELEMENTS ---
     const ui = {
         wave: document.getElementById('waveType'),
         octave: document.getElementById('octave'),
@@ -340,6 +346,7 @@
         noiseMute: document.getElementById('noiseMute'),
         noiseType: document.getElementById('noiseType'),
         noiseLvl: document.getElementById('noiseLvl'),
+        lfoPower: document.getElementById('lfoPower'), // New
         lfoTarget: document.getElementById('lfoTarget'),
         lfoSpeed: document.getElementById('lfoSpeed'),
         lfoDepth: document.getElementById('lfoDepth'),
@@ -360,13 +367,12 @@
     let activeNotes = {};
     let isNoiseOn = true;
     let isFilterOn = true;
-    let currentAccentColor = '#ff0055'; // Variable to track JS line color
+    let isLfoOn = true; // New
+    let currentAccentColor = '#ff0055';
 
-    // --- THEME LOGIC ---
     ui.themeSelect.addEventListener('change', (e) => {
         const newColor = e.target.value;
         currentAccentColor = newColor;
-        // Update CSS Variables for buttons/sliders
         document.documentElement.style.setProperty('--accent', newColor);
     });
 
@@ -382,7 +388,12 @@
         ui.filterBypass.className = isFilterOn ? "toggle-btn active" : "toggle-btn muted";
     });
 
-    // --- AUDIO ENGINE ---
+    ui.lfoPower.addEventListener('click', () => {
+        isLfoOn = !isLfoOn;
+        ui.lfoPower.textContent = isLfoOn ? "ON" : "OFF";
+        ui.lfoPower.className = isLfoOn ? "toggle-btn active" : "toggle-btn muted";
+    });
+
     function noteOn(baseFreq, keyElem) {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         if (activeNotes[baseFreq]) return;
@@ -407,26 +418,11 @@
         noiseGain.gain.setValueAtTime(nVol, now);
 
         const filter = audioCtx.createBiquadFilter();
-        const useFilter = isFilterOn;
-        
-        if (useFilter) {
+        if (isFilterOn) {
             filter.type = ui.filterType.value;
             filter.frequency.setValueAtTime(parseFloat(ui.cutoff.value), now);
             filter.Q.setValueAtTime(parseFloat(ui.res.value), now);
         }
-
-        const lfo = audioCtx.createOscillator();
-        const lfoGain = audioCtx.createGain();
-        lfo.type = ui.lfoShape.value;
-        lfo.frequency.setValueAtTime(parseFloat(ui.lfoSpeed.value), now);
-        lfoGain.gain.setValueAtTime(parseFloat(ui.lfoDepth.value), now);
-        
-        lfo.connect(lfoGain);
-        lfo.start();
-
-        const target = ui.lfoTarget.value;
-        if (target === 'filter' && useFilter) lfoGain.connect(filter.frequency);
-        else if (target === 'pitch') lfoGain.connect(osc.frequency);
 
         const env = audioCtx.createGain();
         const vol = parseFloat(ui.vol.value);
@@ -434,7 +430,34 @@
         env.gain.linearRampToValueAtTime(vol, now + parseFloat(ui.atk.value));
         env.gain.exponentialRampToValueAtTime((vol * parseFloat(ui.sus.value)) + 0.001, now + parseFloat(ui.atk.value) + parseFloat(ui.dec.value));
 
-        if (useFilter) {
+        // --- UPDATED LFO LOGIC ---
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.type = ui.lfoShape.value;
+        lfo.frequency.setValueAtTime(parseFloat(ui.lfoSpeed.value), now);
+        
+        // Scale depth based on target (e.g., volume needs small numbers, frequency needs big ones)
+        const depth = parseFloat(ui.lfoDepth.value);
+        lfoGain.gain.setValueAtTime(isLfoOn ? depth : 0, now);
+        lfo.connect(lfoGain);
+        lfo.start();
+
+        const target = ui.lfoTarget.value;
+        if (isLfoOn) {
+            if (target === 'filter' && isFilterOn) lfoGain.connect(filter.frequency);
+            else if (target === 'pitch') lfoGain.connect(osc.frequency);
+            else if (target === 'res' && isFilterOn) lfoGain.connect(filter.Q);
+            else if (target === 'volume') {
+                lfoGain.gain.value = depth / 1000; // Normalize for volume
+                lfoGain.connect(env.gain);
+            }
+            else if (target === 'noise') {
+                lfoGain.gain.value = depth / 2000; // Normalize for noise mix
+                lfoGain.connect(noiseGain.gain);
+            }
+        }
+
+        if (isFilterOn) {
             osc.connect(filter);
             noiseSrc.connect(noiseGain);
             noiseGain.connect(filter);
@@ -470,27 +493,38 @@
         delete activeNotes[baseFreq];
     }
 
-    // --- KEYBOARD ---
+    // --- KEYBOARD MAPPING ---
     const keysContainer = document.getElementById('keyboard');
     const notes = [
-        {f: 130.8, t:'w'}, {f: 138.6, t:'b'}, {f: 146.8, t:'w'}, {f: 155.6, t:'b'},
-        {f: 164.8, t:'w'}, {f: 174.6, t:'w'}, {f: 185.0, t:'b'}, {f: 196.0, t:'w'},
-        {f: 207.7, t:'b'}, {f: 220.0, t:'w'}, {f: 233.1, t:'b'}, {f: 246.9, t:'w'},
-        {f: 261.6, t:'w'}, {f: 277.2, t:'b'}, {f: 293.7, t:'w'}, {f: 311.1, t:'b'},
-        {f: 329.6, t:'w'}, {f: 349.2, t:'w'}, {f: 370.0, t:'b'}, {f: 392.0, t:'w'},
-        {f: 415.3, t:'b'}, {f: 440.0, t:'w'}, {f: 466.2, t:'b'}, {f: 493.9, t:'w'}, {f: 523.3, t:'w'}
+        {f: 130.8, t:'w', k:'a'}, {f: 138.6, t:'b', k:'w'}, {f: 146.8, t:'w', k:'s'}, {f: 155.6, t:'b', k:'e'},
+        {f: 164.8, t:'w', k:'d'}, {f: 174.6, t:'w', k:'f'}, {f: 185.0, t:'b', k:'t'}, {f: 196.0, t:'w', k:'g'},
+        {f: 207.7, t:'b', k:'y'}, {f: 220.0, t:'w', k:'h'}, {f: 233.1, t:'b', k:'u'}, {f: 246.9, t:'w', k:'j'},
+        {f: 261.6, t:'w', k:'k'}, {f: 277.2, t:'b', k:'o'}, {f: 293.7, t:'w', k:'l'}, {f: 311.1, t:'b', k:'p'},
+        {f: 329.6, t:'w', k:';'}
     ];
 
+    const keyElements = {};
     notes.forEach(note => {
         const key = document.createElement('div');
         key.className = `key ${note.t === 'b' ? 'black' : ''}`;
+        key.innerHTML = `<span>${note.k.toUpperCase()}</span>`;
         key.addEventListener('mousedown', () => noteOn(note.f, key));
         key.addEventListener('mouseup', () => noteOff(note.f));
         key.addEventListener('mouseleave', () => noteOff(note.f));
         keysContainer.appendChild(key);
+        keyElements[note.k] = { freq: note.f, element: key };
     });
 
-    // --- SCOPE LOOP ---
+    window.addEventListener('keydown', (e) => {
+        const keyData = keyElements[e.key.toLowerCase()];
+        if (keyData && !e.repeat) noteOn(keyData.freq, keyData.element);
+    });
+
+    window.addEventListener('keyup', (e) => {
+        const keyData = keyElements[e.key.toLowerCase()];
+        if (keyData) noteOff(keyData.freq);
+    });
+
     const canvas = document.getElementById('scope');
     const ctx = canvas.getContext('2d');
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -500,15 +534,12 @@
         analyser.getByteTimeDomainData(dataArray);
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
-        
-        ctx.fillStyle = '#000'; // Hardcoded Black Background
+        ctx.fillStyle = '#000';
         ctx.fillRect(0,0,canvas.width, canvas.height);
-        
         ctx.lineWidth = 2;
-        ctx.strokeStyle = currentAccentColor; // Dynamic line color
+        ctx.strokeStyle = currentAccentColor;
         ctx.shadowBlur = 10;
         ctx.shadowColor = currentAccentColor;
-        
         ctx.beginPath();
         const sliceWidth = canvas.width / dataArray.length;
         let x = 0;

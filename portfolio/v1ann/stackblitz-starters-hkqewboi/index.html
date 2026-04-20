@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>原生 JS 即時聊天室</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+      }
+      #chat-container {
+        width: 100%;
+        max-width: 500px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        height: 80vh;
+      }
+      #messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+      }
+      .msg {
+        margin-bottom: 15px;
+      }
+      .msg b {
+        color: #3b82f6;
+        display: block;
+        font-size: 0.8em;
+      }
+      .msg p {
+        background: #eef2ff;
+        padding: 8px 12px;
+        border-radius: 15px;
+        display: inline-block;
+        margin: 4px 0;
+      }
+      #input-area {
+        padding: 15px;
+        display: flex;
+        gap: 10px;
+      }
+      input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        outline: none;
+      }
+      #username {
+        width: 80px;
+      }
+      #content {
+        flex: 1;
+      }
+      button {
+        padding: 10px 20px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2563eb;
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div id="chat-container">
+      <div id="messages"></div>
+      <div id="input-area">
+        <input type="text" id="username" placeholder="名字" value="路人甲" />
+        <input
+          type="text"
+          id="content"
+          placeholder="輸入訊息..."
+          autocomplete="off"
+        />
+        <button onclick="sendMessage()">發送</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+      // 1. 初始化 Supabase (請替換成你的資訊)
+      const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+      const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      const msgContainer = document.getElementById('messages');
+      const contentInput = document.getElementById('content');
+      const usernameInput = document.getElementById('username');
+
+      // 2. 載入初始歷史訊息
+      async function loadMessages() {
+        const { data, error } = await supabase
+          .from('messages') // 假設你的資料表名稱是 messages
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (data) data.forEach(appendMessage);
+        scrollToBottom();
+      }
+
+      // 3. 發送訊息到 Supabase
+      async function sendMessage() {
+        const content = contentInput.value;
+        const username = usernameInput.value;
+
+        if (!content) return;
+
+        const { error } = await supabase
+          .from('messages')
+          .insert([{ content, username }]);
+
+        if (error) console.error('發送失敗:', error);
+        contentInput.value = ''; // 清空輸入框
+      }
+
+      // 4. 將訊息渲染到畫面
+      function appendMessage(data) {
+        const div = document.createElement('div');
+        div.className = 'msg';
+        div.innerHTML = `<b>${data.username}</b><p>${data.content}</p>`;
+        msgContainer.appendChild(div);
+        scrollToBottom();
+      }
+
+      function scrollToBottom() {
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+      }
+
+      // 5. 重要：啟動 Realtime 監聽
+      supabase
+        .channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          (payload) => {
+            appendMessage(payload.new);
+          }
+        )
+        .subscribe();
+
+      // 綁定 Enter 鍵發送
+      contentInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
+
+      loadMessages();
+    </script>
+  </body>
+</html>

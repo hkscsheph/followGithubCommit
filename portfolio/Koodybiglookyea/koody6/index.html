@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hand Gesture 3D Cube</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        background: #000;
+        overflow: hidden;
+        font-family: sans-serif;
+      }
+      #video-container {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 200px;
+        border: 2px solid #00ffcc;
+        border-radius: 10px;
+        overflow: hidden;
+        transform: scaleX(-1); /* Mirror the video */
+      }
+      video {
+        width: 100%;
+        display: block;
+      }
+      .ui {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: #00ffcc;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        pointer-events: none;
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div class="ui">Move your hand to rotate the cube</div>
+    <div id="video-container">
+      <video id="webcam"></video>
+    </div>
+
+    <script>
+      // --- 1. THREE.JS SCENE SETUP ---
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Create a stylish Wireframe Cube
+      const geometry = new THREE.BoxGeometry(2, 2, 2);
+      const material = new THREE.MeshNormalMaterial({ wireframe: false });
+      const cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
+
+      // Add an outer wireframe for effect
+      const wireframeGeom = new THREE.BoxGeometry(2.1, 2.1, 2.1);
+      const wireframeMat = new THREE.MeshBasicMaterial({
+        color: 0x00ffcc,
+        wireframe: true,
+      });
+      const wireframe = new THREE.Mesh(wireframeGeom, wireframeMat);
+      scene.add(wireframe);
+
+      camera.position.z = 5;
+
+      // --- 2. MEDIAPIPE HAND TRACKING ---
+      const videoElement = document.getElementById('webcam');
+
+      function onResults(results) {
+        if (
+          results.multiHandLandmarks &&
+          results.multiHandLandmarks.length > 0
+        ) {
+          const hand = results.multiHandLandmarks[0];
+
+          // Use Landmark 9 (Middle finger MCP) as the anchor point
+          const point = hand[9];
+
+          // Map coordinates: 0.5 is center. Multiply by 10 for rotation speed.
+          // We invert X because the video is mirrored.
+          const targetRotationY = (point.x - 0.5) * 8;
+          const targetRotationX = (point.y - 0.5) * 8;
+
+          // Smooth interpolation (Lerp)
+          cube.rotation.y += (targetRotationY - cube.rotation.y) * 0.1;
+          cube.rotation.x += (targetRotationX - cube.rotation.x) * 0.1;
+
+          wireframe.rotation.y = cube.rotation.y;
+          wireframe.rotation.x = cube.rotation.x;
+        }
+        renderer.render(scene, camera);
+      }
+
+      const hands = new Hands({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      hands.onResults(onResults);
+
+      // --- 3. START CAMERA ---
+      const cameraHelper = new Camera(videoElement, {
+        onFrame: async () => {
+          await hands.send({ image: videoElement });
+        },
+        width: 640,
+        height: 480,
+      });
+      cameraHelper.start();
+
+      // Handle window resizing
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>

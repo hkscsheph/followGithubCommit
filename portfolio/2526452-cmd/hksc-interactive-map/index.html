@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Document metadata and shared styles -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HKSC Interactive 3D Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <!-- Decorative background texture -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- Top branding and page title -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">HKSC</span>
+        <h1>Interactive Mall Map</h1>
+      </div>
+      <p class="top-note">Reference style inspired by the Codrops interactive 3D mall map</p>
+    </header>
+
+    <!-- Main application layout -->
+    <main class="layout">
+      <!-- 3D map viewer and quick actions -->
+      <section class="viewer-wrap">
+        <div id="viewer" class="viewer" aria-label="3D floor map viewer">
+          <div id="scene" class="scene">
+            <div id="stack" class="stack"></div>
+          </div>
+        </div>
+
+        <!-- Viewer toolbar controls -->
+        <div class="viewer-toolbar" aria-label="Map controls">
+          <button id="zoomInBtn" class="tool-btn" type="button" title="Zoom in">+</button>
+          <button id="zoomOutBtn" class="tool-btn" type="button" title="Zoom out">-</button>
+          <button id="autoRotateBtn" class="tool-btn wide" type="button" aria-pressed="false">Auto Rotate: Off</button>
+        </div>
+      </section>
+
+      <!-- Side panel for level selection and view settings -->
+      <aside class="panel">
+        <h2>Levels</h2>
+        <div id="floorButtons" class="floor-buttons"></div>
+
+        <!-- Floor spacing control -->
+        <label class="control-label" for="spacingRange">Floor Distance</label>
+        <input id="spacingRange" type="range" min="30" max="260" step="5" value="120" />
+
+        <!-- Camera tilt control -->
+        <label class="control-label" for="tiltRange">Camera Tilt</label>
+        <input id="tiltRange" type="range" min="10" max="75" step="1" value="58" />
+
+        <!-- Preset camera views -->
+        <div class="button-row">
+          <button id="viewIso" class="tiny-btn" type="button">Isometric</button>
+          <button id="viewTop" class="tiny-btn" type="button">Top</button>
+          <button id="viewFront" class="tiny-btn" type="button">Front</button>
+          <button id="resetView" class="tiny-btn" type="button">Reset</button>
+        </div>
+
+        <!-- Floor directory list -->
+        <h3>Directory</h3>
+        <ul id="directoryList" class="directory-list"></ul>
+
+        <!-- Interaction guidance -->
+        <p class="hint">
+          Drag to rotate. Scroll (or pinch) to zoom. Tap any floor to focus.
+          <span class="server-tip">Floor maps are loaded from standalone .svg files.</span>
+        </p>
+      </aside>
+    </main>
+
+    <!-- Main application script -->
+    <script src="app.js" defer></script>
+  </body>
+</html>
