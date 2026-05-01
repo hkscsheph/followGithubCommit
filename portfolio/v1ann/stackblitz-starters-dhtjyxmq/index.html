@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breakout: Infinite Speed</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            background: #000;
+            border: 4px solid #00DDFF;
+            display: block;
+            box-shadow: 0 0 30px rgba(0, 221, 255, 0.3);
+            border-radius: 8px;
+            cursor: none; /* Immersive feel */
+        }
+        h1 { margin-bottom: 10px; letter-spacing: 5px; color: #00DDFF; text-shadow: 0 0 10px #00DDFF; }
+        .stats { margin-top: 15px; color: #aaa; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <h1>BREAKOUT</h1>
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+    <div class="stats">Level up increases speed • Mouse to move</div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Game State
+        let score = 0;
+        let level = 1;
+        let isPaused = false;
+
+        // Ball Setup
+        let ballRadius = 7;
+        let x = canvas.width / 2;
+        let y = canvas.height - 30;
+        
+        let baseSpeed = 3; 
+        let currentSpeed = baseSpeed;
+        let dx = baseSpeed;
+        let dy = -baseSpeed;
+
+        // Paddle Setup
+        let paddleHeight = 10;
+        let paddleWidth = 80;
+        let paddleX = (canvas.width - paddleWidth) / 2;
+
+        // Brick Setup
+        const brickRowCount = 3;
+        const brickColumnCount = 6;
+        const brickWidth = 65;
+        const brickHeight = 16;
+        const brickPadding = 7;
+        const brickOffsetTop = 45;
+        const brickOffsetLeft = 25;
+
+        let bricks = [];
+        function initBricks() {
+            for(let c=0; c<brickColumnCount; c++) {
+                bricks[c] = [];
+                for(let r=0; r<brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1 };
+                }
+            }
+        }
+        initBricks();
+
+        // Control Listener
+        document.addEventListener("mousemove", (e) => {
+            let relativeX = e.clientX - canvas.offsetLeft;
+            if(relativeX > 0 && relativeX < canvas.width) {
+                paddleX = relativeX - paddleWidth / 2;
+            }
+        });
+
+        function nextLevel() {
+            isPaused = true;
+            level++;
+            // Increase global speed cap by 0.5 each level
+            currentSpeed = baseSpeed + (level * 0.5);
+            
+            x = canvas.width / 2;
+            y = canvas.height - 30;
+            dx = currentSpeed * (Math.random() > 0.5 ? 1 : -1);
+            dy = -currentSpeed;
+
+            initBricks();
+            
+            setTimeout(() => { isPaused = false; draw(); }, 1000);
+        }
+
+        function collisionDetection() {
+            let bricksLeft = false;
+            for(let c=0; c<brickColumnCount; c++) {
+                for(let r=0; r<brickRowCount; r++) {
+                    let b = bricks[c][r];
+                    if(b.status == 1) {
+                        bricksLeft = true;
+                        if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy;
+                            b.status = 0;
+                            score += 10;
+                        }
+                    }
+                }
+            }
+            if(!bricksLeft) nextLevel();
+        }
+
+        function drawUI() {
+            ctx.font = "bold 14px Segoe UI";
+            ctx.fillStyle = "#00DDFF";
+            ctx.fillText(`SCORE: ${score}`, 15, 25);
+            ctx.fillText(`LEVEL: ${level}`, canvas.width - 75, 25);
+            
+            if(isPaused) {
+                ctx.fillStyle = "rgba(0,0,0,0.6)";
+                ctx.fillRect(0,0, canvas.width, canvas.height);
+                ctx.fillStyle = "#FFF";
+                ctx.textAlign = "center";
+                ctx.fillText(`READY FOR LEVEL ${level}?`, canvas.width/2, canvas.height/2);
+                ctx.textAlign = "left";
+            }
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+            ctx.fillStyle = "#FFF";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.roundRect(paddleX, canvas.height - paddleHeight - 5, paddleWidth, paddleHeight, 5);
+            ctx.fillStyle = "#00DDFF";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBricks() {
+            for(let c=0; c<brickColumnCount; c++) {
+                for(let r=0; r<brickRowCount; r++) {
+                    if(bricks[c][r].status == 1) {
+                        let bX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                        let bY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                        bricks[c][r].x = bX;
+                        bricks[c][r].y = bY;
+                        ctx.beginPath();
+                        ctx.roundRect(bX, bY, brickWidth, brickHeight, 3);
+                        // Row-based colors that shift with levels
+                        ctx.fillStyle = `hsl(${(level * 40) + (r * 25)}, 70%, 50%)`;
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            if(isPaused) return;
+
+            // Trail effect (semi-transparent clear)
+            ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            drawUI();
+            collisionDetection();
+
+            // Wall Bounces
+            if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
+            if(y + dy < ballRadius) dy = -dy;
+            else if(y + dy > canvas.height - ballRadius - 5) {
+                if(x > paddleX && x < paddleX + paddleWidth) {
+                    // Physics: Calculate exit angle based on where ball hits paddle
+                    let hitPoint = (x - (paddleX + paddleWidth/2)) / (paddleWidth/2);
+                    dx = hitPoint * currentSpeed;
+                    // Maintain total speed using Pythagorean theorem
+                    dy = -Math.sqrt(Math.abs(Math.pow(currentSpeed, 2) - Math.pow(dx, 2))); 
+                } else if (y + dy > canvas.height) {
+                    alert(`GAME OVER\nScore: ${score}\nLevel Reached: ${level}`);
+                    document.location.reload();
+                    return;
+                }
+            }
+
+            x += dx;
+            y += dy;
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>互動 3D 留言板 | AI x WebGL</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        font-family: sans-serif;
+      }
+      canvas {
+        display: block;
+      }
+      #info {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        pointer-events: none;
+      }
+      video {
+        transform: scaleX(-1);
+        position: absolute;
+        width: 200px;
+        bottom: 10px;
+        right: 10px;
+        border: 2px solid #fff;
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div id="info">🖐️ 請舉起手：食指移動即可在 3D 板上留言</div>
+    <video id="webcam" autoplay playsinline></video>
+
+    <script>
+      /**
+       * 1. 初始化 p5.js (Instance Mode)
+       * 作為 Three.js 的動態貼圖源
+       */
+      let p5Canvas;
+      let lastPos = { x: 0, y: 0 };
+
+      const sketch = (p) => {
+        p.setup = () => {
+          p5Canvas = p.createCanvas(1024, 1024);
+          p.background(20);
+          p.noStroke();
+        };
+
+        p.draw = () => {
+          // 這裡可以處理淡出效果或持續繪圖
+        };
+
+        p.drawPoint = (x, y) => {
+          p.fill(0, 255, 200);
+          p.ellipse(x * 1024, y * 1024, 20);
+        };
+      };
+      const p5Instance = new p5(sketch);
+
+      /**
+       * 2. 初始化 Three.js 場景
+       */
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // 建立 3D 留言板物體
+      const texture = new THREE.CanvasTexture(p5Instance.canvas);
+      const geometry = new THREE.PlaneGeometry(5, 5);
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+      });
+      const board = new THREE.Mesh(geometry, material);
+      scene.add(board);
+
+      camera.position.z = 5;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        // 讓板子輕微晃動增加動感
+        board.rotation.y = Math.sin(Date.now() * 0.001) * 0.1;
+        texture.needsUpdate = true; // 重要：更新 p5 內容到 3D
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      /**
+       * 3. MediaPipe 手勢偵測整合
+       */
+      const videoElement = document.getElementById('webcam');
+      const hands = new Hands({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      hands.onResults((results) => {
+        if (
+          results.multiHandLandmarks &&
+          results.multiHandLandmarks.length > 0
+        ) {
+          const landmarks = results.multiHandLandmarks[0];
+          // 獲取食指指尖 (Landmark 8)
+          // 座標鏡像處理 (1 - x)
+          const indexTip = { x: 1 - landmarks[8].x, y: landmarks[8].y };
+          p5Instance.drawPoint(indexTip.x, indexTip.y);
+        }
+      });
+
+      const cameraFeed = new Camera(videoElement, {
+        onFrame: async () => {
+          await hands.send({ image: videoElement });
+        },
+        width: 640,
+        height: 480,
+      });
+      cameraFeed.start();
+
+      // 視窗縮放自適應
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>

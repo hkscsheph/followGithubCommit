@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深海尖刺：魔鬼魚全螢幕挑戰</title>
+    <style>
+        /* CSS 樣式：打造深海氛圍 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Arial Black', sans-serif;
+            user-select: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 30%, #001a33 0%, #000000 100%);
+            cursor: crosshair;
+        }
+
+        /* UI 分數與計時器 */
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .stat-box {
+            color: #fff;
+            font-size: 24px;
+            text-shadow: 0 0 10px #00d2ff;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 30px;
+            border-radius: 5px;
+            border-bottom: 3px solid #00d2ff;
+        }
+
+        /* 覆蓋層 (開始與結束) */
+        #overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            transition: opacity 0.5s;
+        }
+
+        #modal {
+            text-align: center;
+            color: white;
+        }
+
+        h1 {
+            font-size: 60px;
+            margin: 0;
+            color: #00d2ff;
+            letter-spacing: 5px;
+            text-shadow: 0 0 20px #00d2ff;
+        }
+
+        p {
+            font-size: 20px;
+            color: #ccc;
+            margin-top: 10px;
+        }
+
+        /* 自動重啟進度條 */
+        .progress-container {
+            width: 200px;
+            height: 4px;
+            background: #222;
+            margin: 20px auto;
+            display: none;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        #restart-bar {
+            width: 0%;
+            height: 100%;
+            background: #ff0055;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="ui-layer">
+        <div class="stat-box">得分: <span id="score">0</span></div>
+        <div class="stat-box">剩餘時間: <span id="timer">30</span>s</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="overlay">
+        <div id="modal">
+            <h1 id="title">深海獵手</h1>
+            <p id="msg">點擊畫面開始遊戲</p>
+            <div class="progress-container" id="prog-cont">
+                <div id="restart-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const overlay = document.getElementById('overlay');
+        const msgEl = document.getElementById('msg');
+        const restartBar = document.getElementById('restart-bar');
+        const progCont = document.getElementById('prog-cont');
+
+        let score = 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let rays = [];
+        let particles = [];
+
+        // 自動調整畫布大小
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class SharpManta {
+            constructor() {
+                const types = [
+                    { color: '#1a3c6e', glow: '#00d2ff', points: 1, size: 90, speed: 2.5 }, // 深藍
+                    { color: '#4da6ff', glow: '#ffffff', points: 2, size: 70, speed: 4.5 }, // 淺藍
+                    { color: '#111111', glow: '#ff0055', points: 3, size: 50, speed: 7.0 }  // 黑色 (最尖最快)
+                ];
+                const t = types[Math.floor(Math.random() * types.length)];
+                Object.assign(this, t);
+
+                // 從螢幕外隨機進場
+                const side = Math.floor(Math.random() * 4);
+                if (side === 0) { this.x = -this.size; this.y = Math.random()*canvas.height; }
+                else if (side === 1) { this.x = canvas.width+this.size; this.y = Math.random()*canvas.height; }
+                else if (side === 2) { this.x = Math.random()*canvas.width; this.y = -this.size; }
+                else { this.x = Math.random()*canvas.width; this.y = canvas.height+this.size; }
+
+                const angle = Math.atan2(canvas.height/2 - this.y, canvas.width/2 - this.x) + (Math.random()-0.5);
+                this.vx = Math.cos(angle) * this.speed;
+                this.vy = Math.sin(angle) * this.speed;
+                this.angle = angle;
+                this.wingStep = Math.random() * Math.PI;
+            }
+
+            draw() {
+                this.wingStep += 0.12;
+                const wingEffect = Math.sin(this.wingStep) * (this.size * 0.4);
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // 發光邊緣
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.glow;
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = this.glow;
+                ctx.lineWidth = 2;
+
+                // 繪製尖銳形狀
+                ctx.beginPath();
+                ctx.moveTo(this.size * 1.3, 0); // 銳利頭尖
+                
+                // 側翼頂點變得很尖 (V字型)
+                ctx.lineTo(0, this.size + wingEffect); 
+                ctx.lineTo(-this.size * 0.5, 0); // 縮進的腰部
+                ctx.lineTo(0, -this.size - wingEffect); 
+                
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 長尖尾巴
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 0.5, 0);
+                ctx.lineTo(-this.size * 2.5, 0);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            rays = [];
+            gameActive = true;
+            scoreEl.innerText = score;
+            timerEl.innerText = timeLeft;
+            
+            overlay.style.opacity = '0';
+            progCont.style.display = 'none';
+            setTimeout(() => overlay.style.display = 'none', 500);
+
+            animate();
+        }
+
+        function endGame() {
+            gameActive = false;
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.style.opacity = '1', 10);
+            
+            msgEl.innerHTML = `遊戲結束！得分: ${score}<br>3 秒後自動重新開始...`;
+            
+            // 進度條動畫
+            progCont.style.display = 'block';
+            restartBar.style.transition = 'none';
+            restartBar.style.width = '0%';
+            setTimeout(() => {
+                restartBar.style.transition = 'width 3s linear';
+                restartBar.style.width = '100%';
+            }, 50);
+
+            // 3秒後重新開始
+            setTimeout(startGame, 3000);
+        }
+
+        function animate() {
+            if (!gameActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 隨機生成頻率
+            if (Math.random() < 0.04 && rays.length < 18) {
+                rays.push(new SharpManta());
+            }
+
+            // 更新與繪製魔鬼魚
+            for (let i = rays.length - 1; i >= 0; i--) {
+                const r = rays[i];
+                r.update();
+                r.draw();
+
+                // 移除出界
+                if (r.x < -300 || r.x > canvas.width+300 || r.y < -300 || r.y > canvas.height+300) {
+                    rays.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // 倒數計時
+        setInterval(() => {
+            if (gameActive) {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 0) endGame();
+            }
+        }, 1000);
+
+        // 點擊判定
+        window.addEventListener('mousedown', (e) => {
+            if (!gameActive) {
+                if (msgEl.innerText.includes("開始") && !progCont.style.display === 'block') startGame();
+                return;
+            }
+
+            const mx = e.clientX;
+            const my = e.clientY;
+
+            for (let i = rays.length - 1; i >= 0; i--) {
+                const r = rays[i];
+                const dist = Math.hypot(r.x - mx, r.y - my);
+                // 點擊判定範圍稍微大一點方便遊玩
+                if (dist < r.size * 0.8) {
+                    score += r.points;
+                    scoreEl.innerText = score;
+                    rays.splice(i, 1);
+                    break; // 每次點擊只殺一隻
+                }
+            }
+        });
+
+        // 啟動提示
+        overlay.addEventListener('click', () => {
+            if (!gameActive && timeLeft === 30) startGame();
+        });
+
+    </script>
+</body>
+</html>

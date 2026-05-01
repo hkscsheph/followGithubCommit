@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GRAFFITI AIM ELITE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Permanent Marker', cursive; }
+
+      #ui-layer {
+          position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+          pointer-events: none; color: #00ff00; text-shadow: 3px 3px #004400;
+          z-index: 10;
+      }
+
+      .bold-text {
+          **font-weight: 900;** **font-size: 42px;** /* 50% larger than previous version */
+      }
+
+      #stats { position: absolute; top: 20px; left: 30px; }
+      #timer-display { position: absolute; top: 20px; right: 30px; color: #ff0000; }
+
+      #menu {
+          position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          background: rgba(0, 40, 0, 0.95); padding: 50px; border: 8px solid #00ff00;
+          text-align: center; pointer-events: auto; z-index: 100;
+      }
+
+      button {
+          background: #00ff00; color: #000; border: none;
+          padding: 15px 30px; margin: 10px; cursor: pointer;
+          font-family: 'Permanent Marker', cursive; **font-size: 32px; font-weight: bold;**
+      }
+
+      button:hover { background: #fff; transform: scale(1.1); }
+
+      #crosshair {
+          position: absolute; top: 50%; left: 50%;
+          width: 30px; height: 30px; border: 3px solid #00ff00;
+          border-radius: 50%; transform: translate(-50%, -50%);
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div id="menu">
+      <h1 class="bold-text">SELECT DURATION</h1>
+      <button onclick="startGame(30)">30 SECS</button>
+      <button onclick="startGame(60)">1 MIN</button>
+      <button onclick="startGame(300)">5 MIN</button>
+    </div>
+
+    <div id="ui-layer" style="display: none">
+      <div id="stats" class="bold-text">SCORE: <span id="score">0</span></div>
+      <div id="timer-display" class="bold-text">
+        TIME: <span id="clock">0</span>
+      </div>
+      <div id="crosshair"></div>
+    </div>
+
+    <script>
+      let score = 0;
+      let timeLeft = 0;
+      let gameActive = false;
+      const targets = [];
+      const bullets = [];
+
+      // --- 1. ENGINE SETUP ---
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000a00);
+      document.body.appendChild(renderer.domElement);
+
+      // --- 2. 3D POV GUN & ARM ---
+      const weaponGroup = new THREE.Group();
+      const arm = new THREE.Mesh(
+        new THREE.BoxGeometry(0.4, 0.4, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0x008800 })
+      );
+      arm.position.set(0.6, -0.6, -0.5);
+      weaponGroup.add(arm);
+
+      const gun = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.5, 1.0),
+        new THREE.MeshStandardMaterial({ color: 0x004400 })
+      );
+      gun.position.set(0.6, -0.3, -1.2);
+      weaponGroup.add(gun);
+
+      camera.add(weaponGroup);
+      scene.add(camera);
+
+      const light = new THREE.PointLight(0x00ff00, 2, 20);
+      camera.add(light);
+      scene.add(new THREE.AmbientLight(0x003300));
+
+      // --- 3. CONTROLS ---
+      let pitch = 0,
+        yaw = 0;
+      document.addEventListener('mousemove', (e) => {
+        if (gameActive && document.pointerLockElement) {
+          yaw -= e.movementX * 0.002;
+          pitch -= e.movementY * 0.002;
+          pitch = Math.max(-1, Math.min(1, pitch));
+          camera.rotation.set(pitch, yaw, 0, 'YXZ');
+        }
+      });
+
+      // --- 4. GAMEPLAY LOGIC ---
+      function startGame(seconds) {
+        score = 0;
+        timeLeft = seconds;
+        gameActive = true;
+        document.getElementById('score').innerText = '0';
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('ui-layer').style.display = 'block';
+        document.body.requestPointerLock();
+
+        spawnTargetBatch(15);
+        startTimer();
+      }
+
+      function startTimer() {
+        const timerInterval = setInterval(() => {
+          timeLeft--;
+          document.getElementById('clock').innerText = timeLeft;
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            endGame();
+          }
+        }, 1000);
+      }
+
+      function spawnTargetBatch(count) {
+        for (let i = 0; i < count; i++) spawnTarget();
+      }
+
+      function spawnTarget() {
+        const group = new THREE.Group();
+
+        // Sphere Target
+        const outer = new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0x00ff00, wireframe: true })
+        );
+
+        // Inner Dot (Center)
+        const inner = new THREE.Mesh(
+          new THREE.SphereGeometry(0.05, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+        );
+
+        group.add(outer);
+        group.add(inner);
+
+        const dist = 10 + Math.random() * 10;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = (Math.random() - 0.5) * Math.PI * 0.5;
+
+        group.position.setFromSphericalCoords(dist, phi + Math.PI / 2, theta);
+        group.lookAt(0, 0, 0);
+
+        scene.add(group);
+        targets.push(group);
+      }
+
+      // --- 5. BULLETS & SHOOTING ---
+      window.addEventListener('mousedown', () => {
+        if (!gameActive || !document.pointerLockElement) return;
+
+        // Visual Recoil
+        weaponGroup.position.z += 0.3;
+
+        // Create Bullet
+        const bullet = new THREE.Mesh(
+          new THREE.SphereGeometry(0.05, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+
+        const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(
+          camera.quaternion
+        );
+        bullet.position.copy(camera.position);
+        bullet.velocity = direction.multiplyScalar(1.2); // Bullet Speed
+        bullet.life = 100;
+
+        scene.add(bullet);
+        bullets.push(bullet);
+
+        // Raycast for Instant Feedback (Accuracy check)
+        checkHit();
+      });
+
+      function checkHit() {
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+        const hits = raycaster.intersectObjects(targets, true);
+
+        if (hits.length > 0) {
+          const hitObj = hits[0].object.parent;
+          const distFromCenter = hits[0].point.distanceTo(hitObj.position);
+
+          // Accuracy Points (Lower distance = Higher points)
+          const points = Math.round(Math.max(10, (1 - distFromCenter) * 500));
+          score += points;
+          document.getElementById('score').innerText = score;
+
+          scene.remove(hitObj);
+          targets.splice(targets.indexOf(hitObj), 1);
+          spawnTarget();
+        }
+      }
+
+      function endGame() {
+        gameActive = false;
+        document.exitPointerLock();
+        alert('TIMEOVER! FINAL SCORE: ' + score);
+        location.reload();
+      }
+
+      // --- 6. ANIMATION ---
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Bullet movement
+        bullets.forEach((b, i) => {
+          b.position.add(b.velocity);
+          b.life--;
+          if (b.life <= 0) {
+            scene.remove(b);
+            bullets.splice(i, 1);
+          }
+        });
+
+        // Recoil recovery
+        weaponGroup.position.z += (0 - weaponGroup.position.z) * 0.1;
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>

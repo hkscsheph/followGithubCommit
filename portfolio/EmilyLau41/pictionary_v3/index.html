@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>幾何軌跡辨識 - 點矩陣版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { margin: 0; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
+        #input_video { position: absolute; width: 100vw; height: 100vh; object-fit: cover; transform: scaleX(-1); opacity: 0.15; }
+        canvas { position: absolute; top: 0; left: 0; z-index: 100; }
+        .ui {
+            position: absolute; top: 20px; left: 20px; z-index: 200;
+            background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;
+            border-left: 5px solid #00ffcc; color: white;
+        }
+        #res { font-size: 36px; color: #00ffcc; font-weight: bold; display: block; }
+        #score { font-size: 14px; color: #888; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+    <video id="input_video"></video>
+    <div class="ui">
+        <span>識別形狀：</span>
+        <span id="res">等待繪圖...</span>
+        <span id="score">信心值: 0%</span>
+    </div>
+
+<script>
+    let hands, camera, pg;
+    let path = []; // 存儲手指路徑點矩陣
+    let handResults = null;
+    let isDrawing = false;
+
+    // 定義簡單的模板路徑 (簡化表示)
+    const TEMPLATES = {
+        "圓形": "CIRCLE",
+        "正方形": "SQUARE",
+        "三角形": "TRIANGLE",
+        "心型": "HEART"
+    };
+
+    function setup() {
+        createCanvas(windowWidth, windowHeight);
+        pg = createGraphics(windowWidth, windowHeight);
+        pg.stroke(0, 255, 204);
+        pg.strokeWeight(8);
+        pg.noFill();
+
+        hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+        hands.setOptions({ maxNumHands: 1, minDetectionConfidence: 0.8 });
+        hands.onResults(r => handResults = r.multiHandLandmarks);
+
+        const video = document.getElementById('input_video');
+        camera = new Camera(video, {
+            onFrame: async () => { await hands.send({image: video}); },
+            width: 640, height: 480
+        });
+        camera.start();
+    }
+
+    function draw() {
+        clear();
+        if (handResults && handResults.length > 0) {
+            let pts = handResults[0];
+            let x = (1 - pts[8].x) * width;
+            let y = pts[8].y * height;
+
+            // 判斷食指是否伸出
+            let d1 = dist(pts[8].x, pts[8].y, pts[6].x, pts[6].y);
+            let d2 = dist(pts[12].x, pts[12].y, pts[10].x, pts[10].y);
+            let pointing = d1 > 0.1 && d2 < 0.1;
+
+            if (pointing) {
+                if (!isDrawing) {
+                    path = []; // 開始新路徑
+                    pg.clear();
+                }
+                isDrawing = true;
+                path.push({x: x, y: y});
+                
+                // 繪製路徑
+                if (path.length > 1) {
+                    let last = path[path.length-2];
+                    pg.line(last.x, last.y, x, y);
+                }
+                
+                // 畫筆尖點
+                fill(255);
+                ellipse(x, y, 10, 10);
+            } else {
+                if (isDrawing && path.length > 10) {
+                    analyzePath(path); // 停筆時立即分析
+                }
+                isDrawing = false;
+            }
+        }
+        image(pg, 0, 0);
+    }
+
+    function analyzePath(pts) {
+        // 1. 計算邊界矩形 (Bounding Box)
+        let minX = Math.min(...pts.map(p => p.x));
+        let maxX = Math.max(...pts.map(p => p.x));
+        let minY = Math.min(...pts.map(p => p.y));
+        let maxY = Math.max(...pts.map(p => p.y));
+        
+        let w = maxX - minX;
+        let h = maxY - minY;
+        let aspectRatio = w / h;
+
+        // 2. 幾何規則辨識 (最直觀且聰明的做法)
+        let first = pts[0];
+        let last = pts[pts.length - 1];
+        let d_start_end = dist(first.x, first.y, last.x, last.y);
+        let closed = d_start_end < 100; // 起點終點夠近視為封閉
+
+        let result = "直線";
+        let score = 80;
+
+        if (closed) {
+            if (aspectRatio > 0.8 && aspectRatio < 1.2) {
+                result = "圓形";
+            } else {
+                result = "矩形";
+            }
+        } else {
+            if (aspectRatio > 2) result = "橫線";
+            else if (aspectRatio < 0.5) result = "直線";
+            else result = "弧線";
+        }
+
+        // 這裡可以擴展更複雜的角點偵測 (Corner Detection)
+        document.getElementById('res').innerText = result;
+        document.getElementById('score').innerText = `寬高比: ${aspectRatio.toFixed(2)} | 封閉度: ${Math.round(d_start_end)}`;
+    }
+
+    function windowResized() { resizeCanvas(windowWidth, windowHeight); pg.resizeCanvas(width, height); }
+</script>
+</body>
+</html>

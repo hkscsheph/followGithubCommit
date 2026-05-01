@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字世界編輯器</title>
+    <style>
+        :root {
+            --bg-color: #2b2b2b;       
+            --grid-bg: #000000;        
+            --grid-line: #1a4040;      
+            --text-color: #cccccc;     
+            --border-color: #555555;   
+            
+            --human-color: #ffffff;    
+            --elf-color: #88ff88;   
+            --dwarf-color: #ffaa44; 
+            --dragon-color: #ff4444;
+            --demon-color: #d900ff; /* 惡魔專屬顏色 */
+            --fire-color: #ff5500;  
+            --meteor-color: #ffaa00;
+            --nuke-color: #33ff33;  
+            --plague-color: #cc55ff;
+            --weapon-color: #00ffff;   
+            
+            --cat-color: #ffbba0;   
+            --penguin-color: #e0e0e0;
+            --sealion-color: #c08050;
+            --seal-color: #a0c0d0;  
+            
+            --pet-color: #ff99cc; 
+            
+            --boss-color: #ff0055;  
+            --river-color: #44aaff;
+            --rain-color: #55bbff;
+            --snow-color: #ffffff;
+            --expand-color: #aaffaa;
+            --custom-color: #ff00ff;
+            --speed-color: #ffff00;
+            --love-color: #ff66b2;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'PMingLiU', 'MingLiU', 'Microsoft JhengHei', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            box-sizing: border-box;
+            user-select: none;
+            overflow: hidden; 
+        }
+
+        h1 {
+            width: 100%;
+            background-color: #d4d4d4;
+            color: #000;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 0;
+            padding: 4px 10px;
+            border-bottom: 2px solid #000;
+            box-sizing: border-box;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .title-hints { font-weight: normal; font-size: 12px; color: #555; }
+
+        .control-panel {
+            display: flex; flex-direction: column; gap: 5px; margin-top: 5px; padding: 10px;
+            background-color: #1e1e1e; border: 1px solid var(--border-color); width: 98vw; box-sizing: border-box;
+        }
+
+        .controls { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-start; }
+
+        button {
+            background: #000; color: #ddd; border: 1px solid #666; padding: 4px 8px;
+            font-family: inherit; font-size: 14px; cursor: pointer; transition: background 0.1s;
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        button:hover, button.active-key { background: #444; color: #fff; border-color: #999; }
+
+        .hotkey { color: #888; font-family: sans-serif; font-size: 11px; background: #222; padding: 1px 4px; border-radius: 2px; border: 1px solid #444; }
+        select#save-slot-select { background: #111; color: #fff; border: 1px solid #666; padding: 4px 8px; font-family: inherit; font-size: 14px; border-radius: 3px; }
+
+        button.btn-human { border-left: 4px solid var(--human-color); }
+        button.btn-elf { border-left: 4px solid var(--elf-color); }
+        button.btn-dwarf { border-left: 4px solid var(--dwarf-color); }
+        button.btn-dragon { border-left: 4px solid var(--dragon-color); }
+        button.btn-demon { border-left: 4px solid var(--demon-color); color: var(--demon-color); font-weight: bold; background-color: #1a001a; }
+        button.btn-demon:hover { background-color: #330033; }
+        button.btn-pet { border-left: 4px solid var(--pet-color); }
+        button.btn-fire { border-left: 4px solid var(--fire-color); }
+        button.btn-meteor { border-left: 4px solid var(--meteor-color); }
+        button.btn-nuke { border-left: 4px solid var(--nuke-color); }
+        button.btn-plague { border-left: 4px solid var(--plague-color); }
+        button.btn-weapon { border-left: 4px solid var(--weapon-color); }
+        button.btn-ship { border-left: 4px solid #55ddff; color: #aaffff; }
+        button.btn-ship:hover { background-color: rgba(85, 221, 255, 0.15); }
+        button.btn-boss { border-left: 4px solid var(--boss-color); color: var(--boss-color); }
+        button.btn-river { border-left: 4px solid var(--river-color); }
+        button.btn-rain { border-left: 4px solid var(--rain-color); }
+        button.btn-snow { border-left: 4px solid var(--snow-color); }
+        button.btn-expand { border-left: 4px solid var(--expand-color); }
+        button.btn-custom { border-left: 4px solid var(--custom-color); color: var(--custom-color); font-weight: bold; }
+        button.btn-speed { border-left: 4px solid var(--speed-color); color: var(--speed-color); }
+        button.btn-love { border-left: 4px solid var(--love-color); color: var(--love-color); font-weight: bold; background-color: #1a0011; }
+        button.btn-love:hover { background-color: #330022; }
+        button.btn-fly { border-left: 4px solid #66ccff; }
+        button.active-weather { background: rgba(85, 187, 255, 0.18); border-color: #55bbff; color: #fff; }
+
+        .entity-info-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            padding: 20px;
+        }
+        .entity-info-card {
+            background: linear-gradient(180deg, rgba(12,18,34,0.98), rgba(8,12,24,0.98));
+            border: 1px solid rgba(102, 170, 255, 0.45);
+            border-radius: 16px;
+            padding: 22px;
+            width: min(480px, calc(100vw - 60px));
+            color: #f1f7ff;
+            position: relative;
+            box-shadow: 0 0 35px rgba(30, 80, 140, 0.45);
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .entity-info-close {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #c8ddff;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .entity-info-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            color: #b6e0ff;
+        }
+        .entity-info-meta {
+            font-size: 13px;
+            margin-bottom: 12px;
+            color: #99c4ff;
+            line-height: 1.4;
+        }
+        .entity-info-image {
+            background: #051122;
+            border: 1px solid rgba(102, 170, 255, 0.25);
+            border-radius: 10px;
+            color: #88ccff;
+            padding: 14px;
+            min-height: 100px;
+            margin-bottom: 14px;
+            white-space: pre;
+            line-height: 1.15;
+            font-size: 13px;
+        }
+        .war-banner {
+            width: 98vw;
+            max-width: 1600px;
+            margin: 4px auto 0;
+            padding: 8px 12px;
+            border: 1px solid rgba(212,212,141,0.3);
+            background: rgba(20, 20, 30, 0.9);
+            color: rgba(212,212,141,0.9);
+            font-size: 13px;
+            letter-spacing: 0.4px;
+            text-align: center;
+            border-radius: 8px;
+            box-sizing: border-box;
+            opacity: 0.95;
+        }
+        .entity-info-description {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 100px;
+            color: #e8f2ff;
+            font-size: 13px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+        }
+
+        button.btn-speed.fast { background-color: #333300; color: #ffff88; }
+        button.btn-berserk { border-left: 4px solid #ff0000; }
+        button.btn-berserk.berserk-on { background-color: #440000; color: #ff8888; border-color: #ff0000; }
+        button.audio-on { color: #88ff88; border-left: 4px solid #88ff88; }
+
+        #world-container {
+            background: var(--grid-bg); width: 98vw; max-width: 1600px; flex: 1; min-height: 0; 
+            display: flex; justify-content: center; align-items: center; margin-top: 10px;
+            border: 2px solid #555; box-sizing: border-box; padding: 0; position: relative;
+            transition: box-shadow 0.4s ease-out; 
+        }
+
+        #world {
+            display: grid; width: 100%; height: 100%;
+            border-top: 1px solid var(--grid-line); border-left: 1px solid var(--grid-line);
+        }
+
+        .cell {
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            font-size: clamp(8px, 1.8vmin, 20px); border-right: 1px solid var(--grid-line); border-bottom: 1px solid var(--grid-line);
+            box-sizing: border-box; position: relative; overflow: hidden; white-space: nowrap; text-overflow: clip;
+            cursor: pointer; transition: background 0.2s ease;
+        }
+        .cell:hover { background: rgba(255,255,255,0.04); }
+
+        .king-crown::after {
+            content: '王';
+            position: absolute;
+            top: -8px;
+            font-size: 8px;
+            text-shadow: 0 0 2px #000;
+        }
+
+        #stats {
+            display: flex; gap: 15px; margin: 5px 0; font-size: 14px; color: #ccc;
+            background: #1e1e1e; padding: 5px 15px; border: 1px solid #555; width: 98vw; box-sizing: border-box; max-width: 1600px;
+        }
+
+        #log-container {
+            width: 98vw; max-width: 1600px; border: 1px solid #555; padding: 5px 10px; height: 100px;
+            background: #000; margin-bottom: 5px; position: relative; box-sizing: border-box; overflow: hidden;
+        }
+
+        #log-container::before {
+            content: "Terminal / 世界頻道"; position: absolute; top: 0; right: 0; background: #555; color: #000;
+            padding: 0 5px; font-size: 12px; font-family: sans-serif;
+        }
+
+        #log { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; font-size: 13px; line-height: 1.4; }
+        .log-entry { opacity: 0.8; }
+        .log-entry:last-child { opacity: 1; color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+
+        #custom-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center;
+        }
+        .custom-modal { background: #222; border: 2px solid var(--custom-color); padding: 20px; color: #ccc; font-family: sans-serif; width: 340px; border-radius: 5px; }
+        .custom-modal h2 { margin-top: 0; color: #fff; font-size: 18px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .form-group { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .form-group label { font-size: 14px; color: #ddd; }
+        .form-group input, .form-group select { background: #111; color: #fff; border: 1px solid #555; padding: 4px 6px; width: 130px; font-family: inherit; font-size: 14px; }
+        .form-group input[type="color"] { padding: 0; width: 60px; height: 26px; cursor: pointer; }
+        .form-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-submit { background: #330033; border: 1px solid var(--custom-color); color: #fff; cursor: pointer;}
+        .btn-cancel { background: #333; border: 1px solid #666; color: #ccc; cursor: pointer;}
+
+        #love-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(255, 102, 178, 0.1); pointer-events: none; z-index: 50; display: none; box-shadow: inset 0 0 150px 30px rgba(255, 102, 178, 0.3); }
+        #scream-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: clamp(24px, 5vw, 45px); color: #ff1111; font-weight: 900; text-shadow: 0 0 20px #ff0000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; pointer-events: none; z-index: 1000; opacity: 0; text-align: center; white-space: nowrap; }
+
+        @keyframes shakeScreen { 0%, 100% { margin-left: 0; margin-top: 0; } 20% { margin-left: -8px; margin-top: 6px; transform: translate(-50%, -50%) rotate(-2deg); } 40% { margin-left: 8px; margin-top: -6px; transform: translate(-50%, -50%) rotate(2deg); } 60% { margin-left: -6px; margin-top: -8px; transform: translate(-50%, -50%) rotate(-1deg); } 80% { margin-left: 6px; margin-top: 8px; transform: translate(-50%, -50%) rotate(1deg); } }
+        @keyframes fadeOutScream { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0.6); } 10% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); display: none; } }
+
+        #extinction-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #030000; z-index: 9999; display: none; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+        #why-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; color: #cc0000; font-size: 4.5vh; line-height: 5vh; font-weight: 900; word-break: break-all; text-align: justify; margin: 0; padding: 0; opacity: 0.9; text-shadow: 2px 2px 0px #440000, -1px -1px 0px #000; animation: whyGlitch 0.1s infinite; }
+        @keyframes whyGlitch { 0% { transform: translate(0, 0); } 25% { transform: translate(-2px, 2px); color: #ff1111; } 50% { transform: translate(2px, -2px); color: #990000; } 75% { transform: translate(-2px, -2px); text-shadow: none; } 100% { transform: translate(2px, 2px); } }
+        .blood-vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-shadow: inset 0 0 200px 50px rgba(255,0,0,0.9); pointer-events: none; z-index: 10; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <h1>
+        <span>= 文字世界編輯器 v3.2 (惡魔降臨) =</span>
+        <span class="title-hints">新增: 惡魔無差別攻擊、範圍技、嗜血狂暴與空投飛船。這是一個文字編織的戰場，每一步都暗藏詩意與危機。</span>
+    </h1>
+
+    <div id="world-container">
+        <div id="world"></div>
+        <div id="scream-overlay"></div>
+    </div>
+
+    <div id="stats">
+        <span id="stat-human" style="color: var(--human-color)">人: 0</span>
+        <span id="stat-elf" style="color: var(--elf-color)">精: 0</span>
+        <span id="stat-dwarf" style="color: var(--dwarf-color)">矮: 0</span>
+        <span id="stat-dragon" style="color: var(--dragon-color)">龍: 0</span>
+        <span id="stat-demon" style="color: var(--demon-color); font-weight: bold;">魔: 0</span>
+        <span id="stat-wild" style="color: #aaaaaa">野: 0</span>
+        <span id="stat-custom" style="color: var(--custom-color)">自: 0</span>
+        <span id="stat-size" style="color: var(--expand-color); margin-left: auto;">地圖: 35x18</span>
+        <span id="weather-status" style="color: #88ccff; margin-left: 1rem;">天氣：晴朗</span>
+    </div>
+    <div id="war-banner" class="war-banner" style="display:none;">戰雲低沉，群雄蠢蠢欲動。</div>
+
+    <div id="log-container">
+        <div id="log"></div>
+    </div>
+
+    <div id="entity-info-overlay" class="entity-info-overlay">
+        <div class="entity-info-card">
+            <button class="entity-info-close" onclick="closeEntityInfo()">✕</button>
+            <div id="entity-info-title" class="entity-info-title">點擊地圖上的生命或建築查看資訊</div>
+            <div id="entity-info-meta" class="entity-info-meta">探索每一個格子的文字故事。</div>
+            <pre id="entity-info-image" class="entity-info-image"></pre>
+            <div id="entity-info-description" class="entity-info-description">點選生物或建築，便能看見它們的簡短預覽。</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="controls">
+            <button class="btn-human" id="btn-1" onclick="spawnEntity('HUMAN')"><span class="hotkey">1</span> 新增人類</button>
+            <button class="btn-elf" id="btn-2" onclick="spawnEntity('ELF')"><span class="hotkey">2</span> 新增精靈</button>
+            <button class="btn-dwarf" id="btn-3" onclick="spawnEntity('DWARF')"><span class="hotkey">3</span> 新增矮人</button>
+            <button class="btn-dragon" id="btn-4" onclick="spawnEntity('DRAGON')"><span class="hotkey">4</span> 新增龍族</button>
+            <button class="btn-demon" id="btn-5" onclick="spawnDemon()"><span class="hotkey">5</span> 新增惡魔</button>
+            <button class="btn-custom" id="btn-u" onclick="openCustomModal()"><span class="hotkey">U</span> 創造角色</button>
+            <button class="btn-love" id="btn-l" onclick="triggerLove()"><span class="hotkey">L</span> 散播愛情</button>
+        </div>
+        <div class="controls">
+            <button class="btn-pet" id="btn-q" onclick="spawnRandomSuperNeutral()"><span class="hotkey">Q</span> 隨機萌獸</button>
+            <button class="btn-fire" id="btn-a" onclick="triggerDisaster('FIRE')"><span class="hotkey">A</span> 執行火焰</button>
+            <button class="btn-meteor" id="btn-s" onclick="triggerDisaster('METEOR')"><span class="hotkey">S</span> 執行隕石</button>
+            <button class="btn-nuke" id="btn-d" onclick="triggerDisaster('NUKE')"><span class="hotkey">D</span> 執行核彈</button>
+            <button class="btn-plague" id="btn-f" onclick="triggerDisaster('PLAGUE')"><span class="hotkey">F</span> 執行瘟疫</button>
+            <button class="btn-weapon" id="btn-g" onclick="spawnWeapons()"><span class="hotkey">G</span> 生成武器</button>
+            <button class="btn-ship" id="btn-y" onclick="launchAirship()"><span class="hotkey">Y</span> 空投飛船</button>
+            <button class="btn-fly" id="btn-t" onclick="flingEntities()"><span class="hotkey">T</span> 彈飛生物</button>
+            <button class="btn-speed" id="btn-p" onclick="toggleSpeed()"><span class="hotkey">P</span> 速度: 1x</button>
+            <button id="btn-r" onclick="resetGame()"><span class="hotkey">R</span> 重設遊戲</button>
+        </div>
+        <div class="controls">
+            <select id="save-slot-select" onchange="refreshSaveButtons()">
+                <option value="slot1">存檔槽 1</option>
+                <option value="slot2">存檔槽 2</option>
+                <option value="slot3">存檔槽 3</option>
+                <option value="slot4">存檔槽 4</option>
+                <option value="slot5">存檔槽 5</option>
+            </select>
+            <span id="save-slot-status" class="save-slot-status">尚未存檔</span>
+            <button id="btn-save" onclick="saveGame()"><span class="hotkey">S</span> 存檔</button>
+            <button id="btn-load" onclick="loadGame()"><span class="hotkey">L</span> 讀取存檔</button>
+            <button id="btn-clear-save" onclick="clearSaveSlot()"><span class="hotkey">C</span> 刪除存檔</button>
+        </div>
+        <div class="controls">
+            <button class="btn-boss" id="btn-z" onclick="spawnBoss('CHAIN_DRAGON')"><span class="hotkey">Z</span> 召喚鎖刃龍</button>
+            <button class="btn-river" id="btn-c" onclick="spawnRiver()"><span class="hotkey">C</span> 生成河流</button>
+            <button class="btn-custom" id="btn-h" onclick="triggerSpecialEvent()"><span class="hotkey">H</span> 特殊事件</button>
+            <button class="btn-rain" id="btn-b" onclick="triggerWeather('RAIN')"><span class="hotkey">B</span> 降雨</button>
+            <button class="btn-snow" id="btn-n" onclick="triggerWeather('SNOW')"><span class="hotkey">N</span> 降雪</button>
+            <button class="btn-expand" id="btn-m" onclick="expandMap()"><span class="hotkey">M</span> 擴大地圖</button>
+            <button class="btn-berserk" id="btn-v" onclick="toggleBerserk()"><span class="hotkey">V</span> 狂暴: 關閉</button>
+            <button id="btn-x" class="audio-on" onclick="toggleAudio()"><span class="hotkey">X</span> 音效: 開啟</button>
+        </div>
+    </div>
+
+    <!-- 自創角色彈出視窗 -->
+    <div id="custom-modal-overlay">
+        <div class="custom-modal">
+            <h2>創造自訂角色</h2>
+            <div class="form-group">
+                <label>角色圖示</label>
+                <input type="text" id="c-name" value="神" maxlength="4">
+            </div>
+            <div class="form-group">
+                <label>初始體力</label>
+                <input type="number" id="c-hp" value="10" min="1">
+            </div>
+            <div class="form-group">
+                <label>額外攻擊力</label>
+                <input type="number" id="c-dmg" value="100" min="0">
+            </div>
+            <div class="form-group">
+                <label>攜帶武器</label>
+                <select id="c-weapon">
+                    <option value="NONE">無</option>
+                    <option value="SWORD">劍 (+1)</option>
+                    <option value="GREATSWORD">大劍 (+2)</option>
+                    <option value="CHAIN_BLADE">真·鎖刃 (+4)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>顯示顏色</label>
+                <input type="color" id="c-color" value="#ff00ff">
+            </div>
+            <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
+            <div class="form-group">
+                <label>偏向種族</label>
+                <select id="c-faction">
+                    <option value="HUMAN">人類</option>
+                    <option value="ELF">精靈</option>
+                    <option value="DWARF">矮人</option>
+                    <option value="DRAGON">龍族</option>
+                    <option value="NONE" selected>無</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>繁衍同類?</label>
+                <input type="checkbox" id="c-breed" checked>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeCustomModal()">取消</button>
+                <button class="btn-submit" onclick="submitCustomCharacter()">創造降臨</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="extinction-overlay">
+        <div class="blood-vignette"></div>
+        <div id="why-container"></div>
+    </div>
+    
+    <div id="love-overlay"></div>
+
+    <script>
+        document.addEventListener('keydown', (event) => {
+            if(document.getElementById('custom-modal-overlay').style.display === 'flex') return;
+            const key = event.key.toLowerCase();
+            let buttonId = null;
+
+            switch(key) {
+                case '1': spawnEntity('HUMAN'); buttonId = 'btn-1'; break;
+                case '2': spawnEntity('ELF'); buttonId = 'btn-2'; break;
+                case '3': spawnEntity('DWARF'); buttonId = 'btn-3'; break;
+                case '4': spawnEntity('DRAGON'); buttonId = 'btn-4'; break;
+                case '5': spawnDemon(); buttonId = 'btn-5'; break;
+                case 'u': openCustomModal(); buttonId = 'btn-u'; break;
+                case 'l': triggerLove(); buttonId = 'btn-l'; break; 
+                case 'q': spawnRandomSuperNeutral(); buttonId = 'btn-q'; break;
+                case 'a': triggerDisaster('FIRE'); buttonId = 'btn-a'; break;
+                case 's': triggerDisaster('METEOR'); buttonId = 'btn-s'; break;
+                case 'd': triggerDisaster('NUKE'); buttonId = 'btn-d'; break;
+                case 'f': triggerDisaster('PLAGUE'); buttonId = 'btn-f'; break;
+                case 'g': spawnWeapons(); buttonId = 'btn-g'; break;
+                case 'y': launchAirship(); buttonId = 'btn-y'; break;
+                case 't': flingEntities(); buttonId = 'btn-t'; break;
+                case 'z': spawnBoss('CHAIN_DRAGON'); buttonId = 'btn-z'; break;
+                case 'c': spawnRiver(); buttonId = 'btn-c'; break;
+                case 'h': triggerSpecialEvent(); buttonId = 'btn-h'; break;
+                case 'b': triggerWeather('RAIN'); buttonId = 'btn-b'; break;
+                case 'n': triggerWeather('SNOW'); buttonId = 'btn-n'; break;
+                case 'm': expandMap(); buttonId = 'btn-m'; break;
+                case 'v': toggleBerserk(); buttonId = 'btn-v'; break;
+                case 'x': toggleAudio(); buttonId = 'btn-x'; break;
+                case 'p': toggleSpeed(); buttonId = 'btn-p'; break;
+                case 'r': resetGame(); buttonId = 'btn-r'; break;
+            }
+
+            if (buttonId) {
+                const btn = document.getElementById(buttonId);
+                if (btn) { btn.classList.add('active-key'); setTimeout(() => btn.classList.remove('active-key'), 150); }
+            }
+        });
+
+        let WORLD_WIDTH = 35; let WORLD_HEIGHT = 18;
+        let MAX_BUILDINGS_PER_RACE = 2; 
+
+        const BASE_TICK_RATE = 800; 
+        let currentTickRate = BASE_TICK_RATE;
+        let currentSpeed = 1; let worldInterval = null;
+
+        const NATION_THRESHOLD = 12; 
+        const COLLAPSE_THRESHOLD = 4; 
+
+        const WEAPON_TYPES = [
+            { id: 'SWORD', name: '劍', char: '劍', color: '#cccccc', bonus: 10 },
+            { id: 'SPEAR', name: '長槍', char: '槍', color: '#aaccaa', bonus: 10 },
+            { id: 'GREATSWORD', name: '大劍', char: '斬', color: '#ffaaaa', bonus: 20 } 
+        ];
+
+        const RACES = {
+            HUMAN:  { id: 'HUMAN',  name: '人類', stages: ['人', '兵', '將', '王'], color: 'var(--human-color)', buildingChar: '城', buildingColor: '#aaaaaa', nationBg: 'rgba(255, 255, 255, 0.15)' },
+            ELF:    { id: 'ELF',    name: '精靈', stages: ['精', '靈', '賢', '聖'], color: 'var(--elf-color)', buildingChar: '樹', buildingColor: '#66aa66', nationBg: 'rgba(136, 255, 136, 0.15)' },
+            DWARF:  { id: 'DWARF',  name: '矮人', stages: ['矮', '匠', '鋼', '鑽'], color: 'var(--dwarf-color)', buildingChar: '堡', buildingColor: '#886644', nationBg: 'rgba(255, 170, 68, 0.15)' },
+            DRAGON: { id: 'DRAGON', name: '龍族', stages: ['龍', '魔', '霸', '祖'], color: 'var(--dragon-color)', buildingChar: '巢', buildingColor: '#aa4444', nationBg: 'rgba(255, 68, 68, 0.15)' }
+        };
+
+        const NEUTRALS = { SLIME: { id: 'SLIME', name: '史萊姆', stages: ['史'], color: '#55ccaa' }, BEAST: { id: 'BEAST', name: '野獸', stages: ['獸'], color: '#aa8855' } };
+        const SUPER_NEUTRALS = { CAT: { id: 'CAT', name: '貓咪', stages: ['貓'], color: 'var(--cat-color)' }, PENGUIN: { id: 'PENGUIN', name: '企鵝', stages: ['企'], color: 'var(--penguin-color)' }, SEALION: { id: 'SEALION', name: '海獅', stages: ['獅'], color: 'var(--sealion-color)' }, SEAL: { id: 'SEAL', name: '海豹', stages: ['豹'], color: 'var(--seal-color)' } };
+        const BOSSES = { CHAIN_DRAGON: { id: 'CHAIN_DRAGON', name: '鎖刃龍', stages: ['鎖'], color: 'var(--boss-color)' } };
+        const DISASTERS = { FIRE: { name: '火焰', radius: 2, char: '炎', color: 'var(--fire-color)' }, METEOR: { name: '隕石', radius: 5, char: '隕', color: 'var(--meteor-color)' }, NUKE: { name: '核彈', radius: 90, char: '核', color: 'var(--nuke-color)' }, PLAGUE: { name: '瘟疫', radius: 4, char: '毒', color: 'var(--plague-color)' } };
+
+        const EMPTY_CHAR = '';
+
+        let entities = []; let domGrid = []; let logs = []; let effects = []; 
+        let buildings = []; let items = []; let rivers = [];
+        let activeNations = {}; 
+        
+        let isPlagueActive = false; let plagueCapacity = 0; let isBerserkMode = false;
+        let currentWeather = 'NONE'; let weatherTimer = 0; let loveTimer = 0; let isWarActive = false; let warTimer = 0; 
+        let worldEverHadLife = false; let extinctionInProgress = false; 
+
+        function hexToRgba(hex, alpha) {
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function triggerLove() {
+            if (entities.length > (WORLD_WIDTH * WORLD_HEIGHT * 0.8)) { addLog("系統", "世界太擁擠了，愛情無法在此刻舒展。請先稍作整理。", "#aaaaaa"); return; }
+            loveTimer = 25; 
+            if (isBerserkMode) toggleBerserk();
+            document.getElementById('love-overlay').style.display = 'block';
+            addLog("神蹟", "愛的波動悄然降臨，文字之間迸發出柔和的光彩，生物們開始尋找他們的伴侶...", "var(--love-color)");
+            playSfx('love'); drawWorld();
+        }
+
+        function handleLove(e1, e2) {
+            if (Math.random() > 0.35) return;
+            let newRace = Math.random() > 0.5 ? e1.race : e2.race;
+            let targetFaction = e1.isCustom ? e1.targetFaction : (e2.isCustom ? e2.targetFaction : 'NONE');
+            let emptySpots = [];
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    let ex = e1.x + dx, ey = e1.y + dy;
+                    if (ex >= 0 && ex < WORLD_WIDTH && ey >= 0 && ey < WORLD_HEIGHT && !getEntityAt(ex, ey) && !getBuildingAt(ex, ey) && !getRiverAt(ex, ey)) emptySpots.push({ x: ex, y: ey });
+                }
+            }
+            if (emptySpots.length > 0) {
+                let spot = emptySpots[Math.floor(Math.random() * emptySpots.length)];
+                let child = { race: newRace, level: 0, hp: 2, maxHp: 2, baseDmg: 0, weapon: null, x: spot.x, y: spot.y, age: 0, isNeutral: e1.isNeutral && e2.isNeutral, isCustom: e1.isCustom || e2.isCustom, targetFaction: targetFaction, id: Math.random().toString(36).substr(2, 9) };
+                entities.push(child);
+                effects.push({ x: spot.x, y: spot.y, char: '♥', color: 'var(--love-color)', life: 3 }); effects.push({ x: e1.x, y: e1.y, char: '♥', color: 'var(--love-color)', life: 2 }); effects.push({ x: e2.x, y: e2.y, char: '♥', color: 'var(--love-color)', life: 2 });
+                addLog('繁衍', `💕 【${e1.race.name}】與【${e2.race.name}】結合，孕育了新生命！`, 'var(--love-color)'); playSfx('spawn');
+            }
+        }
+
+        function generateNationName(raceId, customName) {
+            const prefixes = ["神聖", "榮耀", "永恆", "暗影", "鐵血", "遠古", "黎明", "黃金"];
+            const suffixes = {
+                HUMAN: ["帝國", "王國", "聯邦", "教國"], ELF: ["森之國", "神木庭園", "精靈聯盟"],
+                DWARF: ["深淵礦國", "鐵砧堡壘", "高山氏族"], DRAGON: ["龍之巢穴", "災厄龍國", "龍王領"]
+            };
+            let p = prefixes[Math.floor(Math.random() * prefixes.length)];
+            let sList = suffixes[raceId] || ["之國", "部落", "同盟", "領域"];
+            let s = sList[Math.floor(Math.random() * sList.length)];
+            return raceId.startsWith('CUSTOM_') ? (customName + s) : (p + s);
+        }
+
+        function toggleSpeed() {
+            const speeds = [1, 2, 5, 10]; 
+            currentSpeed = speeds[(speeds.indexOf(currentSpeed) + 1) % speeds.length];
+            currentTickRate = BASE_TICK_RATE / currentSpeed;
+            clearInterval(worldInterval); if (!extinctionInProgress) worldInterval = setInterval(worldTick, currentTickRate);
+            const btn = document.getElementById('btn-p'); btn.innerHTML = `<span class="hotkey">P</span> 速度: ${currentSpeed}x`;
+            if (currentSpeed > 1) btn.classList.add('fast'); else btn.classList.remove('fast');
+        }
+
+        function resetGame() {
+            clearInterval(worldInterval);
+            WORLD_WIDTH = 35; WORLD_HEIGHT = 18; MAX_BUILDINGS_PER_RACE = 2;
+            currentSpeed = 1; currentTickRate = BASE_TICK_RATE;
+            isPlagueActive = false; plagueCapacity = 0; isBerserkMode = false;
+            currentWeather = 'NONE'; weatherTimer = 0; loveTimer = 0; isWarActive = false; warTimer = 0;
+            worldEverHadLife = false; extinctionInProgress = false;
+            entities = []; buildings = []; items = []; rivers = []; effects = []; activeNations = {};
+            logs = [];
+            document.getElementById('love-overlay').style.display = 'none';
+            document.getElementById('war-banner').style.display = 'none';
+            document.getElementById('extinction-overlay').style.display = 'none';
+            document.getElementById('extinction-overlay').style.opacity = '0';
+            document.getElementById('scream-overlay').style.animation = 'none';
+            document.getElementById('custom-modal-overlay').style.display = 'none';
+            document.getElementById('btn-p').innerHTML = `<span class="hotkey">P</span> 速度: 1x`;
+            document.getElementById('btn-p').classList.remove('fast');
+            document.getElementById('btn-v').classList.remove('berserk-on');
+            document.getElementById('btn-v').innerHTML = `<span class="hotkey">V</span> 狂暴: 關閉`;
+            buildGrid(); drawWorld(); updateStats();
+            document.getElementById('log').innerHTML = '';
+            addLog('系統', '遊戲已重設。新的冒險開始了！世界重新回歸寧靜，文字的波瀾仍在暗中翻湧。', '#aaaaaa');
+            worldInterval = setInterval(worldTick, currentTickRate);
+            if (isAudioEnabled) playBGM();
+        }
+
+        function getSelectedSaveSlot() {
+            const slot = document.getElementById('save-slot-select');
+            return slot ? slot.value : 'slot1';
+        }
+
+        function getSaveKey() { return `theworld_tao_save_${getSelectedSaveSlot()}`; }
+
+        function refreshSaveButtons() {
+            const raw = localStorage.getItem(getSaveKey());
+            const loadBtn = document.getElementById('btn-load');
+            const clearBtn = document.getElementById('btn-clear-save');
+            const status = document.getElementById('save-slot-status');
+            let hasValidSave = false;
+            let statusText = '尚未存檔';
+            if (raw) {
+                try {
+                    const data = JSON.parse(raw);
+                    if (data) {
+                        if (data.savedAt) {
+                            const savedAt = new Date(data.savedAt);
+                            if (!isNaN(savedAt)) {
+                                statusText = `最後儲存: ${savedAt.toLocaleString('zh-TW', { hour12: false })}`;
+                                hasValidSave = true;
+                            }
+                        }
+                        if (!hasValidSave) {
+                            statusText = '找到舊存檔，可讀取。';
+                            hasValidSave = true;
+                        }
+                    }
+                } catch (error) {
+                    statusText = '存檔已損壞，請重新存檔或刪除。';
+                }
+            }
+            status.innerText = statusText;
+            loadBtn.disabled = !hasValidSave;
+            clearBtn.disabled = !raw;
+        }
+
+        function saveGame() {
+            const saveData = {
+                WORLD_WIDTH, WORLD_HEIGHT, MAX_BUILDINGS_PER_RACE,
+                currentSpeed, currentTickRate,
+                isPlagueActive, plagueCapacity, isBerserkMode,
+                currentWeather, weatherTimer, loveTimer,
+                worldEverHadLife, extinctionInProgress,
+                entities, buildings, items, rivers, activeNations,
+                isAudioEnabled,
+                savedAt: new Date().toISOString()
+            };
+            localStorage.setItem(getSaveKey(), JSON.stringify(saveData));
+            addLog('存檔', `已將進度存入 ${getSelectedSaveSlot()}。`, '#88cc88');
+            refreshSaveButtons();
+        }
+
+        function loadGame() {
+            const raw = localStorage.getItem(getSaveKey());
+            if (!raw) { addLog('系統', `在 ${getSelectedSaveSlot()} 找不到存檔，請先存檔。`, '#ffcc88'); return; }
+            if (entities.length > 0 || buildings.length > 0 || items.length > 0 || rivers.length > 0) {
+                const confirmed = confirm(`讀取 ${getSelectedSaveSlot()} 會覆蓋目前進度，確定要載入嗎？`);
+                if (!confirmed) return;
+            }
+            try {
+                const data = JSON.parse(raw);
+                clearInterval(worldInterval);
+                WORLD_WIDTH = data.WORLD_WIDTH || 35;
+                WORLD_HEIGHT = data.WORLD_HEIGHT || 18;
+                MAX_BUILDINGS_PER_RACE = data.MAX_BUILDINGS_PER_RACE || 2;
+                currentSpeed = data.currentSpeed || 1;
+                currentTickRate = data.currentTickRate || BASE_TICK_RATE / currentSpeed;
+                isPlagueActive = !!data.isPlagueActive;
+                plagueCapacity = data.plagueCapacity || 0;
+                isBerserkMode = !!data.isBerserkMode;
+                currentWeather = data.currentWeather || 'NONE';
+                weatherTimer = data.weatherTimer || 0;
+                loveTimer = data.loveTimer || 0;
+                worldEverHadLife = !!data.worldEverHadLife;
+                extinctionInProgress = !!data.extinctionInProgress;
+                entities = data.entities || [];
+                buildings = data.buildings || [];
+                items = data.items || [];
+                rivers = data.rivers || [];
+                activeNations = data.activeNations || {};
+                isAudioEnabled = data.isAudioEnabled !== false;
+
+                document.getElementById('love-overlay').style.display = loveTimer > 0 ? 'block' : 'none';
+                document.getElementById('extinction-overlay').style.display = 'none';
+                document.getElementById('extinction-overlay').style.opacity = '0';
+                document.getElementById('scream-overlay').style.animation = 'none';
+                document.getElementById('custom-modal-overlay').style.display = 'none';
+                document.getElementById('btn-p').innerHTML = `<span class="hotkey">P</span> 速度: ${currentSpeed}x`;
+                document.getElementById('btn-p').classList.toggle('fast', currentSpeed > 1);
+                document.getElementById('btn-v').classList.toggle('berserk-on', isBerserkMode);
+                document.getElementById('btn-v').innerHTML = `<span class="hotkey">V</span> 狂暴: ${isBerserkMode ? '開啟' : '關閉'}`;
+                document.getElementById('btn-x').innerHTML = `<span class="hotkey">X</span> 音效: ${isAudioEnabled ? '開啟' : '關閉'}`;
+                document.getElementById('btn-x').classList.toggle('audio-on', isAudioEnabled);
+
+                buildGrid(); drawWorld(); updateStats();
+                document.getElementById('log').innerHTML = '';
+                addLog('讀取', '已從存檔還原遊戲進度。', '#88cc88');
+                worldInterval = setInterval(worldTick, currentTickRate);
+                if (isAudioEnabled) playBGM(); else stopBGM();
+            } catch (error) {
+                addLog('錯誤', '讀取存檔時發生問題，請重新存檔。', '#ff4444');
+            }
+        }
+
+        function clearSaveSlot() {
+            localStorage.removeItem(getSaveKey());
+            addLog('存檔', `已刪除 ${getSelectedSaveSlot()} 的存檔。`, '#ff8888');
+            refreshSaveButtons();
+        }
+
+        let audioCtx; let isAudioEnabled = true; let audioInitialized = false; let bgmInterval; let bgmStepIndex = 0; let noiseBuffer = null;
+        const BGM_PATTERN = [
+            { mel: 392.00, bass: 130.81 },
+            { mel: 440.00, bass: 130.81 },
+            { mel: 466.16, bass: 146.83 },
+            { mel: 392.00, bass: 130.81 },
+            { mel: 349.23, bass: 98.00 },
+            { mel: 330.00, bass: 98.00 },
+            { mel: 294.00, bass: 82.41 },
+            { mel: 262.00, bass: 82.41 },
+            { mel: 330.00, bass: 98.00 },
+            { mel: 392.00, bass: 130.81 },
+            { mel: 440.00, bass: 146.83 },
+            { mel: 392.00, bass: 130.81 },
+            { mel: 330.00, bass: 98.00 },
+            { mel: 294.00, bass: 82.41 },
+            { mel: 0, bass: 0 },
+            { mel: 392.00, bass: 130.81 }
+        ];
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (!audioInitialized && isAudioEnabled) { playBGM(); audioInitialized = true; }
+        }
+
+        const unlockAudio = () => { if (isAudioEnabled && !audioInitialized) initAudio(); document.removeEventListener('click', unlockAudio); document.removeEventListener('keydown', unlockAudio); };
+        document.addEventListener('click', unlockAudio); document.addEventListener('keydown', unlockAudio);
+
+        function getNoiseBuffer() {
+            if (noiseBuffer) return noiseBuffer;
+            let bufferSize = audioCtx.sampleRate * 2; noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            let output = noiseBuffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1; return noiseBuffer;
+        }
+
+        function toggleAudio() {
+            const btn = document.getElementById('btn-x');
+            if (!isAudioEnabled) { isAudioEnabled = true; btn.innerHTML = `<span class="hotkey">X</span> 音效: 開啟`; btn.classList.add('audio-on'); initAudio(); if (!bgmInterval && !extinctionInProgress) playBGM(); } 
+            else { isAudioEnabled = false; btn.innerHTML = `<span class="hotkey">X</span> 音效: 關閉`; btn.classList.remove('audio-on'); stopBGM(); }
+        }
+
+        function playSfx(type) {
+            if (!isAudioEnabled || !audioCtx || audioCtx.state === 'suspended') return; 
+            const now = audioCtx.currentTime; const gainNode = audioCtx.createGain(); gainNode.connect(audioCtx.destination);
+            if (type === 'horror') { const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(60, now); osc.frequency.exponentialRampToValueAtTime(10, now + 5); const osc2 = audioCtx.createOscillator(); osc2.type = 'square'; osc2.frequency.setValueAtTime(150, now); osc2.frequency.exponentialRampToValueAtTime(1, now + 4); gainNode.gain.setValueAtTime(1.0, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 6); osc.connect(gainNode); osc2.connect(gainNode); osc.start(now); osc.stop(now + 6); osc2.start(now); osc2.stop(now + 6); return; }
+            if (type === 'disaster') { const noiseSrc = audioCtx.createBufferSource(); noiseSrc.buffer = getNoiseBuffer(); const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(1000, now); filter.frequency.exponentialRampToValueAtTime(50, now + 0.6); noiseSrc.connect(filter); filter.connect(gainNode); gainNode.gain.setValueAtTime(0.5, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.6); noiseSrc.start(now); noiseSrc.stop(now + 0.6); return; }
+            if (type === 'scream') { const osc1 = audioCtx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.setValueAtTime(900, now); osc1.frequency.exponentialRampToValueAtTime(100, now + 1.0); const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 25; const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 150; lfo.connect(lfoGain); lfoGain.connect(osc1.frequency); gainNode.gain.setValueAtTime(0.6, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.2); osc1.connect(gainNode); lfo.start(now); lfo.stop(now + 1.2); osc1.start(now); osc1.stop(now + 1.2); return; }
+            if (type === 'love') { const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.connect(gainNode); osc.frequency.setValueAtTime(523.25, now); osc.frequency.setValueAtTime(659.25, now + 0.1); osc.frequency.setValueAtTime(783.99, now + 0.2); osc.frequency.setValueAtTime(1046.50, now + 0.3); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.6); osc.start(now); osc.stop(now + 0.6); return; }
+            const osc = audioCtx.createOscillator(); osc.connect(gainNode);
+            if (type === 'spawn' || type === 'level_up') { osc.type = 'square'; osc.frequency.setValueAtTime(330, now); osc.frequency.setValueAtTime(440, now + 0.05); osc.frequency.setValueAtTime(660, now + 0.1); gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); } 
+            else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(250, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.1); gainNode.gain.setValueAtTime(0.25, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); } 
+            else if (type === 'weapon') { osc.type = 'square'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(800, now + 0.05); osc.frequency.setValueAtTime(1200, now + 0.1); gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); } 
+            else if (type === 'boss') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.setValueAtTime(150, now + 0.15); osc.frequency.setValueAtTime(100, now + 0.3); osc.frequency.setValueAtTime(150, now + 0.45); osc.frequency.exponentialRampToValueAtTime(20, now + 1.2); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.linearRampToValueAtTime(0, now + 1.2); osc.start(now); osc.stop(now + 1.2); }
+        }
+
+        function scheduleOscillator(type, frequency, duration, volume, now) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(frequency, now);
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        function playBGM() {
+            if (bgmInterval || !isAudioEnabled || extinctionInProgress) return;
+            bgmStepIndex = 0;
+            bgmInterval = setInterval(() => {
+                if (!audioCtx || audioCtx.state === 'suspended') return;
+                const now = audioCtx.currentTime;
+                const step = BGM_PATTERN[bgmStepIndex];
+                if (step.mel > 0) {
+                    scheduleOscillator('square', step.mel, 0.18, 0.18, now);
+                    scheduleOscillator('triangle', step.mel * 2, 0.18, 0.04, now);
+                }
+                if (step.bass > 0) {
+                    scheduleOscillator('triangle', step.bass, 0.18, 0.14, now);
+                }
+                if (Math.random() < 0.35 && step.mel > 0) {
+                    scheduleOscillator('sawtooth', step.mel * 1.5, 0.12, 0.08, now + 0.04);
+                }
+                bgmStepIndex = (bgmStepIndex + 1) % BGM_PATTERN.length;
+            }, 220);
+        }
+        function stopBGM() { if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; } }
+
+        function checkExtinction() {
+            if (worldEverHadLife && entities.length === 0 && !extinctionInProgress) { extinctionInProgress = true; worldEverHadLife = false; stopBGM(); clearInterval(worldInterval); playSfx('horror'); const overlay = document.getElementById('extinction-overlay'); const whyContainer = document.getElementById('why-container'); let whyText = ""; for(let i=0; i<1200; i++) whyText += "為什麼"; whyContainer.innerText = whyText; overlay.style.display = 'flex'; setTimeout(() => { overlay.style.opacity = '1'; }, 50); addLog("系統", "⚠️ 警告：偵測到生命跡象為零。怨念覆蓋了世界...", "#ff0000"); setTimeout(() => { overlay.style.opacity = '0'; setTimeout(() => { overlay.style.display = 'none'; extinctionInProgress = false; worldInterval = setInterval(worldTick, currentTickRate); if (isAudioEnabled) playBGM(); }, 1000); }, 6000); } 
+            else if (entities.length > 0) { worldEverHadLife = true; }
+        }
+
+        function buildGrid() {
+            const worldEl = document.getElementById('world'); worldEl.innerHTML = ''; domGrid = [];
+            worldEl.style.gridTemplateColumns = `repeat(${WORLD_WIDTH}, minmax(0, 1fr))`; worldEl.style.gridTemplateRows = `repeat(${WORLD_HEIGHT}, minmax(0, 1fr))`;
+            for (let y = 0; y < WORLD_HEIGHT; y++) {
+                domGrid[y] = [];
+                for (let x = 0; x < WORLD_WIDTH; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.innerText = EMPTY_CHAR;
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.addEventListener('click', () => showCellInfo(x, y));
+                    worldEl.appendChild(cell);
+                    domGrid[y][x] = cell;
+                }
+            }
+            document.getElementById('stat-size').innerText = `地圖: ${WORLD_WIDTH}x${WORLD_HEIGHT}`;
+        }
+
+        function initWorld() { buildGrid(); addLog("系統", "神聖的年代開始。生物數量達到一定規模將建立國家，並設立皇都。"); updateStats(); worldInterval = setInterval(worldTick, currentTickRate); refreshSaveButtons(); }
+
+        function expandMap() {
+            const MAX_WORLD_WIDTH = 70; const MAX_WORLD_HEIGHT = 36;
+            if (WORLD_WIDTH >= MAX_WORLD_WIDTH || WORLD_HEIGHT >= MAX_WORLD_HEIGHT) return;
+            WORLD_WIDTH = Math.min(MAX_WORLD_WIDTH, WORLD_WIDTH + 7); WORLD_HEIGHT = Math.min(MAX_WORLD_HEIGHT, WORLD_HEIGHT + 4);
+            MAX_BUILDINGS_PER_RACE += 1; buildGrid(); drawWorld(); 
+        }
+
+        function spawnEntity(raceId) {
+            let attempts = 0; let x, y;
+            do { x = Math.floor(Math.random() * WORLD_WIDTH); y = Math.floor(Math.random() * WORLD_HEIGHT); attempts++; } while (getEntityAt(x, y) && attempts < 50);
+            if (attempts >= 50) return;
+            const race = RACES[raceId];
+            entities.push({ race: race, level: 0, hp: 2, maxHp: 2, baseDmg: 0, weapon: null, x: x, y: y, age: 0, id: Math.random().toString(36).substr(2, 9), isCustom: false });
+            playSfx('spawn'); drawWorld(); updateStats(); checkExtinction();
+        }
+
+        function spawnDemon() {
+            let x, y, attempts = 0;
+            do { x = Math.floor(Math.random() * WORLD_WIDTH); y = Math.floor(Math.random() * WORLD_HEIGHT); attempts++; } while (getEntityAt(x, y) && attempts < 50);
+            if (attempts < 50) {
+                entities.push({
+                    race: { id: 'DEMON', name: '惡魔', stages: ['魔', '魔', '魔', '魔'], color: 'var(--demon-color)' },
+                    level: 0, hp: 40, maxHp: 40, baseDmg: 3, weapon: null,
+                    x: x, y: y, age: 0, isNeutral: false, isCustom: false, isBoss: false, isDemon: true,
+                    timeSinceLastAttack: 0, isFrenzied: false,
+                    id: Math.random().toString(36).substr(2, 9)
+                });
+                playSfx('boss'); drawWorld(); updateStats(); checkExtinction();
+                addLog("降臨", `恐怖的【惡魔】降臨了，牠將無差別屠殺一切生命！`, "var(--demon-color)");
+            }
+        }
+
+        function openCustomModal() { document.getElementById('custom-modal-overlay').style.display = 'flex'; }
+        function closeCustomModal() { document.getElementById('custom-modal-overlay').style.display = 'none'; }
+
+        function submitCustomCharacter() {
+            const nameInput = document.getElementById('c-name').value.trim() || '神'; const displayChar = [...nameInput][0];
+            const hp = parseInt(document.getElementById('c-hp').value) || 10; const dmg = parseInt(document.getElementById('c-dmg').value) || 0;
+            const weaponId = document.getElementById('c-weapon').value; const color = document.getElementById('c-color').value;
+            const faction = document.getElementById('c-faction').value; const canBreed = document.getElementById('c-breed').checked;
+            closeCustomModal();
+            let attempts = 0; let x, y; do { x = Math.floor(Math.random() * WORLD_WIDTH); y = Math.floor(Math.random() * WORLD_HEIGHT); attempts++; } while (getEntityAt(x, y) && attempts < 50);
+            if (attempts >= 50) return;
+            let weaponObj = null; if (weaponId !== 'NONE') weaponObj = (weaponId === 'CHAIN_BLADE') ? { id: 'CHAIN_BLADE', name: '真·鎖刃', char: '刃', color: 'var(--boss-color)', bonus: 4 } : WEAPON_TYPES.find(w => w.id === weaponId);
+            entities.push({ race: { id: 'CUSTOM_' + Math.random().toString(), name: displayChar, stages: [displayChar, displayChar, displayChar, displayChar], color: color, buildingChar: '營', buildingColor: color, nationBg: hexToRgba(color, 0.15) }, isCustom: true, targetFaction: faction, canBreed: canBreed, level: 0, hp: hp, maxHp: hp, baseDmg: dmg, weapon: weaponObj, x: x, y: y, age: 0, isNeutral: false, id: Math.random().toString() });
+            playSfx('spawn'); drawWorld(); updateStats(); checkExtinction();
+        }
+
+        function spawnWeapons() { let count = 3 + Math.floor(Math.random() * 3); for (let i = 0; i < count; i++) { let x = Math.floor(Math.random() * WORLD_WIDTH); let y = Math.floor(Math.random() * WORLD_HEIGHT); if (!getEntityAt(x, y)) items.push({ x: x, y: y, type: WEAPON_TYPES[Math.floor(Math.random() * WEAPON_TYPES.length)], id: Math.random().toString() }); } drawWorld(); }
+
+        function spawnNeutral() {
+            const types = Object.keys(NEUTRALS); const avail = types.filter(type => entities.filter(e => e.race.id === type).length < 5);
+            if (avail.length === 0) return; let x, y, attempts = 0;
+            do { x = Math.floor(Math.random() * WORLD_WIDTH); y = Math.floor(Math.random() * WORLD_HEIGHT); attempts++; } while (getEntityAt(x, y) && attempts < 10);
+            if (attempts < 10) { const race = NEUTRALS[avail[Math.floor(Math.random() * avail.length)]]; entities.push({ race: race, level: 0, hp: race.id === 'BEAST' ? 2 : 1, maxHp: race.id === 'BEAST' ? 2 : 1, baseDmg: 0, weapon: null, x: x, y: y, age: 0, isNeutral: true, isCustom: false, id: Math.random().toString() }); updateStats(); checkExtinction(); }
+        }
+
+        function spawnRandomSuperNeutral() {
+            const types = Object.keys(SUPER_NEUTRALS); const race = SUPER_NEUTRALS[types[Math.floor(Math.random() * types.length)]]; let x, y, attempts = 0;
+            do { x = Math.floor(Math.random() * WORLD_WIDTH); y = Math.floor(Math.random() * WORLD_HEIGHT); attempts++; } while (getEntityAt(x, y) && attempts < 50);
+            if (attempts < 50) { entities.push({ race: race, level: 0, hp: 2, maxHp: 2, baseDmg: 0, weapon: null, x: x, y: y, age: 0, isNeutral: true, isSuperNeutral: true, isCustom: false, id: Math.random().toString() }); playSfx('spawn'); drawWorld(); updateStats(); checkExtinction(); }
+        }
+
+        function showCellInfo(x, y) {
+            const entity = getEntityAt(x, y);
+            const building = getBuildingAt(x, y);
+            if (!entity && !building) {
+                document.getElementById('entity-info-overlay').style.display = 'none';
+                return;
+            }
+
+            const overlay = document.getElementById('entity-info-overlay');
+            const title = document.getElementById('entity-info-title');
+            const meta = document.getElementById('entity-info-meta');
+            const image = document.getElementById('entity-info-image');
+            const description = document.getElementById('entity-info-description');
+
+            if (entity) {
+                const kind = entity.isBoss ? '首領' : entity.isDemon ? '惡魔' : entity.isNeutral ? '野生' : entity.isCustom ? '創造角色' : entity.race.name;
+                title.innerText = `生命資料：${entity.race.name}`;
+                meta.innerText = `類型：${kind} · 坐標：(${x}, ${y}) · 狀態：${getEntityState(entity)}`;
+                image.innerText = getEntityPortrait(entity);
+                description.innerText = getEntityDescription(entity);
+            } else {
+                title.innerText = `建築資料：${building.race.name}`;
+                meta.innerText = `${building.isCapital ? '皇都' : '建築'} · 坐標：(${x}, ${y}) · 所屬：${building.race.name}`;
+                image.innerText = getBuildingPortrait(building);
+                description.innerText = getBuildingDescription(building);
+            }
+            overlay.style.display = 'flex';
+        }
+
+        function getBuildingPortrait(building) {
+            if (building.isCapital) {
+                return `  /\\____\\  \n /  皇都  \\ \n/__________\\ \n`;
+            }
+            return `  [${building.race.buildingChar}${building.race.buildingChar}] \n /______\\ \n |  ${building.race.name.substr(0, 2)}  | \n`;
+        }
+
+        function getBuildingDescription(building) {
+            let lines = [];
+            lines.push(`建築：${building.isCapital ? '皇都' : building.race.buildingChar}`);
+            lines.push(`種族：${building.race.name}`);
+            lines.push(`耐久：${building.hp} / 20`);
+            if (building.isCapital) {
+                lines.push('說明：這座皇都是國家的心臟，象徵著權力與希望。');
+                lines.push('在文字之下，城牆如詩一般堅固，守護著民眾的夢與恐懼。');
+            } else {
+                lines.push('說明：這座建築為城市提供庇護與秩序的支撐。');
+                lines.push('它是生活的節點，承載了漫長歲月的平凡與輝煌。');
+            }
+            lines.push('預覽：建築屹立於文字世界中，與生物共存。');
+            return lines.join('\n');
+        }
+
+        function getEntityState(entity) {
+            let state = [];
+            if (entity.isDemon) state.push('憤怒中');
+            if (entity.isBoss) state.push('威儀森然');
+            if (entity.isKing) state.push('身披王冠');
+            if (entity.isInfected) state.push('染病');
+            if (entity.isFrenzied) state.push('狂暴');
+            if (entity.isNeutral) state.push('野性');
+            if (!state.length) state.push('平靜');
+            return state.join('，');
+        }
+
+        function closeEntityInfo() {
+            document.getElementById('entity-info-overlay').style.display = 'none';
+        }
+
+        function getEntityPortrait(entity) {
+            if (entity.isDemon) {
+                return `  /\\_/\\  \n (  0 0 ) \n  > ^ <  \n`;
+            }
+            if (entity.isBoss) {
+                return `  /\\___/\\ \n (  ^ ^  )\n  \\  =  / \n`;
+            }
+            switch (entity.race.id) {
+                case 'HUMAN': return `  o  \n /|\\ \n / \\ \n`;
+                case 'ELF': return `  /\\  \n /__\\ \n  ||  \n`;
+                case 'DWARF': return ` [##] \n /||\\ \n /  \\ \n`;
+                case 'DRAGON': return `  /\\  \n /~~\\ \n \\__/  \n`;
+                case 'CAT': return `  /\\_/\\ \n ( o.o )\n  > ^ < \n`;
+                case 'PENGUIN': return `  _~_  \n (o o) \n / V \\ \n`;
+                case 'SEALION': return `  ___  \n (o o) \n/  ^  \\ \n`;
+                case 'SEAL': return `  .--. \n (o_o) \n /   \\ \n`;
+                default: return `  ${entity.race.stages[0]}   \n /|\\  \n / \\  \n`;
+            }
+        }
+
+        function getEntityDescription(entity) {
+            let lines = [];
+            if (entity.isNeutral) {
+                lines.push(`種類：${entity.race.name}（野生）`);
+                lines.push('特性：自由奔放，循環於荒野與未知之間。');
+                lines.push('傳說它們是文字風景中的自由幽靈，悄然穿梭於世界邊界。');
+            } else if (entity.isDemon) {
+                lines.push('種類：惡魔');
+                lines.push('特性：無差別攻擊，心中只剩混沌與烈焰。');
+                lines.push('它的崛起，是這個世界最深的黑色注腳。');
+            } else if (entity.isBoss) {
+                lines.push(`種類：${entity.race.name}（首領）`);
+                lines.push('特性：主宰疆域，眾生畏懼它的目光。');
+                lines.push('它以強大的存在感扭轉周遭氣場，是群族的象徵。');
+            } else if (entity.isCustom) {
+                lines.push(`種類：自訂角色 ${entity.race.name}`);
+                lines.push(`特性：由創造者賦予的獨特靈魂。`);
+                lines.push(`目標傾向：${entity.targetFaction || '無'}`);
+                lines.push('每次出現都像是創世者的筆觸，帶來新一段故事。');
+            } else {
+                lines.push(`種類：${entity.race.name}`);
+                lines.push(`階級：${entity.race.stages[Math.min(entity.level, entity.race.stages.length - 1)]}`);
+                lines.push('特性：在世界中尋找命運的軌跡。');
+                lines.push('它的旅程由文字一筆一劃鋪展，破曉與黃昏間閃爍。');
+            }
+            lines.push(`生命：${entity.hp}/${entity.maxHp}`);
+            if (entity.weapon) lines.push(`武裝：${entity.weapon.name}（+${entity.weapon.bonus}）`);
+            if (entity.baseDmg) lines.push(`潛力：攻擊力 +${entity.baseDmg}`);
+            if (entity.isKing) lines.push('身份：王者之姿，守護國度。');
+            if (entity.isInfected) lines.push('狀態：被瘟疫侵蝕，步伐沈重。');
+            if (entity.isFrenzied) lines.push('狀態：陷入狂暴，無法自控。');
+            if (entity.weapon) lines.push('鋼鐵與文字共鳴，讓它在戰場上更具存在感。');
+            lines.push('詩意：這則生命在文字世界中，悄然綻放或者悄然凋零。');
+            return lines.join('\n');
+        }
+
+        function flingEntities() {
+            if (entities.length === 0) { addLog('彈飛', '世界中沒有生物可供彈飛。', '#aaaaaa'); return; }
+            const directions = [
+                { dx: 1, dy: 0, char: '→', name: '右方' },
+                { dx: -1, dy: 0, char: '←', name: '左方' },
+                { dx: 0, dy: 1, char: '↓', name: '下方' },
+                { dx: 0, dy: -1, char: '↑', name: '上方' },
+                { dx: 1, dy: -1, char: '↗', name: '右上方' },
+                { dx: 1, dy: 1, char: '↘', name: '右下方' },
+                { dx: -1, dy: -1, char: '↖', name: '左上方' },
+                { dx: -1, dy: 1, char: '↙', name: '左下方' }
+            ];
+            const dir = directions[Math.floor(Math.random() * directions.length)];
+            let movedCount = 0;
+            for (let entity of entities) {
+                const force = 2 + Math.floor(Math.random() * 3);
+                let target = null;
+                for (let step = force; step >= 1; step--) {
+                    const tx = Math.max(0, Math.min(WORLD_WIDTH - 1, entity.x + dir.dx * step));
+                    const ty = Math.max(0, Math.min(WORLD_HEIGHT - 1, entity.y + dir.dy * step));
+                    if (!getEntityAt(tx, ty) && !getBuildingAt(tx, ty) && !getRiverAt(tx, ty)) {
+                        target = { x: tx, y: ty, step };
+                        break;
+                    }
+                }
+                for (let step = 1; step <= force; step++) {
+                    const tx = Math.max(0, Math.min(WORLD_WIDTH - 1, entity.x + dir.dx * step));
+                    const ty = Math.max(0, Math.min(WORLD_HEIGHT - 1, entity.y + dir.dy * step));
+                    if (tx >= 0 && tx < WORLD_WIDTH && ty >= 0 && ty < WORLD_HEIGHT) {
+                        effects.push({ x: tx, y: ty, char: dir.char, color: 'var(--rain-color)', life: 3 });
+                    }
+                }
+                if (target && (target.x !== entity.x || target.y !== entity.y)) {
+                    entity.x = target.x;
+                    entity.y = target.y;
+                    movedCount++;
+                }
+            }
+            if (movedCount > 0) {
+                playSfx('disaster');
+                addLog('彈飛', `文字風暴將 ${movedCount} 個生物一同朝 ${dir.name} 彈飛，畫面宛如飛舞的筆劃。`, '#88ccff');
+                drawWorld(); updateStats();
+            } else {
+                addLog('彈飛', '筆勢雖勁，但生物仍固守原位。', '#aaaaaa');
+            }
+        }
+
+        function launchAirship() {
+            if (WORLD_WIDTH <= 0 || WORLD_HEIGHT <= 0) return;
+            const row = Math.max(1, Math.min(WORLD_HEIGHT - 2, Math.floor(WORLD_HEIGHT / 3) + Math.floor(Math.random() * Math.max(1, WORLD_HEIGHT / 3))));
+            const direction = Math.random() < 0.5 ? 1 : -1;
+            const startX = direction === 1 ? 0 : WORLD_WIDTH - 1;
+            const label = direction === 1 ? '從左往右' : '從右往左';
+            addLog('空投', `飛船 ${label} 橫跨地圖，釋放文字炸彈。`, '#88eeff');
+            for (let i = 0; i < WORLD_WIDTH; i++) {
+                const x = startX + direction * i;
+                const delay = i * 120;
+                setTimeout(() => {
+                    if (x < 0 || x >= WORLD_WIDTH) return;
+                    effects.push({ x: x, y: row, char: direction === 1 ? '>' : '<', color: 'var(--rain-color)', life: 2 });
+                    const bombY = Math.min(WORLD_HEIGHT - 1, row + 1);
+                    effects.push({ x: x, y: bombY, char: '爆', color: 'var(--fire-color)', life: 2 });
+                    effects.push({ x: x - 1, y: bombY, char: '轟', color: '#ff9944', life: 2 });
+                    effects.push({ x: x + 1, y: bombY, char: '裂', color: '#ff6644', life: 2 });
+                    const target = getEntityAt(x, bombY);
+                    if (target) {
+                        if (applyDamage(target, 4)) {
+                            if (target.weapon) items.push({ x: target.x, y: target.y, type: target.weapon, id: Math.random().toString() });
+                            entities = entities.filter(e => e.id !== target.id);
+                            updateStats();
+                            addLog('空投', `爆裂的文字衝擊，${target.race.name} 被擊退並破碎。`, '#ffbbbb');
+                        } else {
+                            addLog('空投', `${target.race.name} 被爆炸震撼，殘留文字在空中旋轉。`, '#ffdddd');
+                        }
+                    }
+                    const building = getBuildingAt(x, bombY);
+                    if (building) {
+                        building.hp -= 6;
+                        effects.push({ x: x, y: bombY - 1, char: '煙', color: '#cc7755', life: 3 });
+                        if (building.hp <= 0) {
+                            if (building.isCapital) addLog('空投', `皇都【${building.race.name}】在爆裂中瓦解。`, '#ff4444');
+                            buildings = buildings.filter(b => b.id !== building.id);
+                        }
+                    }
+                    drawWorld();
+                    if (i === WORLD_WIDTH - 1) {
+                        addLog('空投', '飛船飛越完畢，殘留爆炸文字雲煙逐漸消散。', '#99ddff');
+                    }
+                }, delay);
+            }
+            playSfx('disaster');
+        }
+
+        function spawnBoss(id) {
+            if (entities.filter(e => e.isBoss).length >= 1) return; let x, y, attempts = 0;
+            do { x = Math.floor(Math.random() * WORLD_WIDTH); y = Math.floor(Math.random() * WORLD_HEIGHT); attempts++; } while (getEntityAt(x, y) && attempts < 50);
+            if (attempts < 50) { entities.push({ race: BOSSES[id], level: 0, hp: 40, maxHp: 40, baseDmg: 0, weapon: { id: 'CHAIN_BLADE', name: '真·鎖刃', char: '刃', color: 'var(--boss-color)', bonus: 4 }, x: x, y: y, isNeutral: false, isBoss: true, isCustom: false, id: Math.random().toString() }); playSfx('boss'); drawWorld(); updateStats(); checkExtinction(); }
+        }
+
+        function spawnRiver() {
+            let x = Math.floor(Math.random() * WORLD_WIDTH); let y = Math.floor(Math.random() * WORLD_HEIGHT);
+            for(let i = 0; i < 8 + Math.floor(Math.random() * 5); i++) {
+                if (!getRiverAt(x, y)) rivers.push({x: x, y: y, id: Math.random().toString()});
+                let dirs = [[0,1], [0,-1], [1,0], [-1,0]]; let d = dirs[Math.floor(Math.random() * dirs.length)];
+                x = Math.max(0, Math.min(WORLD_WIDTH - 1, x + d[0])); y = Math.max(0, Math.min(WORLD_HEIGHT - 1, y + d[1]));
+            }
+            while(rivers.length > Math.floor((WORLD_WIDTH * WORLD_HEIGHT) * 0.08)) rivers.shift(); 
+            drawWorld();
+        }
+
+        function updateWeatherDisplay() {
+            const rainBtn = document.getElementById('btn-b');
+            const snowBtn = document.getElementById('btn-n');
+            rainBtn.classList.toggle('active-weather', currentWeather === 'RAIN');
+            snowBtn.classList.toggle('active-weather', currentWeather === 'SNOW');
+            const status = document.getElementById('weather-status');
+            if (status) {
+                if (currentWeather === 'RAIN') status.innerText = `天氣：降雨 (${weatherTimer})`;
+                else if (currentWeather === 'SNOW') status.innerText = `天氣：降雪 (${weatherTimer})`;
+                else status.innerText = '天氣：晴朗';
+            }
+        }
+
+        function spawnWeatherEffects() {
+            if (currentWeather === 'RAIN') {
+                const dropCount = 5 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < dropCount; i++) {
+                    const x = Math.floor(Math.random() * WORLD_WIDTH);
+                    const y = Math.floor(Math.random() * WORLD_HEIGHT);
+                    const char = Math.random() < 0.35 ? '滴' : '雨';
+                    effects.push({ x, y, char, color: 'var(--rain-color)', life: 1 + Math.floor(Math.random() * 2) });
+                }
+            } else if (currentWeather === 'SNOW') {
+                const flakeCount = 4 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < flakeCount; i++) {
+                    const x = Math.floor(Math.random() * WORLD_WIDTH);
+                    const y = Math.floor(Math.random() * WORLD_HEIGHT);
+                    const char = Math.random() < 0.5 ? '❄' : '雪';
+                    effects.push({ x, y, char, color: 'var(--snow-color)', life: 2 + Math.floor(Math.random() * 2) });
+                }
+            }
+        }
+
+        function triggerWeather(type) {
+            currentWeather = type;
+            weatherTimer = type === 'SNOW' ? 36 : 30;
+            if (type === 'RAIN' && isPlagueActive) {
+                isPlagueActive = false;
+                for (let e of entities) e.isInfected = false;
+                addLog('天氣', '細雨洗滌了瘟疫，黑暗逐漸消散。', 'var(--rain-color)');
+            } else if (type === 'SNOW') {
+                addLog('天氣', '片片雪花覆蓋大地，世界進入寧靜的白色時刻。', 'var(--snow-color)');
+            }
+            updateWeatherDisplay();
+            drawWorld();
+        }
+
+        function toggleBerserk() { isBerserkMode = !isBerserkMode; const btn = document.getElementById('btn-v'); if(isBerserkMode) { btn.classList.add('berserk-on'); btn.innerHTML = `<span class="hotkey">V</span> 狂暴: 開啟`; playSfx('boss'); } else { btn.classList.remove('berserk-on'); btn.innerHTML = `<span class="hotkey">V</span> 狂暴: 關閉`; } drawWorld(); }
+
+        function triggerSpecialEvent() {
+            if (buildings.length === 0) {
+                addLog('事件', '特殊事件未能降臨：世界目前尚無建築。', '#cccccc');
+                return;
+            }
+
+            const b = buildings[Math.floor(Math.random() * buildings.length)];
+            const raceName = b.race.name;
+            const title = b.isCapital ? '帝都奇蹟' : '聖地共鳴';
+            const effectChar = b.isCapital ? '✶' : '★';
+            const effectColor = b.isCapital ? '#ffd700' : '#aaffaa';
+            let healed = 0;
+            let spawned = 0;
+
+            for (let e of entities) {
+                if (e.race.id === b.race.id && !e.isDemon && Math.abs(e.x - b.x) + Math.abs(e.y - b.y) <= 3) {
+                    const oldHp = e.hp;
+                    e.hp = Math.min(e.maxHp, e.hp + 2);
+                    if (e.hp > oldHp) healed++;
+                    if (!e.isKing && !e.isBoss && e.level < 3 && Math.random() < 0.15) {
+                        e.level++;
+                    }
+                }
+            }
+
+            const surroundSpots = [];
+            for (let dy = -2; dy <= 2; dy++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                    const tx = b.x + dx;
+                    const ty = b.y + dy;
+                    if (tx < 0 || tx >= WORLD_WIDTH || ty < 0 || ty >= WORLD_HEIGHT) continue;
+                    if (!getEntityAt(tx, ty) && !getBuildingAt(tx, ty) && !getRiverAt(tx, ty)) {
+                        surroundSpots.push({ x: tx, y: ty });
+                    }
+                }
+            }
+
+            const spawnLimit = Math.min(2, surroundSpots.length);
+            for (let i = 0; i < spawnLimit; i++) {
+                const spotIndex = Math.floor(Math.random() * surroundSpots.length);
+                const spot = surroundSpots.splice(spotIndex, 1)[0];
+                entities.push({
+                    race: b.race,
+                    level: 0,
+                    hp: 2,
+                    maxHp: 2,
+                    baseDmg: 0,
+                    weapon: null,
+                    x: spot.x,
+                    y: spot.y,
+                    age: 0,
+                    isNeutral: false,
+                    isSuperNeutral: false,
+                    isCustom: false,
+                    id: Math.random().toString()
+                });
+                spawned++;
+            }
+
+            if (b.isCapital) {
+                b.hp = Math.min(b.hp + 3, 30);
+            }
+
+            for (let i = 0; i < 8; i++) {
+                const tx = Math.max(0, Math.min(WORLD_WIDTH - 1, b.x + Math.floor(Math.random() * 5) - 2));
+                const ty = Math.max(0, Math.min(WORLD_HEIGHT - 1, b.y + Math.floor(Math.random() * 5) - 2));
+                effects.push({ x: tx, y: ty, char: effectChar, color: effectColor, life: 3 });
+            }
+
+            addLog('事件', `【${raceName}】${title}降臨，${healed} 位生物獲得滋養，${spawned} 位新人亮相。`, effectColor);
+            playSfx('boss');
+            updateStats();
+            drawWorld();
+        }
+
+        function getEntityAt(x, y) { return entities.find(e => e.x === x && e.y === y); }
+        function getBuildingAt(x, y) { return buildings.find(b => b.x === x && b.y === y); }
+        function getItemAt(x, y) { return items.find(i => i.x === x && i.y === y); }
+        function getRiverAt(x, y) { return rivers.find(r => r.x === x && r.y === y); }
+
+        function findNearestBuilding(entity, raceId, maxRange = 6) {
+            let best = null;
+            let bestDist = Infinity;
+            for (let b of buildings) {
+                if (raceId && b.race.id !== raceId) continue;
+                const dist = Math.abs(b.x - entity.x) + Math.abs(b.y - entity.y);
+                if (dist < bestDist && dist <= maxRange) {
+                    bestDist = dist;
+                    best = b;
+                }
+            }
+            return best;
+        }
+
+        function applyDamage(entity, amount) {
+            entity.hp -= amount;
+            if (entity.hp <= 0) {
+                let rate = [0, 0.4, 0.7, 0.95][entity.level] || 0; if (entity.isCustom) rate += 0.2; 
+                if (Math.random() < rate && !entity.isDemon) { entity.hp = 1; return false; } return true;
+            } return false;
+        }
+
+        // 惡魔專屬範圍傷害技能
+        function demonAoE(demon, toRemove) {
+            effects.push({ x: demon.x, y: demon.y, char: '爆', color: 'var(--demon-color)', life: 3 });
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    let tx = demon.x + dx, ty = demon.y + dy;
+                    if (tx >= 0 && tx < WORLD_WIDTH && ty >= 0 && ty < WORLD_HEIGHT) {
+                        effects.push({ x: tx, y: ty, char: '炎', color: 'var(--demon-color)', life: 2 });
+                        let target = getEntityAt(tx, ty);
+                        if (target && !target.isDemon && !toRemove.has(target.id)) {
+                            if (applyDamage(target, 2 + (demon.baseDmg||0))) toRemove.add(target.id);
+                        }
+                        let b = getBuildingAt(tx, ty);
+                        if (b) {
+                            b.hp -= 2;
+                            if (b.hp <= 0) {
+                                if (b.isCapital) addLog("戰報", `惡魔的烈焰摧毀了【${b.race.name}】的皇都！`, "#ff4444");
+                                buildings = buildings.filter(bl => bl.id !== b.id);
+                            }
+                        }
+                    }
+                }
+            }
+            playSfx('disaster');
+        }
+
+        function worldTick() {
+            if (extinctionInProgress) return; 
+            for (let e of entities) { e.age = Math.min(12, (e.age || 0) + 1); }
+
+            if (loveTimer > 0) { loveTimer--; if (loveTimer === 0) { document.getElementById('love-overlay').style.display = 'none'; addLog("系統", "愛的波動消散了，世界恢復了平靜與爭奪...", "#aaaaaa"); } }
+
+            if (!isWarActive && entities.length > WORLD_WIDTH * WORLD_HEIGHT * 0.6) {
+                isWarActive = true;
+                warTimer = 28;
+                document.getElementById('war-banner').style.display = 'block';
+                addLog('戰爭', '戰雲漸起，勢力間的矛盾正在悄然積累，文字世界的寧靜破碎前的幽光即將綻放。', '#d4d48d');
+            }
+            if (isWarActive) {
+                warTimer--;
+                for (let i = 0; i < 3; i++) {
+                    const x = Math.floor(Math.random() * WORLD_WIDTH);
+                    const y = Math.floor(Math.random() * WORLD_HEIGHT);
+                    effects.push({ x: x, y: y, char: '戰', color: 'rgba(212,212,141,0.28)', life: 2 });
+                }
+                if (warTimer <= 0 || entities.length < WORLD_WIDTH * WORLD_HEIGHT * 0.45) {
+                    isWarActive = false;
+                    document.getElementById('war-banner').style.display = 'none';
+                    addLog('戰爭', '緊張氣氛緩和，戰雲逐漸散去，短暫的衝突在文字間落幕。', '#aab18d');
+                }
+            }
+
+            let wildCount = entities.filter(e => e.isNeutral).length; if (wildCount < 25 && Math.random() < 0.2) spawnNeutral();
+
+            effects = effects.filter(ef => { ef.life -= 1; return ef.life > 0; });
+            spawnWeatherEffects();
+            if (weatherTimer > 0) { weatherTimer--; if(weatherTimer===0) { currentWeather='NONE'; updateWeatherDisplay(); } }
+
+            let shuffledEntities = [...entities].sort(() => Math.random() - 0.5);
+            let toRemove = new Set(); let activeInfections = 0;
+
+            let popMap = {};
+            for (let e of entities) {
+                if (!e.isNeutral && !e.isSuperNeutral && !e.isBoss && !e.isDemon) {
+                    if (!popMap[e.race.id]) popMap[e.race.id] = [];
+                    popMap[e.race.id].push(e);
+                }
+            }
+
+            for (let raceId in popMap) {
+                let members = popMap[raceId];
+                if (!activeNations[raceId] && members.length >= NATION_THRESHOLD) {
+                    let nationName = generateNationName(raceId, members[0].race.name);
+                    let newKing = members.sort((a,b) => b.level - a.level)[0];
+                    newKing.isKing = true; newKing.level = 3; newKing.hp = 15; newKing.maxHp = 15; newKing.baseDmg += 2;
+                    
+                    let myBuildings = buildings.filter(b => b.race.id === raceId);
+                    let capital;
+                    if (myBuildings.length > 0) {
+                        capital = myBuildings[0];
+                    } else {
+                        let emptySpots = [];
+                        for(let dy=-1; dy<=1; dy++){
+                            for(let dx=-1; dx<=1; dx++){
+                                let tx=newKing.x+dx, ty=newKing.y+dy;
+                                if(tx>=0 && tx<WORLD_WIDTH && ty>=0 && ty<WORLD_HEIGHT && !getBuildingAt(tx, ty)){
+                                    emptySpots.push({x:tx, y:ty});
+                                }
+                            }
+                        }
+                        if(emptySpots.length > 0){
+                            let spot = emptySpots[Math.floor(Math.random()*emptySpots.length)];
+                            capital = { race: newKing.race, x: spot.x, y: spot.y, hp: 20, id: Math.random().toString(), isCapital: true };
+                            buildings.push(capital);
+                        }
+                    }
+                    
+                    if(capital){
+                        capital.isCapital = true;
+                        capital.hp = 20;
+                        activeNations[raceId] = { name: nationName, kingId: newKing.id, capitalId: capital.id };
+                    } else {
+                        activeNations[raceId] = { name: nationName, kingId: newKing.id };
+                    }
+                    
+                    addLog("建國", `【${members[0].race.name}】建立了【${nationName}】，並設立了皇都！`, members[0].race.color);
+                    playSfx('boss');
+                } else if (activeNations[raceId]) {
+                    if (members.length <= COLLAPSE_THRESHOLD) {
+                        addLog("滅亡", `【${activeNations[raceId].name}】人口凋零，國家正式崩潰滅亡...`, "#888888");
+                        delete activeNations[raceId];
+                        members.forEach(m => m.isKing = false);
+                        buildings.filter(b => b.race.id === raceId).forEach(b => {
+                            if (b.isCapital) { b.isCapital = false; b.hp = Math.min(b.hp, 4); }
+                        });
+                    } else {
+                        let king = members.find(m => m.id === activeNations[raceId].kingId);
+                        if (!king || toRemove.has(king.id) || king.hp <= 0) {
+                            let aliveMembers = members.filter(m => !toRemove.has(m.id) && m.id !== activeNations[raceId].kingId);
+                            if (aliveMembers.length > 0) {
+                                let newKing = aliveMembers.sort((a,b) => b.level - a.level)[0];
+                                newKing.isKing = true; newKing.level = 3; newKing.hp = Math.max(newKing.hp, 10);
+                                activeNations[raceId].kingId = newKing.id;
+                                addLog("繼承", `【${activeNations[raceId].name}】的新王登基了！`, newKing.race.color);
+                            }
+                        }
+                        
+                        let myBuildings = buildings.filter(b => b.race.id === raceId);
+                        let capital = myBuildings.find(b => b.id === activeNations[raceId].capitalId);
+                        if (!capital && myBuildings.length > 0) {
+                            capital = myBuildings[0];
+                            capital.isCapital = true;
+                            capital.hp = 20;
+                            activeNations[raceId].capitalId = capital.id;
+                            addLog("遷都", `【${activeNations[raceId].name}】在倖存的據點中重新設立了皇都！`, members[0].race.color);
+                        }
+                    }
+                }
+            }
+
+            for (let e of shuffledEntities) {
+                if (toRemove.has(e.id)) continue;
+
+                // 惡魔狂暴計算
+                if (e.isDemon) {
+                    e.timeSinceLastAttack++;
+                    if (e.timeSinceLastAttack > 15 && !e.isFrenzied) {
+                        e.isFrenzied = true;
+                        addLog("發狂", `【惡魔】因為找不到獵物，陷入了狂暴加速狀態！`, "var(--demon-color)");
+                    }
+                }
+                
+                if (e.isInfected) {
+                    activeInfections++;
+                    if (Math.random() < 0.08) { if (applyDamage(e, 1)) { toRemove.add(e.id); plagueCapacity--; if (plagueCapacity <= 0) isPlagueActive=false; continue; } }
+                    if (isPlagueActive && Math.random() < 0.2) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                let neighbor = getEntityAt(e.x + dx, e.y + dy);
+                                if (neighbor && !neighbor.isInfected && !toRemove.has(neighbor.id) && !neighbor.isBoss) if (Math.random() < 0.4) neighbor.isInfected = true; 
+                            }
+                        }
+                    }
+                }
+
+                if (currentWeather === 'SNOW' && !(e.isBoss || e.race.id === 'PENGUIN' || e.race.id === 'SEAL' || e.race.id === 'SEALION' || (e.isCustom && e.targetFaction === 'ELF')) && Math.random() < 0.5) continue;
+
+                if (!e.isNeutral && !e.isBoss && !e.isDemon && e.level < 3 && !e.isKing) {
+                    let evoChance = [0.01, 0.005, 0.001][e.level] || 0;
+                    if (Math.random() < evoChance) { e.level++; playSfx('level_up'); }
+                }
+
+                let currentMaxBuildings = MAX_BUILDINGS_PER_RACE + (activeNations[e.race.id] ? 2 : 0);
+                if (!e.isNeutral && !e.isBoss && !e.isDemon && buildings.filter(b => b.race.id === e.race.id).length < currentMaxBuildings && Math.random() < 0.005 && !getBuildingAt(e.x, e.y) && !getRiverAt(e.x, e.y)) {
+                    buildings.push({ race: e.race, x: e.x, y: e.y, hp: 4, id: Math.random().toString(), isCapital: false });
+                }
+
+                // 行動迴圈：狂暴惡魔可以行動 2 次
+                let actionCount = (e.isDemon && e.isFrenzied) ? 2 : 1;
+                for (let act = 0; act < actionCount; act++) {
+                    if (toRemove.has(e.id)) break;
+
+                    let dx = Math.floor(Math.random() * 3) - 1; let dy = Math.floor(Math.random() * 3) - 1;
+                    
+                    if (e.isDemon) {
+                        // 惡魔無差別尋找最近的獵物
+                        let seekTarget = null; let nearestDist = Infinity;
+                        for (let other of entities) {
+                            if (other === e || toRemove.has(other.id) || other.isDemon) continue;
+                            let dist = Math.abs(e.x - other.x) + Math.abs(e.y - other.y);
+                            if (dist < nearestDist) { nearestDist = dist; seekTarget = other; }
+                        }
+                        if (seekTarget) {
+                            dx = seekTarget.x > e.x ? 1 : (seekTarget.x < e.x ? -1 : 0);
+                            dy = seekTarget.y > e.y ? 1 : (seekTarget.y < e.y ? -1 : 0);
+                        }
+                    } else if (e.isKing) {
+                        let capital = buildings.find(b => activeNations[e.race.id] && b.id === activeNations[e.race.id].capitalId);
+                        if (capital) {
+                            if (Math.abs(e.x - capital.x) + Math.abs(e.y - capital.y) > 2) {
+                                dx = capital.x > e.x ? 1 : (capital.x < e.x ? -1 : 0);
+                                dy = capital.y > e.y ? 1 : (capital.y < e.y ? -1 : 0);
+                            } else {
+                                if(Math.random() < 0.5) { dx = 0; dy = 0; }
+                            }
+                        } else {
+                            if(Math.random() < 0.5) { dx = 0; dy = 0; }
+                        }
+                    } else if (!e.isBoss && !e.isSuperNeutral) {
+                        let seekTarget = null; let nearestDist = Infinity;
+                        let seekAny = loveTimer > 0; let seekKin = !seekAny && Math.random() < 0.65;
+                        if (seekAny || seekKin) {
+                            for (let other of entities) {
+                                if (other === e || toRemove.has(other.id) || other.isBoss || other.isSuperNeutral || other.isDemon) continue;
+                                let isSameRace = (other.race.id === e.race.id);
+                                if (seekAny || (seekKin && isSameRace)) {
+                                    let dist = Math.abs(e.x - other.x) + Math.abs(e.y - other.y);
+                                    if (dist < nearestDist) { nearestDist = dist; seekTarget = other; }
+                                }
+                            }
+                        }
+                        if (seekTarget && nearestDist > 1) {
+                            dx = seekTarget.x > e.x ? 1 : (seekTarget.x < e.x ? -1 : 0);
+                            dy = seekTarget.y > e.y ? 1 : (seekTarget.y < e.y ? -1 : 0);
+                            if (Math.random() < 0.2) dx = Math.floor(Math.random() * 3) - 1;
+                            if (Math.random() < 0.2) dy = Math.floor(Math.random() * 3) - 1;
+                        }
+                    }
+
+                    if (!e.isNeutral && !e.isBoss && !e.isDemon) {
+                        const targetBuilding = findNearestBuilding(e, e.race.id, 6);
+                        if (targetBuilding && Math.random() < 0.65) {
+                            const buildingDist = Math.abs(targetBuilding.x - e.x) + Math.abs(targetBuilding.y - e.y);
+                            if (buildingDist > 1) {
+                                dx = targetBuilding.x > e.x ? 1 : (targetBuilding.x < e.x ? -1 : 0);
+                                dy = targetBuilding.y > e.y ? 1 : (targetBuilding.y < e.y ? -1 : 0);
+                                if (Math.random() < 0.25) dx = Math.floor(Math.random() * 3) - 1;
+                                if (Math.random() < 0.25) dy = Math.floor(Math.random() * 3) - 1;
+                            }
+                        }
+                    }
+
+                    let nx = e.x + dx; let ny = e.y + dy;
+                    if (nx < 0 || nx >= WORLD_WIDTH || ny < 0 || ny >= WORLD_HEIGHT || (nx===e.x && ny===e.y)) continue;
+
+                    let targetEntity = getEntityAt(nx, ny); let targetBuilding = getBuildingAt(nx, ny);
+
+                    if (!targetEntity) {
+                        if (targetBuilding && ((targetBuilding.race.id !== e.race.id && (!e.isNeutral || isBerserkMode)) || e.isDemon)) {
+                            targetBuilding.hp -= ((e.race.id === 'DRAGON' || e.level >= 2 || e.isBoss || e.isDemon) ? 3 : 1) + (e.weapon ? e.weapon.bonus : 0) + (e.baseDmg||0);
+                            if (e.isDemon) { e.timeSinceLastAttack = 0; e.isFrenzied = false; }
+                            if (targetBuilding.hp <= 0) { 
+                                if (targetBuilding.isCapital) {
+                                    addLog("戰報", `震驚！【${targetBuilding.race.name}】的皇都遭到摧毀了！`, "#ff4444");
+                                }
+                                buildings = buildings.filter(b => b.id !== targetBuilding.id); 
+                                e.x = nx; e.y = ny; 
+                            } 
+                        } else { e.x = nx; e.y = ny; }
+                    } else if (!toRemove.has(targetEntity.id)) {
+                        if (loveTimer > 0 && !e.isBoss && !targetEntity.isBoss && !e.isSuperNeutral && !targetEntity.isSuperNeutral && !e.isDemon && !targetEntity.isDemon) { 
+                            handleLove(e, targetEntity); 
+                        } else { 
+                            handleInteraction(e, targetEntity, toRemove); 
+                        }
+                    }
+                } // End Action Loop
+            }
+
+            if (toRemove.size > 0) {
+                for (let e of entities) if (toRemove.has(e.id) && e.weapon) items.push({ x: e.x, y: e.y, type: e.weapon, id: Math.random().toString() });
+                entities = entities.filter(e => !toRemove.has(e.id)); updateStats();
+            }
+            
+            for (let e of entities) {
+                if (!e.weapon && !e.isNeutral && !e.isDemon) {
+                    let itemOnGround = getItemAt(e.x, e.y);
+                    if (itemOnGround) { e.weapon = itemOnGround.type; items = items.filter(i => i.id !== itemOnGround.id); playSfx('weapon'); }
+                }
+            }
+            if (isPlagueActive && activeInfections === 0 && toRemove.size === 0) isPlagueActive = false;
+            
+            drawWorld(); checkExtinction(); 
+        }
+
+        function showAttackEffect(attacker, defender) {
+            const midX = Math.round((attacker.x + defender.x) / 2);
+            const midY = Math.round((attacker.y + defender.y) / 2);
+            const dx = Math.sign(defender.x - attacker.x);
+            const dy = Math.sign(defender.y - attacker.y);
+            const positions = [{ x: midX, y: midY }];
+            if (attacker.x !== defender.x || attacker.y !== defender.y) {
+                positions.push({ x: midX - dx, y: midY - dy });
+                positions.push({ x: midX + dx, y: midY + dy });
+            }
+            for (let p of positions) {
+                if (p.x >= 0 && p.x < WORLD_WIDTH && p.y >= 0 && p.y < WORLD_HEIGHT) {
+                    effects.push({ x: p.x, y: p.y, char: '斬', color: '#ffcc88', life: 2 });
+                }
+            }
+        }
+
+        function handleInteraction(attacker, defender, toRemove) {
+            if (attacker.isSuperNeutral || defender.isSuperNeutral) return; 
+            
+            if (attacker.isBoss || defender.isBoss) {
+                let boss = attacker.isBoss ? attacker : defender; let victim = attacker.isBoss ? defender : attacker;
+                if (victim.isBoss) return; 
+                
+                if (attacker.isDemon) { attacker.timeSinceLastAttack = 0; attacker.isFrenzied = false; }
+                if (defender.isDemon) { defender.timeSinceLastAttack = 0; defender.isFrenzied = false; }
+                showAttackEffect(attacker, victim);
+                if (applyDamage(victim, 5)) { toRemove.add(victim.id); playSfx('hit'); if (attacker.isBoss) { attacker.x = defender.x; attacker.y = defender.y; } }
+                if (Math.random() < (victim.level * 0.15 + (victim.weapon ? 0.2 : 0.05)) && !toRemove.has(victim.id)) { 
+                    if (applyDamage(boss, (victim.weapon ? victim.weapon.bonus : 1) + (victim.baseDmg||0))) { toRemove.add(boss.id); playSfx('hit'); }
+                } return;
+            }
+
+            // 惡魔攻擊判定
+            if (attacker.isDemon || defender.isDemon) {
+                if (attacker.isDemon && defender.isDemon) return; // 惡魔互不攻擊
+                let demon = attacker.isDemon ? attacker : defender;
+                let victim = attacker.isDemon ? defender : attacker;
+                
+                demon.timeSinceLastAttack = 0; demon.isFrenzied = false;
+                
+                if (Math.random() < 0.35) { demonAoE(demon, toRemove); }
+                
+                if (!toRemove.has(victim.id)) { // 如果沒有在 AoE 中死亡
+                    showAttackEffect(attacker, victim);
+                    if (applyDamage(victim, 4 + (demon.baseDmg||0))) {
+                        toRemove.add(victim.id); playSfx('hit');
+                        if (attacker.isDemon) { attacker.x = defender.x; attacker.y = defender.y; }
+                    }
+                } else if (attacker.isDemon) {
+                    attacker.x = defender.x; attacker.y = defender.y;
+                }
+                
+                if (!toRemove.has(victim.id) && Math.random() < 0.3) {
+                    showAttackEffect(victim, demon);
+                    if (applyDamage(demon, (victim.weapon?victim.weapon.bonus:1) + (victim.baseDmg||0))) {
+                        toRemove.add(demon.id); playSfx('hit');
+                    }
+                }
+                return;
+            }
+
+            if (isBerserkMode && !attacker.isNeutral) { if (defender.isNeutral) return; } 
+            else { if (attacker.race.id === defender.race.id || (attacker.isNeutral && defender.isNeutral)) return; }
+
+            if (attacker.race.id === 'DRAGON') { showAttackEffect(attacker, defender); if (applyDamage(defender, 2)) { toRemove.add(defender.id); attacker.x = defender.x; attacker.y = defender.y; } return; }
+            if (defender.race.id === 'DRAGON') { showAttackEffect(defender, attacker); if (applyDamage(attacker, 2)) { toRemove.add(attacker.id); } return; }
+
+            if (Math.random() > 0.5) {
+                let winner, loser;
+                let advantage = attacker.level - defender.level + (attacker.weapon?attacker.weapon.bonus:0) + (attacker.baseDmg||0) - (defender.weapon?defender.weapon.bonus:0) - (defender.baseDmg||0);
+                if (Math.random() > (0.5 - (advantage * 0.15))) { winner = attacker; loser = defender; } else { winner = defender; loser = attacker; }
+                
+                showAttackEffect(winner, loser);
+                if (applyDamage(loser, 1 + (winner.baseDmg || 0) + (winner.weapon ? winner.weapon.bonus : 0))) {
+                    toRemove.add(loser.id); playSfx('hit');
+                    if (winner === attacker) { attacker.x = defender.x; attacker.y = defender.y; }
+                }
+            }
+        }
+
+        function showDeathScream(raceName) {
+            const overlay = document.getElementById('scream-overlay'); const container = document.getElementById('world-container');
+            const screams = [ `「為什麼要殺死我們【${raceName}】...」`, `「創世神啊...為什麼！？」`, `「好痛...」`, `「不要...」`];
+            overlay.innerText = screams[Math.floor(Math.random() * screams.length)]; overlay.style.animation = 'none'; void overlay.offsetWidth; 
+            overlay.style.animation = 'shakeScreen 0.05s infinite, fadeOutScream 2.5s forwards';
+            container.style.boxShadow = 'inset 0 0 100px 50px rgba(255, 0, 0, 0.7)'; setTimeout(() => { container.style.boxShadow = 'none'; }, 400); playSfx('scream');
+        }
+
+        function triggerDisaster(type) {
+            const d = DISASTERS[type]; const cx = Math.floor(Math.random() * WORLD_WIDTH); const cy = Math.floor(Math.random() * WORLD_HEIGHT);
+            let toRemove = new Set(); let bToRemove = new Set(); let lastKilled = null;
+
+            for (let y = 0; y < WORLD_HEIGHT; y++) {
+                for (let x = 0; x < WORLD_WIDTH; x++) {
+                    if (Math.hypot(x - cx, y - cy) <= d.radius) {
+                        let entity = getEntityAt(x, y);
+                        if (entity) {
+                            if (type === 'PLAGUE') { if (!entity.isInfected && !entity.isBoss) { entity.isInfected = true; } } 
+                            else { if (applyDamage(entity, 2)) { toRemove.add(entity.id); lastKilled = entity; } }
+                        }
+                        if (type !== 'PLAGUE' && getBuildingAt(x,y)) { 
+                            let b = getBuildingAt(x,y); 
+                            b.hp-=5; 
+                            if(b.hp<=0) {
+                                if (b.isCapital) addLog("戰報", `災難降臨！【${b.race.name}】的皇都在爆裂聲中倒塌。`, "#ff4444");
+                                bToRemove.add(b.id); 
+                            }
+                        }
+                        const blastChars = ['爆','轟','裂','焰','煙'];
+                        const char = blastChars[(Math.abs(x-cx) + Math.abs(y-cy)) % blastChars.length];
+                        effects.push({ x: x, y: y, char, color: d.color, life: 2 + Math.random() * 3 });
+                        if (char === '爆' || char === '轟') {
+                            effects.push({ x: x, y: y, char: '裂', color: '#ff7744', life: 1 });
+                        }
+                    }
+                }
+            }
+
+            if (toRemove.size > 0) {
+                for (let e of entities) if (toRemove.has(e.id) && e.weapon) items.push({ x: e.x, y: e.y, type: e.weapon, id: Math.random().toString() });
+                entities = entities.filter(e => !toRemove.has(e.id)); updateStats();
+            }
+            if (bToRemove.size > 0) buildings = buildings.filter(b => !bToRemove.has(b.id));
+
+            if (type === 'PLAGUE') { if (!isPlagueActive) { isPlagueActive = true; plagueCapacity = Math.max(3, Math.floor(entities.length * 0.4)); } playSfx('disaster'); } 
+            else { playSfx('disaster'); if (lastKilled && entities.length > 0) setTimeout(() => showDeathScream(lastKilled.race.name), 250); }
+            drawWorld(); checkExtinction(); 
+        }
+
+        function drawWorld() {
+            for (let y = 0; y < WORLD_HEIGHT; y++) {
+                for (let x = 0; x < WORLD_WIDTH; x++) {
+                    let cell = domGrid[y][x]; cell.innerText = EMPTY_CHAR;
+                    cell.style.color = 'var(--text-color)';
+                    cell.style.backgroundColor = 'transparent';
+                    cell.style.textDecoration = 'none';
+                    cell.style.outline = 'none';
+                    cell.style.boxShadow = 'none';
+                    cell.style.zIndex = '0';
+                    cell.className = 'cell';
+                    cell.style.fontWeight = 'normal';
+                    cell.style.textShadow = 'none';
+                    cell.style.fontSize = '';
+                    cell.style.lineHeight = '';
+                    cell.style.transform = 'none';
+                }
+            }
+
+            if (currentWeather === 'RAIN' || currentWeather === 'SNOW') {
+                const overlay = currentWeather === 'RAIN' ? 'rgba(30, 60, 100, 0.10)' : 'rgba(255, 255, 255, 0.10)';
+                for (let y = 0; y < WORLD_HEIGHT; y++) {
+                    for (let x = 0; x < WORLD_WIDTH; x++) {
+                        const cell = domGrid[y][x];
+                        if (cell.style.backgroundColor === 'transparent') cell.style.backgroundColor = overlay;
+                    }
+                }
+            }
+
+            for (let b of buildings) {
+                if (activeNations[b.race.id]) {
+                    let radius = b.isCapital ? 2 : 1;
+                    for(let dy=-radius; dy<=radius; dy++){
+                        for(let dx=-radius; dx<=radius; dx++){
+                            if (radius === 2 && Math.abs(dx) + Math.abs(dy) > 3) continue;
+                            let tx = b.x + dx, ty = b.y + dy;
+                            if(tx>=0 && tx<WORLD_WIDTH && ty>=0 && ty<WORLD_HEIGHT) {
+                                domGrid[ty][tx].style.backgroundColor = b.race.nationBg;
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (let b of buildings) { 
+                let cell = domGrid[b.y][b.x]; 
+                if (b.isCapital) {
+                    cell.innerText = '都';
+                    cell.style.color = '#ffd700'; 
+                    cell.style.backgroundColor = '#440000'; 
+                    cell.style.outline = `2px solid #ffd700`;
+                    cell.style.outlineOffset = '-1px';
+                    cell.style.zIndex = '3';
+                } else {
+                    cell.innerText = b.race.buildingChar; 
+                    cell.style.color = b.race.buildingColor; 
+                    cell.style.backgroundColor = '#333'; 
+                }
+            }
+            for (let item of items) { let cell = domGrid[item.y][item.x]; cell.innerText = item.type.char; cell.style.color = item.type.color; }
+
+            for (let e of entities) {
+                let cell = domGrid[e.y][e.x];
+                let charStr = e.race.stages[Math.min(e.level, 3)];
+                
+                if (isBerserkMode && !e.isNeutral && !e.isBoss) cell.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
+                else if (e.race.id && activeNations[e.race.id] && cell.style.backgroundColor === 'transparent') cell.style.backgroundColor = e.race.nationBg; 
+                
+                if (e.isBoss) { charStr = e.race.stages[0]; cell.style.outline = `2px solid #ff0`; cell.style.outlineOffset = '-2px'; }
+                
+                if (e.isDemon && e.isFrenzied) {
+                    charStr = '怒';
+                    cell.style.textShadow = '0 0 8px #ff0000';
+                    cell.style.fontWeight = 'bold';
+                }
+
+                const size = Math.min(20, 8 + (e.age || 0) * 1);
+                cell.style.fontSize = `${size}px`;
+                cell.style.lineHeight = '1';
+                cell.style.color = e.race.color;
+                if (e.weapon && !e.isBoss && !e.isDemon) { cell.style.textDecoration = 'underline'; cell.style.textDecorationColor = e.weapon.color; }
+                if (e.hp === 1 && Math.random() < 0.4 && !e.isBoss && !e.isDemon) { charStr = '危'; cell.style.color = '#ff4444'; } 
+                else if (e.isInfected && Math.random() < 0.3) { charStr = '病'; cell.style.color = 'var(--plague-color)'; }
+                
+                if (e.isKing) {
+                    cell.classList.add('king-crown');
+                    cell.style.boxShadow = `inset 0 0 5px ${e.race.color}`;
+                    cell.style.fontWeight = 'bold';
+                    cell.style.zIndex = '5';
+                }
+
+                cell.innerText = charStr;
+            }
+
+            for (let ef of effects) {
+                if (ef.y >= 0 && ef.y < WORLD_HEIGHT && ef.x >= 0 && ef.x < WORLD_WIDTH) {
+                    let cell = domGrid[ef.y][ef.x]; cell.innerText = ef.char; cell.style.color = ef.color;
+                    if (ef.char !== '+' && ef.char !== '雨' && ef.char !== '滴' && ef.char !== '雪' && ef.char !== '❄' && ef.char !== '♥') {
+                        if (ef.char === '爆' || ef.char === '轟') cell.style.backgroundColor = 'rgba(255, 100, 0, 0.55)';
+                        else if (ef.char === '裂' || ef.char === '焰') cell.style.backgroundColor = 'rgba(255, 160, 80, 0.45)';
+                        else if (ef.char === '煙') cell.style.backgroundColor = 'rgba(120, 80, 40, 0.4)';
+                        else cell.style.backgroundColor = 'rgba(100, 0, 0, 0.3)';
+                        cell.style.textShadow = '0 0 4px rgba(255,255,255,0.7)';
+                    }
+                }
+            }
+            updateWeatherDisplay();
+        }
+
+        function updateStats() {
+            let counts = { HUMAN: 0, ELF: 0, DWARF: 0, DRAGON: 0, DEMON: 0, WILD: 0, CUSTOM: 0 };
+            for (let e of entities) { 
+                if (e.isCustom) counts.CUSTOM++; 
+                else if (e.isDemon) counts.DEMON++;
+                else if (e.isNeutral) counts.WILD++; 
+                else if (counts[e.race.id] !== undefined) counts[e.race.id]++; 
+            }
+            
+            document.getElementById('stat-human').innerText = `${activeNations['HUMAN'] ? '王 ' : ''}人: ${counts.HUMAN}`; 
+            document.getElementById('stat-elf').innerText = `${activeNations['ELF'] ? '王 ' : ''}精: ${counts.ELF}`;
+            document.getElementById('stat-dwarf').innerText = `${activeNations['DWARF'] ? '王 ' : ''}矮: ${counts.DWARF}`; 
+            document.getElementById('stat-dragon').innerText = `${activeNations['DRAGON'] ? '王 ' : ''}龍: ${counts.DRAGON}`;
+            document.getElementById('stat-demon').innerText = `魔: ${counts.DEMON}`;
+            document.getElementById('stat-wild').innerText = `野: ${counts.WILD}`; 
+            
+            let customHasNation = Object.keys(activeNations).some(id => id.startsWith('CUSTOM_'));
+            document.getElementById('stat-custom').innerText = `${customHasNation ? '王 ' : ''}自: ${counts.CUSTOM}`;
+        }
+
+        function addLog(type, message, color = "var(--text-color)") {
+            const logEl = document.getElementById('log'); const entry = document.createElement('div'); entry.className = 'log-entry';
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+            entry.innerHTML = `<span style="color:#777">[${time}] ${type} &gt;</span> <span style="color:${color}">${message}</span>`;
+            logEl.appendChild(entry); logs.push(entry); if (logs.length > 5) logEl.removeChild(logs.shift()); 
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        window.onload = initWorld;
+
+    </script>
+</body>
+</html>

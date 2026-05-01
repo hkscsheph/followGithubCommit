@@ -1,19 +1,603 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Other page</title>
+<head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="script.js"></script>
-  </head>
-  <body>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/page2.html" aria-current="page">Other page</a>
-    </nav>
-    <main>
-      <h1>My other page</h1>
-    </main>
-  </body>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONARCH // ULTIMATE_VAPOR_v80</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=VT323&display=swap');
+        
+        :root { 
+            --pink: #ff00ff; --cyan: #00f2ff; --yellow: #fff200; 
+            --bg: #05010a; --green: #00ff66; --red: #ff3e3e;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; overflow: hidden; 
+            background: var(--bg); font-family: 'Orbitron', sans-serif; 
+            color: #fff; user-select: none;
+        }
+
+        canvas { display: block; filter: contrast(1.1) saturate(1.2); }
+
+        /* --- HUD LAYER --- */
+        #hud { 
+            position: absolute; inset: 0; pointer-events: none; z-index: 100; 
+            display: flex; flex-direction: column; justify-content: space-between; 
+            padding: 40px; opacity: 0; transition: 1s ease-in-out;
+        }
+
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 30px; height: 30px; transform: translate(-50%, -50%);
+            border: 2px solid rgba(0, 242, 255, 0.5); border-radius: 50%;
+        }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: var(--cyan);
+        }
+        #crosshair::before { top: 50%; left: -5px; width: 10px; height: 2px; }
+        #crosshair::after { left: 50%; top: -5px; width: 2px; height: 10px; }
+
+        .panel {
+            background: rgba(5, 1, 10, 0.8); border: 1px solid var(--cyan);
+            padding: 20px; backdrop-filter: blur(15px);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+        }
+
+        .bar-container { width: 300px; height: 12px; background: rgba(255,255,255,0.1); margin: 8px 0; position: relative; }
+        .bar-fill { height: 100%; transition: width 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        #integrity { background: var(--pink); box-shadow: 0 0 15px var(--pink); }
+        #heat-level { background: var(--cyan); box-shadow: 0 0 15px var(--cyan); }
+        #exp-bar { background: var(--yellow); height: 4px; width: 0%; transition: 0.1s; }
+
+        #radar-module {
+            position: absolute; top: 40px; left: 40px; width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(255,0,255,0.1) 0%, rgba(0,0,0,0.8) 80%);
+            border: 2px solid var(--pink); border-radius: 50%; overflow: hidden;
+        }
+        #radar-sweep {
+            position: absolute; width: 100%; height: 100%;
+            background: conic-gradient(from 0deg, transparent, var(--pink));
+            opacity: 0.2; animation: sweep 4s linear infinite;
+        }
+        @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        #reload-prompt {
+            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
+            color: var(--red); font-size: 1.5rem; display: none;
+            text-shadow: 0 0 10px var(--red); animation: flash 0.4s infinite;
+        }
+        
+        .overlay {
+            position: absolute; inset: 0; z-index: 1000;
+            background: #000; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; text-align: center;
+        }
+
+        .glitch-text {
+            font-size: 6rem; font-weight: 900; letter-spacing: 20px;
+            text-shadow: 3px 0 var(--cyan), -3px 0 var(--pink);
+            animation: glitch 2s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); } 20% { transform: skew(2deg); }
+            21% { transform: skew(-5deg); } 25% { transform: skew(0deg); }
+        }
+
+        .btn {
+            background: transparent; border: 2px solid var(--cyan); color: var(--cyan);
+            padding: 15px 50px; cursor: pointer; font-family: 'Orbitron';
+            font-size: 1rem; letter-spacing: 5px; margin-top: 30px; transition: 0.3s;
+        }
+        .btn:hover { background: var(--cyan); color: #000; box-shadow: 0 0 30px var(--cyan); }
+
+        #damage-tint {
+            position: absolute; inset: 0; pointer-events: none;
+            box-shadow: inset 0 0 100px var(--red); opacity: 0; transition: 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen" class="overlay">
+        <h1 class="glitch-text">MONARCH</h1>
+        <p style="color: var(--pink); font-family: 'VT323'; font-size: 1.4rem;">NEURAL_LINK_ESTABLISHED // V80.4</p>
+        <div id="loading-bar-container" style="width: 300px; height: 4px; background: #222; margin-top: 20px;">
+            <div id="loading-fill" style="width: 0%; height: 100%; background: var(--cyan);"></div>
+        </div>
+        <button class="btn" id="start-btn" style="display: none;">INITIALIZE_SYSTEM</button>
+    </div>
+
+    <div id="damage-tint"></div>
+    <div id="reload-prompt">MAGAZINE_EMPTY // PRESS [R]</div>
+
+    <div id="hud">
+        <div id="radar-module">
+            <div id="radar-sweep"></div>
+            <canvas id="radar-canvas" style="position:absolute; inset:0;"></canvas>
+        </div>
+
+        <div style="position: absolute; top: 40px; right: 40px; text-align: right;">
+            <div style="font-family: 'VT323'; color: var(--yellow);">XP_LEVEL</div>
+            <div class="bar-container" style="width: 200px; height: 6px;"><div id="exp-bar"></div></div>
+            <div id="score" style="font-size: 2rem; color: #fff;">000000</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+            <div class="panel">
+                <div style="font-family: 'VT323'; color: var(--pink);">CHASSIS_STABILITY</div>
+                <div class="bar-container"><div id="integrity" class="bar-fill" style="width: 100%;"></div></div>
+                <div style="font-family: 'VT323'; color: var(--cyan); margin-top: 10px;">RAIL_THERMALS</div>
+                <div class="bar-container" style="border-color: var(--cyan);"><div id="heat-level" class="bar-fill" style="width: 100%;"></div></div>
+            </div>
+
+            <div id="crosshair"></div>
+
+            <div class="panel" style="text-align: right; border-color: var(--yellow); min-width: 150px;">
+                <div id="ammo-count" style="font-size: 4rem; font-weight: 900; line-height: 1; color: var(--yellow);">20</div>
+                <div style="font-family: 'VT323'; font-size: 1.2rem;">PHASE: <span id="wave-id" style="color: var(--pink);">01</span></div>
+                <div style="font-family: 'VT323'; color: var(--green);">THREATS: <span id="mob-val">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        /**
+         * MONARCH v80.4 - THE OVERGLOW REDUX
+         * High-Performance FPS Engine for Modern Browsers
+         */
+
+        // --- CONSTANTS & CONFIG ---
+        const CONFIG = {
+            AMMO_MAX: 20,
+            PLAYER_SPEED: 280,
+            PLAYER_ACCEL: 4500,
+            FRICTION: 12,
+            BULLET_SPEED: 6500,
+            GRAVITY: -9.8,
+            COLORS: {
+                cyan: 0x00f2ff,
+                pink: 0xff00ff,
+                yellow: 0xfff200,
+                bg: 0x05010a
+            }
+        };
+
+        // --- PARTICLE SYSTEM ---
+        class ParticleSystem {
+            constructor(scene) {
+                this.scene = scene;
+                this.particles = [];
+                this.geometry = new THREE.BoxGeometry(1, 1, 1);
+            }
+
+            spawn(pos, color, count = 10) {
+                for(let i=0; i<count; i++) {
+                    const p = new THREE.Mesh(
+                        this.geometry,
+                        new THREE.MeshBasicMaterial({ color: color })
+                    );
+                    p.position.copy(pos);
+                    const vel = new THREE.Vector3(
+                        (Math.random() - 0.5) * 200,
+                        Math.random() * 200,
+                        (Math.random() - 0.5) * 200
+                    );
+                    this.particles.push({ mesh: p, vel: vel, life: 1.0 });
+                    this.scene.add(p);
+                }
+            }
+
+            update(dt) {
+                for(let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.life -= dt * 2;
+                    p.vel.y += CONFIG.GRAVITY * 100 * dt;
+                    p.mesh.position.add(p.vel.clone().multiplyScalar(dt));
+                    p.mesh.scale.setScalar(p.life);
+                    if(p.life <= 0) {
+                        this.scene.remove(p.mesh);
+                        this.particles.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        // --- ENEMY ACTOR ---
+        class Enemy {
+            constructor(scene, wave, playerPos) {
+                this.scene = scene;
+                this.alive = true;
+                this.hp = 80 + (wave * 30);
+                this.maxHp = this.hp;
+                this.speed = 150 + (wave * 15);
+                
+                this.mesh = this.createModel();
+                this.scene.add(this.mesh);
+                
+                // Random spawn on circle
+                const ang = Math.random() * Math.PI * 2;
+                const dist = 4000 + Math.random() * 2000;
+                this.mesh.position.set(
+                    playerPos.x + Math.cos(ang) * dist,
+                    25,
+                    playerPos.z + Math.sin(ang) * dist
+                );
+            }
+
+            createModel() {
+                const group = new THREE.Group();
+                const body = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(25, 0),
+                    new THREE.MeshStandardMaterial({ 
+                        color: 0x000, 
+                        emissive: CONFIG.COLORS.pink,
+                        wireframe: true 
+                    })
+                );
+                const core = new THREE.Mesh(
+                    new THREE.BoxGeometry(15, 15, 15),
+                    new THREE.MeshBasicMaterial({ color: CONFIG.COLORS.pink })
+                );
+                group.add(body, core);
+                return group;
+            }
+
+            update(dt, playerPos, particles) {
+                if(!this.alive) return;
+
+                // Move toward player
+                const dir = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
+                dir.y = 0;
+                this.mesh.position.add(dir.multiplyScalar(this.speed * dt));
+                this.mesh.rotation.y += dt * 2;
+                this.mesh.rotation.x += dt;
+
+                // Hover effect
+                this.mesh.position.y = 30 + Math.sin(Date.now() * 0.005) * 10;
+            }
+
+            takeDamage(amt, particles) {
+                this.hp -= amt;
+                particles.spawn(this.mesh.position, CONFIG.COLORS.pink, 5);
+                if(this.hp <= 0 && this.alive) {
+                    this.alive = false;
+                    particles.spawn(this.mesh.position, CONFIG.COLORS.pink, 25);
+                    this.scene.remove(this.mesh);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        // --- WEAPON SYSTEM ---
+        class Railgun {
+            constructor(camera) {
+                this.camera = camera;
+                this.group = new THREE.Group();
+                this.isReloading = false;
+                this.recoil = 0;
+                this.createModel();
+                this.camera.add(this.group);
+                
+                this.group.position.set(1.5, -1.2, -2.5);
+            }
+
+            createModel() {
+                const mat = new THREE.MeshStandardMaterial({ color: 0x111, metalness: 0.9, roughness: 0.1 });
+                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 4), mat);
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 2), mat);
+                body.position.z = 1;
+
+                const light = new THREE.PointLight(CONFIG.COLORS.cyan, 0, 10);
+                light.position.set(0, 0, -2);
+                this.muzzleFlash = light;
+
+                this.group.add(barrel, body, light);
+            }
+
+            update(dt) {
+                this.recoil = THREE.MathUtils.lerp(this.recoil, 0, dt * 10);
+                this.group.position.z = -2.5 + this.recoil;
+                this.muzzleFlash.intensity = THREE.MathUtils.lerp(this.muzzleFlash.intensity, 0, dt * 15);
+            }
+
+            trigger() {
+                this.recoil = 0.8;
+                this.muzzleFlash.intensity = 5;
+            }
+
+            reload() {
+                if(this.isReloading) return;
+                this.isReloading = true;
+                // Simple visual reload tilt
+                const startRot = this.group.rotation.x;
+                let t = 0;
+                const anim = () => {
+                    t += 0.05;
+                    this.group.rotation.x = startRot - Math.sin(t * Math.PI) * 0.5;
+                    if(t < 1) requestAnimationFrame(anim);
+                    else {
+                        this.group.rotation.x = startRot;
+                        this.isReloading = false;
+                    }
+                };
+                anim();
+            }
+        }
+
+        // --- MAIN ENGINE ---
+        class MonarchEngine {
+            constructor() {
+                this.state = {
+                    running: false,
+                    hp: 100,
+                    ammo: CONFIG.AMMO_MAX,
+                    wave: 1,
+                    score: 0,
+                    xp: 0,
+                    mobs: [],
+                    bullets: []
+                };
+
+                this.input = { w:0, a:0, s:0, d:0 };
+                this.mouse = { x: 0, y: 0 };
+                this.phys = { vel: new THREE.Vector3() };
+                this.clock = new THREE.Clock();
+
+                this.initThree();
+                this.initWorld();
+                this.particles = new ParticleSystem(this.scene);
+                this.weapon = new Railgun(this.camera);
+                this.setupEvents();
+                this.loadingSequence();
+            }
+
+            initThree() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(CONFIG.COLORS.bg);
+                this.scene.fog = new THREE.FogExp2(CONFIG.COLORS.bg, 0.0005);
+
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 50000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.toneMapping = THREE.ReinhardToneMapping;
+                document.body.appendChild(this.renderer.domElement);
+
+                this.pivot = new THREE.Group();
+                this.pivot.position.y = 40;
+                this.scene.add(this.pivot);
+                this.pivot.add(this.camera);
+
+                const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambient);
+
+                this.sun = new THREE.DirectionalLight(CONFIG.COLORS.cyan, 1);
+                this.sun.position.set(500, 1000, 500);
+                this.scene.add(this.sun);
+            }
+
+            initWorld() {
+                // Ground
+                const grid = new THREE.GridHelper(20000, 100, CONFIG.COLORS.pink, 0x222222);
+                this.scene.add(grid);
+
+                // Monoliths
+                const geo = new THREE.BoxGeometry(1, 1, 1);
+                for(let i=0; i<300; i++) {
+                    const h = 200 + Math.random() * 1500;
+                    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ 
+                        color: 0x000, 
+                        emissive: i % 2 === 0 ? CONFIG.COLORS.cyan : CONFIG.COLORS.pink,
+                        emissiveIntensity: 0.2
+                    }));
+                    const ang = Math.random() * Math.PI * 2;
+                    const rad = 2000 + Math.random() * 10000;
+                    m.position.set(Math.cos(ang)*rad, h/2, Math.sin(ang)*rad);
+                    m.scale.set(100, h, 100);
+                    this.scene.add(m);
+                }
+            }
+
+            loadingSequence() {
+                const fill = document.getElementById('loading-fill');
+                let p = 0;
+                const interval = setInterval(() => {
+                    p += Math.random() * 5;
+                    fill.style.width = p + '%';
+                    if(p >= 100) {
+                        clearInterval(interval);
+                        document.getElementById('start-btn').style.display = 'block';
+                    }
+                }, 50);
+            }
+
+            setupEvents() {
+                document.getElementById('start-btn').onclick = () => {
+                    document.body.requestPointerLock();
+                    document.getElementById('boot-screen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('boot-screen').style.display = 'none';
+                        document.getElementById('hud').style.opacity = '1';
+                        this.state.running = true;
+                        this.spawnWave();
+                        this.loop();
+                    }, 500);
+                };
+
+                window.onkeydown = (e) => {
+                    const k = e.key.toLowerCase();
+                    if(this.input.hasOwnProperty(k)) this.input[k] = 1;
+                    if(k === 'r') this.handleReload();
+                };
+                window.onkeyup = (e) => {
+                    const k = e.key.toLowerCase();
+                    if(this.input.hasOwnProperty(k)) this.input[k] = 0;
+                };
+
+                window.onmousemove = (e) => {
+                    if(!this.state.running) return;
+                    this.pivot.rotation.y -= e.movementX * 0.002;
+                    this.camera.rotation.x -= e.movementY * 0.002;
+                    this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
+                };
+
+                window.onmousedown = () => this.shoot();
+                window.onresize = () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+            }
+
+            handleReload() {
+                if(this.state.ammo < CONFIG.AMMO_MAX && !this.weapon.isReloading) {
+                    this.weapon.reload();
+                    setTimeout(() => {
+                        this.state.ammo = CONFIG.AMMO_MAX;
+                        this.updateUI();
+                    }, 1000);
+                }
+            }
+
+            shoot() {
+                if(!this.state.running || this.state.ammo <= 0 || this.weapon.isReloading) return;
+
+                this.state.ammo--;
+                this.weapon.trigger();
+                
+                const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.getWorldQuaternion(new THREE.Quaternion()));
+                const bGeo = new THREE.BoxGeometry(0.5, 0.5, 8);
+                const bMat = new THREE.MeshBasicMaterial({ color: CONFIG.COLORS.cyan });
+                const bMesh = new THREE.Mesh(bGeo, bMat);
+                
+                bMesh.position.copy(this.pivot.position);
+                bMesh.lookAt(this.pivot.position.clone().add(dir));
+                
+                this.scene.add(bMesh);
+                this.state.bullets.push({ mesh: bMesh, dir: dir, life: 2.0 });
+                this.updateUI();
+            }
+
+            spawnWave() {
+                const count = 5 + (this.state.wave * 3);
+                for(let i=0; i<count; i++) {
+                    this.state.mobs.push(new Enemy(this.scene, this.state.wave, this.pivot.position));
+                }
+                this.updateUI();
+            }
+
+            updateUI() {
+                document.getElementById('integrity').style.width = this.state.hp + "%";
+                document.getElementById('heat-level').style.width = (this.state.ammo / CONFIG.AMMO_MAX * 100) + "%";
+                document.getElementById('ammo-count').innerText = this.state.ammo;
+                document.getElementById('mob-val').innerText = this.state.mobs.length;
+                document.getElementById('wave-id').innerText = this.state.wave.toString().padStart(2, '0');
+                document.getElementById('score').innerText = this.state.score.toString().padStart(6, '0');
+                document.getElementById('exp-bar').style.width = (this.state.xp % 100) + "%";
+                document.getElementById('reload-prompt').style.display = this.state.ammo <= 0 ? 'block' : 'none';
+            }
+
+            drawRadar() {
+                const canvas = document.getElementById('radar-canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 200; canvas.height = 200;
+                ctx.clearRect(0,0,200,200);
+
+                ctx.fillStyle = CONFIG.COLORS.cyan;
+                ctx.fillRect(98, 98, 4, 4);
+
+                this.state.mobs.forEach(m => {
+                    const relX = (m.mesh.position.x - this.pivot.position.x) * 0.02;
+                    const relZ = (m.mesh.position.z - this.pivot.position.z) * 0.02;
+                    const dist = Math.sqrt(relX*relX + relZ*relZ);
+                    if(dist < 90) {
+                        ctx.fillStyle = "#ff00ff";
+                        ctx.beginPath();
+                        ctx.arc(100 + relX, 100 + relZ, 3, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            loop() {
+                if(!this.state.running) return;
+                requestAnimationFrame(() => this.loop());
+
+                const dt = Math.min(this.clock.getDelta(), 0.1);
+
+                // --- PLAYER MOVEMENT ---
+                const move = new THREE.Vector3();
+                if(this.input.w) move.z -= 1;
+                if(this.input.s) move.z += 1;
+                if(this.input.a) move.x -= 1;
+                if(this.input.d) move.x += 1;
+                
+                move.normalize().applyQuaternion(this.pivot.quaternion);
+                this.phys.vel.x += move.x * CONFIG.PLAYER_ACCEL * dt;
+                this.phys.vel.z += move.z * CONFIG.PLAYER_ACCEL * dt;
+
+                this.pivot.position.add(this.phys.vel.clone().multiplyScalar(dt));
+                this.phys.vel.multiplyScalar(1 - CONFIG.FRICTION * dt);
+
+                // --- SYSTEMS ---
+                this.weapon.update(dt);
+                this.particles.update(dt);
+                this.drawRadar();
+
+                // --- BULLET LOGIC ---
+                for(let i=this.state.bullets.length-1; i>=0; i--) {
+                    const b = this.state.bullets[i];
+                    b.life -= dt;
+                    b.mesh.position.add(b.dir.clone().multiplyScalar(CONFIG.BULLET_SPEED * dt));
+
+                    let hit = false;
+                    for(let j=this.state.mobs.length-1; j>=0; j--) {
+                        const m = this.state.mobs[j];
+                        if(b.mesh.position.distanceTo(m.mesh.position) < 50) {
+                            if(m.takeDamage(40, this.particles)) {
+                                this.state.mobs.splice(j, 1);
+                                this.state.score += 100;
+                                this.state.xp += 20;
+                            }
+                            hit = true;
+                            break;
+                        }
+                    }
+
+                    if(hit || b.life <= 0) {
+                        this.scene.remove(b.mesh);
+                        this.state.bullets.splice(i, 1);
+                    }
+                }
+
+                // --- ENEMY LOGIC ---
+                this.state.mobs.forEach(m => {
+                    m.update(dt, this.pivot.position, this.particles);
+                    if(m.mesh.position.distanceTo(this.pivot.position) < 60) {
+                        this.state.hp -= 20 * dt;
+                        document.getElementById('damage-tint').style.opacity = '0.5';
+                        setTimeout(() => document.getElementById('damage-tint').style.opacity = '0', 100);
+                        if(this.state.hp <= 0) location.reload();
+                    }
+                });
+
+                if(this.state.mobs.length === 0) {
+                    this.state.wave++;
+                    this.spawnWave();
+                }
+
+                this.updateUI();
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // Boot
+        window.onload = () => new MonarchEngine();
+    </script>
+</body>
 </html>

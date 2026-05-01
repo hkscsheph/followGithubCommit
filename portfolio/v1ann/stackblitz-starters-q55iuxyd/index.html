@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Snake</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: #00FF41; /* Matrix Green */
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            border: 5px solid #333;
+            background-color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+        }
+        .score-board {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div class="score-board">Score: <span id="scoreVal">0</span></div>
+    <canvas id="snakeGame" width="400" height="400"></canvas>
+    <p>Use Arrow Keys to Move</p>
+
+    <script>
+        const canvas = document.getElementById("snakeGame");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("scoreVal");
+
+        const box = 20; // Size of one square
+        let score = 0;
+        let gameActive = true;
+
+        // Initialize Snake in the middle
+        let snake = [{ x: 10 * box, y: 10 * box }];
+        
+        // Initial food position
+        let food = {
+            x: Math.floor(Math.random() * 19 + 1) * box,
+            y: Math.floor(Math.random() * 19 + 1) * box
+        };
+
+        let d; // Direction
+
+        document.addEventListener("keydown", direction);
+
+        function direction(event) {
+            if(!gameActive) {
+                resetGame();
+                return;
+            }
+            if(event.keyCode == 37 && d != "RIGHT") d = "LEFT";
+            else if(event.keyCode == 38 && d != "DOWN") d = "UP";
+            else if(event.keyCode == 39 && d != "LEFT") d = "RIGHT";
+            else if(event.keyCode == 40 && d != "UP") d = "DOWN";
+        }
+
+        function collision(head, array) {
+            for(let i = 0; i < array.length; i++) {
+                if(head.x == array[i].x && head.y == array[i].y) return true;
+            }
+            return false;
+        }
+
+        function draw() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Snake
+            for(let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i == 0) ? "#00FF41" : "#008F11";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            // Draw Food
+            ctx.fillStyle = "#FF3131";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            // Old head position
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            // Move direction
+            if( d == "LEFT") snakeX -= box;
+            if( d == "UP") snakeY -= box;
+            if( d == "RIGHT") snakeX += box;
+            if( d == "DOWN") snakeY += box;
+
+            // Check if Snake eats food
+            if(snakeX == food.x && snakeY == food.y) {
+                score++;
+                scoreElement.innerHTML = score;
+                food = {
+                    x: Math.floor(Math.random() * 19 + 1) * box,
+                    y: Math.floor(Math.random() * 19 + 1) * box
+                };
+            } else {
+                // Remove the tail
+                snake.pop();
+            }
+
+            // New Head
+            let newHead = { x: snakeX, y: snakeY };
+
+            // Game Over rules
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(game);
+                gameActive = false;
+                ctx.fillStyle = "white";
+                ctx.font = "30px Courier New";
+                ctx.fillText("GAME OVER", canvas.width/6.5, canvas.height/2);
+                ctx.font = "15px Courier New";
+                ctx.fillText("Press any key to restart", canvas.width/5, canvas.height/1.7);
+            }
+
+            snake.unshift(newHead);
+        }
+
+        function resetGame() {
+            score = 0;
+            scoreElement.innerHTML = score;
+            snake = [{ x: 10 * box, y: 10 * box }];
+            d = undefined;
+            gameActive = true;
+            game = setInterval(draw, 100);
+        }
+
+        let game = setInterval(draw, 100);
+    </script>
+</body>
+</html>

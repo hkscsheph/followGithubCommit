@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小魚清道夫 - 手機電腦通用版</title>
+    <style>
+        * { touch-action: none; } /* 防止手機瀏覽器縮放與翻滾 */
+        body {
+            margin: 0; background: #001219;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; color: white; font-family: sans-serif;
+            overflow: hidden;
+        }
+        #game-container { position: relative; width: 100%; max-width: 400px; height: 90vh; }
+        canvas { 
+            background: linear-gradient(to bottom, #00b4d8, #0077b6); 
+            display: block; width: 100%; height: 100%;
+            border-radius: 15px; border: 3px solid #caf0f8;
+        }
+        .ui-layer {
+            position: absolute; top: 10px; width: 100%;
+            text-align: center; pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        #rank-screen {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            flex-direction: column; justify-content: center; align-items: center;
+            border-radius: 15px; z-index: 10;
+        }
+        .rank-emoji { font-size: 80px; margin-bottom: 10px; }
+        button {
+            margin-top: 20px; padding: 15px 40px; font-size: 1.2rem; 
+            cursor: pointer; background: #ffde59; border: none; 
+            border-radius: 50px; font-weight: bold; color: #333;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="game-container">
+    <div class="ui-layer">
+        <h2 id="stats">等級: 1 | 進度: 0/5</h2>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="rank-screen">
+        <h1 style="color: #ffde59;">遊戲結束</h1>
+        <div id="rank-icon" class="rank-emoji"></div>
+        <h2 id="rank-text"></h2>
+        <p id="final-score"></p>
+        <button onclick="location.reload()">再玩一次</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const stats = document.getElementById('stats');
+    const rankScreen = document.getElementById('rank-screen');
+
+    // 固定邏輯解析度，Canvas 會自動縮放適應螢幕
+    canvas.width = 400;
+    canvas.height = 600;
+
+    let level = 1;
+    let collected = 0;
+    let goal = 5;
+    let score = 0;
+    let isGameOver = false;
+    let playerX = canvas.width / 2;
+    let pooCooldown = 0;
+
+    const drops = [];
+    const hazards = [];
+
+    // --- 控制邏輯：同時支援滑鼠與觸控 ---
+    function handleMove(e) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX;
+        
+        if (e.touches) { // 觸控事件
+            clientX = e.touches[0].clientX;
+        } else { // 滑鼠事件
+            clientX = e.clientX;
+        }
+        
+        // 根據縮放比例計算邏輯座標
+        const scaleX = canvas.width / rect.width;
+        playerX = (clientX - rect.left) * scaleX;
+
+        // 邊界限制
+        if (playerX < 30) playerX = 30;
+        if (playerX > canvas.width - 30) playerX = canvas.width - 30;
+    }
+
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('touchmove', (e) => {
+        handleMove(e);
+        e.preventDefault(); // 防止手機頁面被拉動
+    }, { passive: false });
+
+    function spawn() {
+        if (Math.random() < 0.03 && drops.length < 3) {
+            drops.push({ x: 40 + Math.random() * (canvas.width - 80), y: -30, speed: 3 + (level * 0.5) });
+        }
+        
+        if (pooCooldown > 0) {
+            pooCooldown--;
+        } else if (Math.random() < 0.015 && hazards.length < 2) {
+            hazards.push({ x: 40 + Math.random() * (canvas.width - 80), y: -30, speed: 3.5 + (level * 0.4) });
+            pooCooldown = 120; // 嚴格限制大便生成頻率
+        }
+    }
+
+    function showRanking() {
+        isGameOver = true;
+        rankScreen.style.display = 'flex';
+        let rank = "", emoji = "";
+
+        if (score >= 400) { rank = "海中霸主"; emoji = "🐋"; }
+        else if (score >= 200) { rank = "深海巨鯊"; emoji = "🦈"; }
+        else if (score >= 100) { rank = "活潑小魚"; emoji = "🐠"; }
+        else { rank = "平凡蝦米"; emoji = "🦐"; }
+
+        document.getElementById('rank-icon').innerText = emoji;
+        document.getElementById('rank-text').innerText = rank;
+        document.getElementById('final-score').innerText = "最終得分: " + score;
+    }
+
+    function update() {
+        if (isGameOver) return;
+        spawn();
+
+        // 水滴邏輯
+        for (let i = drops.length - 1; i >= 0; i--) {
+            drops[i].y += drops[i].speed;
+            if (Math.hypot(drops[i].x - playerX, drops[i].y - (canvas.height - 80)) < 50) {
+                drops.splice(i, 1);
+                collected++;
+                score += 10;
+                if (collected >= goal) { level++; collected = 0; goal += 3; }
+            } else if (drops[i].y > canvas.height) {
+                showRanking(); // 漏掉水滴就結束
+            }
+        }
+
+        // 大便邏輯
+        for (let i = hazards.length - 1; i >= 0; i--) {
+            hazards[i].y += hazards[i].speed;
+            if (Math.hypot(hazards[i].x - playerX, hazards[i].y - (canvas.height - 80)) < 40) {
+                showRanking(); // 碰到大便就結束
+            } else if (hazards[i].y > canvas.height) {
+                hazards.splice(i, 1);
+            }
+        }
+        stats.innerText = `等級: ${level} | 進度: ${collected}/${goal}`;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.font = "32px Arial";
+        drops.forEach(d => ctx.fillText("💧", d.x, d.y));
+        
+        ctx.font = "40px Arial";
+        hazards.forEach(h => ctx.fillText("💩", h.x, h.y));
+
+        ctx.font = "60px Arial";
+        ctx.fillText("🐟", playerX, canvas.height - 80);
+
+        if (!isGameOver) {
+            update();
+            requestAnimationFrame(draw);
+        }
+    }
+
+    draw();
+</script>
+</body>
+</html>

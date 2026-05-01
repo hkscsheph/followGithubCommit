@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 猜畫大冒險</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --primary-color: #007bff;
+            --accent-color: #28a745;
+            --danger-color: #dc3545;
+        }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #333; margin-bottom: 5px; }
+        .info { color: #666; margin-bottom: 20px; }
+        
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        canvas {
+            cursor: crosshair;
+            display: block;
+            touch-action: none; /* 防止手機端捲動，專注畫圖 */
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .btn-clear { background-color: var(--danger-color); }
+        .btn-guess { background-color: var(--primary-color); }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+
+        #result-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            min-width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        #prediction-text {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        /* 載入動畫 */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ddd;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <h2 style="margin-top: 20px;">AI 腦袋讀取中...</h2>
+    </div>
+
+    <h1>AI 猜畫大冒險</h1>
+    <p class="info">請在畫板上畫出任何東西（例如：香蕉、貓、杯子、筆記型電腦）</p>
+
+    <div id="canvas-container">
+        <canvas id="canvas" width="400" height="400"></canvas>
+    </div>
+
+    <div class="controls">
+        <button class="btn-clear" onclick="clearCanvas()">清除畫板</button>
+        <button class="btn-guess" onclick="predict()">讓 AI 猜猜看！</button>
+    </div>
+
+    <div id="result-box">
+        <div id="prediction-text">準備好了！請開始畫畫。</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const resultText = document.getElementById('prediction-text');
+        const loader = document.getElementById('loader');
+        
+        let isDrawing = false;
+        let model;
+
+        // 初始化畫板
+        function initCanvas() {
+            ctx.lineWidth = 15; // 線條粗細
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000000';
+            // 必須填入白色背景，否則 AI 會因為透明背景而無法辨識
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 滑鼠與觸控事件
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            startDrawing(touch);
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            draw(touch);
+        });
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            ctx.beginPath();
+            const { x, y } = getCoordinates(e);
+            ctx.moveTo(x, y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const { x, y } = getCoordinates(e);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                predict(); // 停筆時自動啟動 AI 辨識
+            }
+        }
+
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function clearCanvas() {
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            resultText.innerText = "畫板已清除，請重新作畫！";
+        }
+
+        // 載入 MobileNet 模型
+        async function loadAI() {
+            try {
+                model = await mobilenet.load();
+                loader.style.display = 'none';
+            } catch (error) {
+                resultText.innerText = "模型載入失敗，請檢查網路連線。";
+            }
+        }
+
+        // 執行 AI 辨識
+        async function predict() {
+            if (!model) return;
+            
+            resultText.innerText = "AI 正在思考中...";
+            
+            // 將畫布內容餵給 AI
+            const predictions = await model.classify(canvas);
+            
+            if (predictions && predictions.length > 0) {
+                // 取得信心度最高的結果
+                const bestGuess = predictions[0].className;
+                const probability = Math.round(predictions[0].probability * 100);
+                
+                // 簡單翻譯或格式化顯示
+                resultText.innerHTML = `我覺得這看起來像：<br><span style="color:#007bff; font-size: 1.8rem;">${bestGuess}</span><br>(信心度: ${probability}%)`;
+            }
+        }
+
+        initCanvas();
+        loadAI();
+    </script>
+</body>
+</html>

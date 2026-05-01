@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>拯救魔鬼魚</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #005f8d; font-family: 'Arial', sans-serif; cursor: none; }
+        canvas { display: block; }
+        #hud {
+            position: absolute; top: 25px; left: 25px; color: #fff; z-index: 10;
+            background: rgba(255,255,255,0.15); padding: 15px 25px; border-radius: 20px;
+            backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3);
+        }
+        #game-over {
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); text-align: center;
+            background: white; padding: 50px; border-radius: 40px;
+            box-shadow: 0 0 100px rgba(0,0,0,0.6); z-index: 100;
+        }
+        .btn {
+            background: #0077be; color: white; border: none; padding: 15px 40px;
+            font-size: 20px; font-weight: bold; border-radius: 50px; cursor: pointer;
+            transition: 0.3s; margin-top: 20px;
+        }
+        .btn:hover { background: #00f2ff; transform: scale(1.1); color: #004e7a; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="game-over">
+    <h1 style="color: #ff4757; font-size: 48px; margin: 0;">拯救失敗</h1>
+    <p id="final-score" style="color: #333; font-size: 24px;"></p>
+    <button class="btn" onclick="location.reload()">重新</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let w, h, manta, obstacles = [], frame = 0, score = 0, gameActive = true;
+let speed = 15; // 初始極速
+const mouse = { y: 0 };
+
+function init() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    manta = { x: 220, y: h/2, wingPhase: 0 };
+}
+
+window.addEventListener('mousemove', e => {
+    mouse.y = e.clientY;
+});
+
+function drawManta() {
+    manta.y += (mouse.y - manta.y) * 0.15;
+    manta.wingPhase += 0.25;
+    const wingWave = Math.sin(manta.wingPhase) * 28;
+
+    ctx.save();
+    ctx.translate(manta.x, manta.y);
+    ctx.rotate((mouse.y - manta.y) * 0.05 * Math.PI/180);
+
+    // --- 1. 立體尾部 ---
+    const tailGrad = ctx.createLinearGradient(0, 0, -220, 0);
+    tailGrad.addColorStop(0, '#0a0a0a');
+    tailGrad.addColorStop(1, 'transparent');
+    ctx.strokeStyle = tailGrad;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-50, 0);
+    ctx.bezierCurveTo(-120, wingWave, -180, -wingWave, -280, 0);
+    ctx.stroke();
+
+    // --- 2. 生物結構主體 ---
+    // 腹部
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(95, 0);
+    ctx.bezierCurveTo(45, -65-wingWave, -45, -95-wingWave, -75, 0);
+    ctx.bezierCurveTo(-45, 95+wingWave, 45, 65+wingWave, 95, 0);
+    ctx.fill();
+
+    // 背部立體層
+    const bodyGrad = ctx.createRadialGradient(30, 0, 5, 30, 0, 110);
+    bodyGrad.addColorStop(0, '#34495e'); 
+    bodyGrad.addColorStop(0.7, '#1c1c1c');
+    bodyGrad.addColorStop(1, '#000');
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.moveTo(90, 0);
+    ctx.bezierCurveTo(40, -60-wingWave, -40, -90-wingWave, -70, 0);
+    ctx.bezierCurveTo(-40, 90+wingWave, 40, 60+wingWave, 90, 0);
+    ctx.fill();
+
+    // --- 3. 頭部觸角 (立體細節) ---
+    const drawHorn = (side) => {
+        ctx.save();
+        ctx.translate(80, side * 28);
+        ctx.rotate(side * (0.4 + Math.sin(manta.wingPhase)*0.15));
+        ctx.fillStyle = '#050505';
+        ctx.beginPath(); ctx.ellipse(0, 0, 35, 12, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath(); ctx.ellipse(8, -side*3, 18, 5, 0, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    };
+    drawHorn(-1); drawHorn(1);
+
+    // --- 4. 霓虹斑點與發光眼 ---
+    ctx.fillStyle = 'rgba(0, 255, 230, 0.6)';
+    for(let i=0; i<10; i++) {
+        ctx.beginPath();
+        ctx.arc(-15-i*12, -25+i*4, 5-i*0.4, 0, Math.PI*2);
+        ctx.arc(-15-i*12, 25-i*4, 5-i*0.4, 0, Math.PI*2);
+        ctx.fill();
+    }
+    ctx.fillStyle = '#00f2ff';
+    ctx.shadowBlur = 20; ctx.shadowColor = '#00f2ff';
+    ctx.beginPath(); ctx.arc(88, -20, 4, 0, Math.PI*2); ctx.arc(88, 20, 4, 0, Math.PI*2); ctx.fill();
+
+    ctx.restore();
+    ctx.shadowBlur = 0;
+}
+
+function spawnObstacle() {
+    const type = Math.random();
+    let obs = { x: w + 300, y: Math.random() * h };
+
+    if (type < 0.35) {
+        obs.type = 'ORCA'; // 虎鯨 - 快
+        obs.speed = speed + 10 + Math.random() * 5;
+        obs.size = 140;
+    } else if (type < 0.7) {
+        obs.type = 'WHALE'; // 苦鯨 - 快
+        obs.speed = speed + 8 + Math.random() * 5;
+        obs.size = 180;
+    } else {
+        obs.type = 'SHARK'; // 鯊魚 - 慢
+        obs.speed = speed - 5 + Math.random() * 3;
+        obs.size = 110;
+    }
+    obstacles.push(obs);
+}
+
+function drawObstacles() {
+    obstacles.forEach((o, i) => {
+        o.x -= o.speed;
+        // 增加上下擺動模擬游動感
+        o.y += Math.sin(frame * 0.1 + i) * 1.5;
+
+        ctx.save();
+        ctx.translate(o.x, o.y);
+
+        if (o.type === 'ORCA') {
+            // 虎鯨繪製 (立體黑白)
+            const g = ctx.createLinearGradient(0, -30, 0, 30);
+            g.addColorStop(0, '#111'); g.addColorStop(1, '#000');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.ellipse(0, 0, o.size, 45, 0, 0, Math.PI*2); ctx.fill();
+            // 白色斑塊
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.ellipse(o.size*0.4, -15, 25, 10, 0.2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(-20, 20, 60, 20, 0, 0, Math.PI*2); ctx.fill();
+            // 背鰭
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.moveTo(-10, -20); ctx.lineTo(-40, -80); ctx.lineTo(-70, -10); ctx.fill();
+        } 
+        else if (o.type === 'WHALE') {
+            // 苦鯨繪製 (巨大、灰藍、斑點)
+            ctx.fillStyle = '#445566';
+            ctx.beginPath(); ctx.ellipse(0, 0, o.size, 65, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            for(let j=0; j<15; j++) {
+                ctx.beginPath(); ctx.arc((Math.random()-0.5)*o.size, (Math.random()-0.5)*50, 4, 0, Math.PI*2); ctx.fill();
+            }
+        }
+        else if (o.type === 'SHARK') {
+            // 鯊魚繪製 (慢速、厚重)
+            ctx.fillStyle = '#7f8c8d';
+            ctx.beginPath(); ctx.ellipse(0, 0, o.size, 38, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#95a5a6'; // 側邊光感
+            ctx.beginPath(); ctx.ellipse(0, 10, o.size*0.8, 15, 0, 0, Math.PI*2); ctx.fill();
+            // 魚鰭
+            ctx.fillStyle = '#7f8c8d';
+            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-30, -60); ctx.lineTo(-50, -10); ctx.fill();
+        }
+
+        // 碰撞檢測 (體積調整)
+        const hitBox = o.type === 'WHALE' ? 85 : 70;
+        if (Math.hypot(manta.x - o.x, manta.y - o.y) < hitBox) endGame();
+
+        ctx.restore();
+        if (o.x < -400) obstacles.splice(i, 1);
+    });
+}
+
+function drawEnv() {
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#58d5ff');
+    grad.addColorStop(1, '#004e7a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // 極速流線效果
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    for(let i=0; i<30; i++) {
+        const x = (10000 - (frame * speed + i * 345)) % w;
+        const y = (i * 197) % h;
+        ctx.fillRect(x, y, 60, 1.5);
+    }
+
+    // 隨機上升小氣泡
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    if(frame % 5 === 0) {
+        ctx.beginPath();
+        ctx.arc(Math.random()*w, h+10, Math.random()*5, 0, Math.PI*2);
+        ctx.fill();
+    }
+}
+
+function endGame() {
+    gameActive = false;
+    document.getElementById('game-over').style.display = 'block';
+    document.getElementById('final-score').innerText = `巡航里程：${Math.floor(score)} m`;
+}
+
+function animate() {
+    if (!gameActive) return;
+    frame++;
+    score += speed / 8;
+    speed += 0.003; 
+
+    drawEnv();
+    if (frame % Math.max(12, 35 - Math.floor(speed/3)) === 0) spawnObstacle();
+    drawObstacles();
+    drawManta();
+
+    requestAnimationFrame(animate);
+}
+
+init();
+animate();
+window.onresize = init;
+</script>
+</body>
+</html>

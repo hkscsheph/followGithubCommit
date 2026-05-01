@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>手勢辨識：握拳與反手</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    canvas {
+      transform: scaleX(-1);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      position: absolute;
+      top: 75vh;
+      left: 80vw;
+    }
+
+    #output {
+      font-size: 48px;
+      font-weight: bold;
+      margin-top: 20px;
+      color: #ff4757;
+    }
+
+    .info {
+      color: #555;
+      margin-bottom: 10px;
+    }
+
+    :root {
+      --bg-color: #2e7d32;
+      --card-back: #c62828;
+      --table-color: #388e3c;
+    }
+
+    body {
+      font-family: 'Microsoft JhengHei', sans-serif;
+      background-color: var(--bg-color);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    #game-info {
+      margin-top: 10px;
+      font-size: 1.2rem;
+    }
+
+    /* 牌桌佈局 */
+    #table {
+      position: relative;
+      width: 900px;
+      height: 900px;
+      background-color: var(--table-color);
+      border: 10px solid #5d4037;
+      border-radius: 50%;
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 玩家區域 */
+    .player-area {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 150px;
+      margin: 50px;
+    }
+
+    #p1 {
+      bottom: 20px;
+    }
+
+    /* 玩家在下方 */
+    #p2 {
+      left: 20px;
+      transform: rotate(90deg);
+    }
+
+    #p3 {
+      top: 20px;
+      transform: rotate(180deg);
+    }
+
+    #p4 {
+      right: 20px;
+      transform: rotate(-90deg);
+    }
+
+    .card-stack {
+      width: 70px;
+      height: 100px;
+      background: var(--card-back);
+      border: 2px solid white;
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .face-up {
+      width: 80px;
+      height: 110px;
+      background: white;
+      border-radius: 8px;
+      margin-top: 10px;
+      /* 關鍵：使用 Flexbox 垂直水平置中 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: black;
+      transition: transform 0.2s ease-in;
+      position: relative;
+      overflow: hidden;
+      /* 防止 Emoji 超出邊界 */
+    }
+
+    .faceInside {
+      width: 70px;
+      /* 稍微縮小寬度，留一點內邊距 */
+      height: 100px;
+      /* 關鍵：讓內部的內容也置中 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      /* 重要：當 Emoji 很多時自動換行 */
+      word-break: break-all;
+      font-size: 24px;
+      /* 縮小一點點字體，避免 5 個 Emoji 擠不下 */
+      line-height: 1.2;
+      /* 調整行高，讓換行後的間距美觀 */
+      text-align: center;
+    }
+
+    /* 鈴鐺 */
+    #bell {
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, #ffd700, #b8860b);
+      border-radius: 50%;
+      border: 4px solid #5d4037;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      box-shadow: 0 5px 0 #8b4513;
+      z-index: 10;
+    }
+
+    #bell:active,
+    #bell.active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #8b4513;
+      background: radial-gradient(circle, #ffe066, #d4af37);
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      background: gold;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .msg {
+      position: fixed;
+      top: 50%;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+      z-index: 11;
+    }
+
+    .night {
+      font-family: cursive;
+      animation: colorFlash 3s infinite;
+    }
+
+    .rop {
+      margin: -20px;
+    }
+
+    @keyframes colorFlash {
+      0% {
+        color: red;
+      }
+
+      30% {
+        color: yellow;
+      }
+
+      50% {
+        color: maroon;
+      }
+
+      70% {
+        color: white;
+      }
+
+      90% {
+        color: fuchsia;
+      }
+
+      100% {
+        color: red;
+      }
+    }
+
+    /* 翻牌縮放效果 */
+    .face-up.scaling {
+      transform: scale(1.2);
+      z-index: 15;
+      /* 確保放大時不會被其他元素遮擋 */
+      transition: transform 0.1s ease-out;
+    }
+
+    /* 為了讓縮放平滑回彈，原有的 face-up 也要加上 transition */
+    .face-up {
+      width: 80px;
+      height: 110px;
+      background: white;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: black;
+      font-size: 1.5rem;
+      position: relative;
+      transition: transform 0.2s ease-in;
+      /* 回彈效果 */
+    }
+  </style>
+</head>
+
+<body>
+  <img id="input_stream" src="http://localhost:3000/video_feed" style="display: none;" crossorigin="anonymous">
+  <canvas id="output_canvas" width="241" height="135"></canvas>
+  <div id="output"></div>
+  <div id="game-info">
+    逆水桌遊--五人犯規! | 當場上同一種生物數量剛好等於 5 時按鈴！
+  </div>
+
+  <div id="table">
+    <div id="msg-box" class="msg"></div>
+    <div id="bell">🔔</div>
+
+    <div class="player-area rop" id="p1">
+      <div>玩家 (你)</div>
+      <div class="card-stack" id="deck-1" onclick="playerDraw()">翻牌</div>
+      <div class="face-up">
+        <div class="faceInside" id="pile-1"></div>
+      </div>
+      <div id="card-count-1">14</div>
+    </div>
+
+    <div class="player-area" id="p2">
+      <div class="night">AI Night</div>
+      <div class="card-stack" id="deck-2"></div>
+      <div class="face-up">
+        <div class="faceInside" id="pile-2"></div>
+      </div>
+      <div id="card-count-2">14</div>
+    </div>
+
+    <div class="player-area rop" id="p3">
+      <div>AI camelia</div>
+      <div class="card-stack" id="deck-3"></div>
+      <div class="face-up">
+        <div class="faceInside" id="pile-3"></div>
+      </div>
+      <div id="card-count-3">14</div>
+    </div>
+
+    <div class="player-area" id="p4">
+      <div>AI Baron</div>
+      <div class="card-stack" id="deck-4"></div>
+      <div class="face-up">
+        <div class="faceInside" id="pile-4"></div>
+      </div>
+      <div id="card-count-4">14</div>
+    </div>
+  </div>
+  <script type="module">
+    let aiErrorRate = 0.09; // AI 出錯的機率 (0.1 = 10%)
+    let aiMinDelay = 1500; // 初始最慢反應
+    let aiMaxDelay = 2000; // 初始最快反應
+    const aiFloorDelay = 400; // AI 的極限速度（不能低於此值，否則人類贏不了）
+    const accelerationRate = 0.95; // 每次縮減倍率 (越小加速越快)
+    let gestureLocked = false;
+    const videoElement = document.getElementById('input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const outputDiv = document.getElementById('output');
+
+    // 判斷是否為握拳
+    function isFist(landmarks) {
+      // 判斷 8, 12, 16, 20 (指尖) 是否低於 6, 10, 14, 18 (指節)
+      const fingerTips = [8, 12, 16, 20];
+      const fingerKnuckles = [6, 10, 14, 18];
+
+      return fingerTips.every((tip, index) => {
+        return landmarks[tip].y > landmarks[fingerKnuckles[index]].y;
+      });
+    }
+
+    // 判斷是否為反手 (手背朝前)
+    // 原理：檢查大拇指 (4) 相對於食指 (5) 和小指 (17) 的位置
+    function isBackOfHand(landmarks, handedness) {
+      const isRightHand = handedness === 'Right';
+      const thumb = landmarks[4].x;
+      const pinky = landmarks[17].x;
+
+      // 在鏡像畫面中，如果右手的大拇指在小指右側，通常是手背；反之亦然。
+      // 注意：這是一個簡化算法，最準確需計算 3D 向量
+      const isOpen = landmarks[8].y < landmarks[6].y; // 至少食指要是伸直的
+
+      if (isRightHand) {
+        return isOpen && thumb > pinky;
+      } else {
+        return isOpen && thumb < pinky;
+      }
+    }
+
+    function onResults(results) {
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      canvasCtx.drawImage(
+        results.image,
+        0,
+        0,
+        canvasElement.width,
+        canvasElement.height
+      );
+
+      // 檢查是否有偵測到手
+      if (
+        results.multiHandLandmarks &&
+        results.multiHandLandmarks.length > 0
+      ) {
+        const landmarks = results.multiHandLandmarks[0];
+        const handedness = results.multiHandedness[0].label;
+
+        // 繪製骨架 (保持原樣)
+        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+          color: '#00FF00',
+          lineWidth: 1,
+        });
+        drawLandmarks(canvasCtx, landmarks, {
+          color: '#FF0000',
+          lineWidth: 1,
+        });
+
+        // --- 關鍵限制邏輯 ---
+        if (!gestureLocked) {
+          if (isFist(landmarks)) {
+            console.log('偵測到握拳：執行按鈴');
+            ringBell(0);
+            gestureLocked = true; // 觸發後立即鎖定
+          } else if (isBackOfHand(landmarks, handedness)) {
+            console.log('偵測到反手：執行翻牌');
+            playerDraw();
+            gestureLocked = true; // 觸發後立即鎖定
+          }
+        } else {
+          // 如果已經鎖定，檢查是否「鬆開手手勢」以解除鎖定
+          // 這裡定義：如果既不是握拳也不是反手，或者手移開了，就解鎖
+          if (!isFist(landmarks) && !isBackOfHand(landmarks, handedness)) {
+            gestureLocked = false;
+          }
+        }
+      } else {
+        // 如果畫面上完全沒看到手，也自動解鎖
+        gestureLocked = false;
+      }
+
+      canvasCtx.restore();
+    }
+
+    const hands = new Hands({
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    hands.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await hands.send({ image: videoElement });
+      },
+      width: 640,
+      height: 480,
+    });
+    // 取代原本的 camera.start()
+    let imageElement = document.getElementById('input_stream')
+    function streamToMediaPipe() {
+      if (imageElement.complete && imageElement.naturalWidth !== 0) {
+        // 將圖片傳送給 MediaPipe 處理
+        hands.send({ image: imageElement });
+      }
+      requestAnimationFrame(streamToMediaPipe);
+    }
+
+    async function predictLoop() {
+      // 檢查圖片是否已經加載且有內容
+      if (imageElement.complete && imageElement.naturalWidth !== 0) {
+        try {
+          await hands.send({ image: imageElement });
+        } catch (e) {
+          console.error("MediaPipe 處理錯誤:", e);
+        }
+      }
+      // 持續循環
+      requestAnimationFrame(predictLoop);
+    }
+
+    // 當圖片開始載入後啟動循環
+    imageElement.onload = () => {
+      console.log("串流已連接，啟動辨識...");
+      predictLoop();
+    };
+    const fruits = ['🐡', '🐠', '🐟', '🏊‍♂️'];
+    let players = [
+      { id: 1, name: '你', deck: [], pile: [], isOut: false },
+      { id: 2, name: 'AI 1', deck: [], pile: [], isOut: false },
+      { id: 3, name: 'AI 2', deck: [], pile: [], isOut: false },
+      { id: 4, name: 'AI 3', deck: [], pile: [], isOut: false },
+    ];
+    let turn = 0;
+    let gameActive = true;
+
+    // 1. 初始化卡牌 (56張)
+    function initGame() {
+      let fullDeck = [];
+      fruits.forEach((f) => {
+        // 每種水果: 1個x5, 2個x3, 3個x3, 4個x2, 5個x1 (共14張)
+        const counts = [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5];
+        counts.forEach((c) => fullDeck.push({ fruit: f, count: c }));
+      });
+      fullDeck.sort(() => Math.random() - 0.5);
+
+      // 發牌
+      players.forEach((p) => {
+        p.deck = fullDeck.splice(0, 14);
+        p.isOut = false;
+        p.pile = [];
+      });
+      updateUI();
+      showMessage('遊戲開始！請點擊你的牌庫翻牌。');
+    }
+
+    // 2. 更新畫面
+    function updateUI() {
+      players.forEach((p, index) => {
+        const countEl = document.getElementById(`card-count-${p.id}`);
+        const pileEl = document.getElementById(`pile-${p.id}`);
+        const deckEl = document.getElementById(`deck-${p.id}`);
+
+        countEl.innerText = `庫存: ${p.deck.length}`;
+
+        if (p.pile.length > 0) {
+          const topCard = p.pile[p.pile.length - 1];
+          pileEl.innerText = topCard.fruit.repeat(topCard.count);
+        } else {
+          pileEl.innerText = '';
+        }
+
+        if (p.deck.length === 0) {
+          deckEl.style.opacity = '0.3';
+          deckEl.innerText = '空';
+        } else {
+          deckEl.style.opacity = '1';
+          deckEl.innerText = '翻牌';
+        }
+      });
+    }
+
+    // 3. 翻牌邏輯
+    function playerDraw() {
+      if (turn !== 0 || !gameActive) return;
+      drawCard(0);
+    }
+
+    function drawCard(playerIdx) {
+      const pileContainer = document
+        .querySelectorAll('.player-area')
+      [playerIdx].querySelector('.face-up');
+
+      pileContainer.classList.add('scaling');
+      setTimeout(() => {
+        pileContainer.classList.remove('scaling');
+      }, 150); // 150 毫秒後恢復原狀
+      const p = players[playerIdx];
+      if (p.deck.length > 0) {
+        const card = p.deck.pop();
+        p.pile.push(card);
+        updateUI();
+
+        // 不管是不是 5 都讓 AI 判斷（裡面會處理正確搶鈴與腦衝按錯）
+        checkAICanRing();
+
+        nextTurn();
+      } else {
+        nextTurn();
+      }
+    }
+
+    function nextTurn() {
+      // 檢查是否只剩兩人
+      const activePlayers = players.filter((p) => !p.isOut);
+      if (players[0].isOut) {
+        endGame();
+        return;
+      }
+      if (activePlayers.length <= 2) {
+        // 額外檢查：如果場上完全沒人能出牌了，也結束
+        if (players.every((p) => p.deck.length === 0)) {
+          endGame();
+          return;
+        }
+      }
+
+      turn = (turn + 1) % 4;
+      if (players[turn].isOut || players[turn].deck.length === 0) {
+        if (players.every((p) => p.deck.length === 0)) {
+          // 全部人沒牌，等待最後搶鈴
+        } else {
+          setTimeout(nextTurn, 100);
+          return;
+        }
+      }
+
+      if (turn !== 0 && !players[turn].isOut) {
+        setTimeout(() => drawCard(turn), 1000);
+      }
+    }
+
+    // 4. 判斷水果總數
+    function checkFruitCount() {
+      let counts = { '🐡': 0, '🐠': 0, '🐟': 0, '🏊‍♂️': 0 };
+      players.forEach((p) => {
+        if (p.pile.length > 0) {
+          const top = p.pile[p.pile.length - 1];
+          counts[top.fruit] += top.count;
+        }
+      });
+      for (let f in counts) {
+        if (counts[f] === 5) return true;
+      }
+      return false;
+    }
+
+    // 5. 搶鈴邏輯
+    function ringBell(playerIdx) {
+      const bellEl = document.getElementById('bell');
+      bellEl.classList.add('active');
+      setTimeout(() => bellEl.classList.remove('active'), 150); // 150毫秒後彈回
+
+      const isCorrect = checkFruitCount();
+      const p = players[playerIdx];
+
+      if (isCorrect) {
+        showMessage(`${p.name} 贏得了本輪所有牌！`);
+        // 贏得所有人的 pile
+        players.forEach((otherP) => {
+          p.deck = [...otherP.pile, ...p.deck];
+          otherP.pile = [];
+        });
+        // 洗牌
+        p.deck.sort(() => Math.random() - 0.5);
+      } else {
+        showMessage(`${p.name} 按錯了！受處罰。`);
+        // 處罰：給其他每人一張牌
+        players.forEach((otherP, idx) => {
+          if (idx !== playerIdx && !otherP.isOut && p.deck.length > 0) {
+            otherP.deck.unshift(p.deck.pop());
+          }
+        });
+      }
+
+      // 檢查出局
+      players.forEach((p) => {
+        if (p.deck.length === 0 && p.pile.length === 0) {
+          p.isOut = true;
+        }
+      });
+      // --- 加速邏輯：每回合結束後 AI 會變強 ---
+      if (aiMinDelay > aiFloorDelay) {
+        aiMinDelay *= accelerationRate;
+        aiMaxDelay *= accelerationRate;
+
+        // 確保不會快過極限值
+        if (aiMinDelay < aiFloorDelay) aiMinDelay = aiFloorDelay;
+        if (aiMaxDelay < aiFloorDelay + 500) aiMaxDelay = aiFloorDelay + 500;
+
+        console.log(
+          `AI 加速中！目前反應區間: ${Math.round(
+            aiMinDelay
+          )}ms ~ ${Math.round(aiMaxDelay)}ms`
+        );
+      }
+
+      updateUI();
+      checkGameOver();
+    }
+
+    function humanRing() {
+      if (!gameActive) return;
+      ringBell(0);
+    }
+
+    function checkAICanRing() {
+      const isCorrect = checkFruitCount();
+
+      players.forEach((p, idx) => {
+        if (idx === 0 || p.isOut) return; // 跳過玩家與出局者
+
+        if (isCorrect) {
+          // --- 狀況 A：正確的按鈴時機 ---
+          // 增加一個「發呆機率」，如果抽到小於 aiErrorRate，這個 AI 這一輪就不參與搶鈴
+          if (Math.random() < aiErrorRate) {
+            console.log(`${p.name} 正在發呆...`);
+            return;
+          }
+
+          const reaction =
+            Math.random() * (aiMaxDelay - aiMinDelay) + aiMinDelay;
+          setTimeout(() => {
+            if (checkFruitCount() && gameActive && !p.isOut) {
+              ringBell(idx);
+            }
+          }, reaction);
+        } else {
+          // --- 狀況 B：錯誤的按鈴時機 (腦衝) ---
+          // 翻牌後如果不是 5，AI 仍有極小機率衝動按鈴
+          // 這裡失誤率要調低一點 (例如失誤率的 1/5)，不然 AI 會一直送牌
+          if (Math.random() < aiErrorRate * 0.2) {
+            const panicDelay = Math.random() * 1500 + 500; // 腦衝通常發生在翻牌後的一瞬間
+            setTimeout(() => {
+              if (!checkFruitCount() && gameActive && !p.isOut) {
+                console.log(`${p.name} 腦衝按錯了！`);
+                ringBell(idx);
+              }
+            }, panicDelay);
+          }
+        }
+      });
+    }
+
+    function showMessage(txt) {
+      const box = document.getElementById('msg-box');
+      box.innerText = txt;
+      box.style.display = 'block';
+      setTimeout(() => (box.style.display = 'none'), 2000);
+    }
+
+    function checkGameOver() {
+      // 取得三個 AI 玩家
+      const aiPlayers = players.slice(1);
+      // 檢查是否所有 AI 的 isOut 都是 true
+      const allAIsOut = aiPlayers.every((p) => p.isOut);
+      // 檢查玩家 (你) 是否出局
+      const playerOut = players[0].isOut;
+    
+      if (allAIsOut) {
+        gameActive = false;
+        imageElement.src="";
+        setTimeout(() => {
+          alert('太強了！你擊敗了所有 AI，成為最終贏家！');
+          location.reload();
+        }, 3000);
+        return;
+      }
+
+      if (playerOut) {
+        gameActive = false;
+        imageElement.src="";
+        setTimeout(() => {
+          alert('你已經沒有手牌了，遊戲結束！');
+          location.reload();
+        }, 3000);
+        return;
+      }
+    }
+
+    function endGame() {
+      gameActive = false;
+      players.sort((a, b) => b.deck.length - a.deck.length);
+      alert(
+        `遊戲結束！ 獲勝者是：${players[0].name}，擁有 ${players[0].deck.length} 張牌。`
+      );
+      location.reload();
+    }
+
+    initGame();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>深海獵手</title>
+    <style>
+        body {
+            margin: 0;
+            background: #00050a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        #game-wrapper {
+            position: relative;
+            border: 4px solid #1a2a44;
+            box-shadow: 0 0 50px rgba(0, 210, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stat-box {
+            text-shadow: 0 0 10px #00f2ff;
+        }
+
+        canvas {
+            display: block;
+            background: radial-gradient(circle at center, #081b33 0%, #00050a 100%);
+        }
+
+        #msg-overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.8);
+            font-size: 2.5rem;
+            color: #00f2ff;
+            text-shadow: 0 0 20px #00f2ff;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="game-wrapper">
+    <div id="ui-overlay">
+        <div class="stat-box">分數: <span id="score">0</span></div>
+        <div class="stat-box">血量: <span id="health">3</span></div>
+        <div class="stat-box">下一局: <span id="timer">15</span></div>
+    </div>
+    <div id="msg-overlay">下一局開始</div>
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const healthEl = document.getElementById('health');
+    const timerEl = document.getElementById('timer');
+    const msgOverlay = document.getElementById('msg-overlay');
+
+    canvas.width = 800;
+    canvas.height = 600;
+
+    let score = 0;
+    let health = 3;
+    let timeLeft = 15;
+    let gameActive = true;
+    let frame = 0;
+
+    const keys = {};
+    const bullets = [];
+    const enemyBullets = [];
+    const enemies = [];
+    const obstacles = [];
+
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    // --- 繪製工具 ---
+    
+    // 繪製精美魔鬼魚
+    function drawMantaRay(x, y, size, color, isPlayer, wingPos) {
+        ctx.save();
+        ctx.translate(x, y);
+        if (!isPlayer) ctx.rotate(Math.PI); // 敵人倒過來
+
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+
+        // 身體 (使用貝茲曲線打造流線感)
+        ctx.beginPath();
+        ctx.moveTo(0, -size/2); // 頭部
+        // 右翼
+        ctx.bezierCurveTo(size * 0.8, -size/4 + wingPos, size, size/4, 0, size/2);
+        // 左翼
+        ctx.bezierCurveTo(-size, size/4, -size * 0.8, -size/4 + wingPos, 0, -size/2);
+        ctx.fill();
+
+        // 眼睛
+        ctx.fillStyle = isPlayer ? "#fff" : "#ff0000";
+        ctx.beginPath();
+        ctx.arc(-size/6, -size/3, 2, 0, Math.PI*2);
+        ctx.arc(size/6, -size/3, 2, 0, Math.PI*2);
+        ctx.fill();
+
+        // 尾巴
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, size/2);
+        ctx.quadraticCurveTo(Math.sin(frame/10)*10, size, 0, size * 1.5);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // --- 遊戲邏輯物件 ---
+
+    class Enemy {
+        constructor() {
+            this.type = Math.floor(Math.random() * 3) + 1; // 1, 2, 3分
+            this.size = 20 + this.type * 15;
+            this.x = Math.random() * (canvas.width - 100) + 50;
+            this.y = -50;
+            this.hp = this.type;
+            this.speed = 4 - this.type; // 小的快，大的慢
+            this.color = `rgba(30, 30, 40, 1)`; // 基本為黑色
+            this.glow = this.type === 3 ? "#ff3366" : this.type === 2 ? "#ffcc00" : "#ffffff";
+        }
+        update() {
+            this.y += this.speed;
+            if (frame % 100 === 0) {
+                enemyBullets.push({x: this.x, y: this.y + 20, spd: 4});
+            }
+        }
+        draw() {
+            drawMantaRay(this.x, this.y, this.size, this.glow, false, Math.sin(frame/10)*10);
+        }
+    }
+
+    class Obstacle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = -100;
+            this.size = 40 + Math.random() * 40;
+            this.speed = 2;
+            this.angle = Math.random() * Math.PI * 2;
+        }
+        update() {
+            this.y += this.speed;
+            this.angle += 0.02;
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
+            ctx.strokeStyle = "rgba(100, 150, 200, 0.5)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+            ctx.restore();
+        }
+    }
+
+    const player = {
+        x: canvas.width/2,
+        y: 520,
+        size: 50,
+        speed: 7,
+        cooldown: 0,
+        draw() {
+            let wingPos = Math.sin(frame/8) * 12;
+            drawMantaRay(this.x, this.y, this.size, "#00f2ff", true, wingPos);
+        }
+    };
+
+    // --- 主迴圈 ---
+
+    function loop() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frame++;
+
+        // 背景微光粒子
+        if (frame % 5 === 0) {
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 1, 1);
+        }
+
+        // 玩家控制
+        if (keys['ArrowLeft'] && player.x > 40) player.x -= player.speed;
+        if (keys['ArrowRight'] && player.x < canvas.width - 40) player.x += player.speed;
+        if (keys['Space'] && player.cooldown <= 0) {
+            bullets.push({x: player.x, y: player.y - 20});
+            player.cooldown = 15;
+        }
+        if (player.cooldown > 0) player.cooldown--;
+
+        player.draw();
+
+        // 子彈
+        bullets.forEach((b, i) => {
+            b.y -= 10;
+            ctx.fillStyle = "#fff";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00f2ff";
+            ctx.fillRect(b.x-2, b.y, 4, 15);
+            if (b.y < 0) bullets.splice(i, 1);
+        });
+
+        // 敵方子彈
+        enemyBullets.forEach((eb, i) => {
+            eb.y += eb.spd;
+            ctx.fillStyle = "#ff0000";
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = "red";
+            ctx.beginPath();
+            ctx.arc(eb.x, eb.y, 4, 0, Math.PI*2);
+            ctx.fill();
+
+            // 擊中玩家
+            let dist = Math.hypot(eb.x - player.x, eb.y - player.y);
+            if (dist < 25) {
+                health--;
+                healthEl.innerText = health;
+                enemyBullets.splice(i, 1);
+                if (health <= 0) gameOver();
+            }
+            if (eb.y > canvas.height) enemyBullets.splice(i, 1);
+        });
+
+        // 敵人管理
+        if (frame % 60 === 0) enemies.push(new Enemy());
+        enemies.forEach((en, i) => {
+            en.update();
+            en.draw();
+
+            // 碰撞檢測
+            bullets.forEach((b, bi) => {
+                if (Math.hypot(b.x - en.x, b.y - en.y) < en.size/2) {
+                    en.hp--;
+                    bullets.splice(bi, 1);
+                    if (en.hp <= 0) {
+                        score += en.type;
+                        scoreEl.innerText = score;
+                        enemies.splice(i, 1);
+                    }
+                }
+            });
+
+            if (en.y > canvas.height + 50) enemies.splice(i, 1);
+        });
+
+        // 障礙物
+        if (frame % 200 === 0) obstacles.push(new Obstacle());
+        obstacles.forEach((obs, i) => {
+            obs.update();
+            obs.draw();
+            if (obs.y > canvas.height + 100) obstacles.splice(i, 1);
+        });
+
+        requestAnimationFrame(loop);
+    }
+
+    // --- 計時與重置 ---
+
+    function startTimer() {
+        let timer = setInterval(() => {
+            if (!gameActive) return;
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                nextRound();
+            }
+        }, 1000);
+    }
+
+    function nextRound() {
+        gameActive = false;
+        msgOverlay.style.display = "flex";
+        msgOverlay.innerHTML = "下一局開始<br><small style='font-size:1rem'>血量已恢復</small>";
+        
+        setTimeout(() => {
+            msgOverlay.style.display = "none";
+            timeLeft = 15;
+            health = 3;
+            healthEl.innerText = health;
+            timerEl.innerText = timeLeft;
+            gameActive = true;
+            startTimer();
+            loop();
+        }, 2000);
+    }
+
+    function gameOver() {
+        gameActive = false;
+        msgOverlay.style.display = "flex";
+        msgOverlay.innerHTML = `遊戲結束<br><small style='font-size:1rem'>最終分數: ${score}</small><br><button onclick="location.reload()" style="padding:10px 20px; margin-top:20px; cursor:pointer">重新開始</button>`;
+    }
+
+    startTimer();
+    loop();
+</script>
+
+</body>
+</html>

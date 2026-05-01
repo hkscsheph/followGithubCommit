@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>深海幻彩：魔鬼魚生態版</title>
+    <style>
+        :root {
+            --deep-blue: #000814;
+            --accent-cyan: #00f2ff;
+        }
+
+        body {
+            margin: 0;
+            background: var(--deep-blue);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: '微軟正黑體', sans-serif;
+            overflow: hidden;
+        }
+
+        /* 背景裝飾魔鬼魚 */
+        .deco-ray {
+            position: absolute;
+            z-index: -1;
+            opacity: 0.15;
+            filter: blur(1px);
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -50px) rotate(10deg); }
+            66% { transform: translate(-20px, 40px) rotate(-10deg); }
+        }
+
+        /* 個別調整裝飾位置 */
+        .r1 { top: 10%; left: 10%; width: 150px; animation-duration: 18s; }
+        .r2 { bottom: 15%; right: 10%; width: 200px; animation-duration: 22s; transform: scaleX(-1); }
+        .r3 { top: 20%; right: 15%; width: 100px; animation-duration: 12s; opacity: 0.1; }
+
+        .score-box {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.6);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        #game-container {
+            position: relative;
+            border: 2px solid rgba(0, 242, 255, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            z-index: 5;
+        }
+
+        canvas {
+            background: rgba(0, 8, 20, 0.9);
+            display: block;
+            border-radius: 10px;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: none;
+            background: rgba(0, 8, 20, 0.85);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        #overlay h2 { color: #ff3366; font-size: 3rem; margin: 0; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <svg class="deco-ray r1" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 10 L90 60 L50 45 L10 60 Z" fill="cyan"/>
+        <path d="M50 45 L50 90" stroke="cyan" stroke-width="1"/>
+    </svg>
+
+    <svg class="deco-ray r2" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 10 L90 60 L50 45 L10 60 Z" fill="cyan"/>
+        <path d="M50 45 L50 90" stroke="cyan" stroke-width="1"/>
+    </svg>
+
+    <svg class="deco-ray r3" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 10 L90 60 L50 45 L10 60 Z" fill="cyan"/>
+        <path d="M50 45 L50 90" stroke="cyan" stroke-width="1"/>
+    </svg>
+
+    <div class="score-box">STINGRAY SWARM: <span id="score">1</span></div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div id="overlay">
+            <h2>RECONNECTING...</h2>
+            <p style="color: #64ffda;">魚群正在重新匯聚</p>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
+    const overlay = document.getElementById("overlay");
+
+    const gridSize = 25;
+    let score = 1;
+    let dx = 1, dy = 0;
+    let swarm = [{x: 10, y: 10, angle: 0}];
+    let food = {x: 15, y: 10};
+    let gameSpeed = 100;
+    let isGameOver = false;
+
+    // 遊戲內的魔鬼魚繪製
+    function drawStingray(x, y, angle, index, total) {
+        ctx.save();
+        ctx.translate(x + gridSize/2, y + gridSize/2);
+        ctx.rotate(angle);
+
+        const hue = 180 + (index * 12) % 80; 
+        const opacity = Math.max(0.2, 1 - (index / (total + 5)));
+        
+        ctx.beginPath();
+        ctx.moveTo(16, 0);       // 頭
+        ctx.lineTo(-6, -20);     // 左翼尖
+        ctx.lineTo(-12, 0);      // 尾部中心
+        ctx.lineTo(-6, 20);      // 右翼尖
+        ctx.closePath();
+
+        const color = `hsla(${hue}, 100%, 60%, ${opacity})`;
+        ctx.fillStyle = color;
+        ctx.shadowBlur = index === 0 ? 15 : 5;
+        ctx.shadowColor = color;
+        ctx.fill();
+
+        // 眼睛
+        if (index === 0) {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(6, -6, 4, 4);
+            ctx.fillRect(6, 2, 4, 4);
+        }
+
+        // 尾巴
+        ctx.beginPath();
+        ctx.moveTo(-12, 0);
+        ctx.lineTo(-28, 0);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function drawFood() {
+        const fx = food.x * gridSize + gridSize/2;
+        const fy = food.y * gridSize + gridSize/2;
+        ctx.beginPath();
+        ctx.arc(fx, fy, 8, 0, Math.PI*2);
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "#fff";
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+    }
+
+    function spawnFood() {
+        food.x = Math.floor(Math.random() * (canvas.width / gridSize));
+        food.y = Math.floor(Math.random() * (canvas.height / gridSize));
+    }
+
+    function update() {
+        if (isGameOver) return;
+
+        const head = {
+            x: swarm[0].x + dx,
+            y: swarm[0].y + dy,
+            angle: Math.atan2(dy, dx)
+        };
+
+        if (head.x < 0 || head.x >= canvas.width/gridSize || head.y < 0 || head.y >= canvas.height/gridSize ||
+            swarm.some(s => s.x === head.x && s.y === head.y)) {
+            handleGameOver();
+            return;
+        }
+
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            scoreDisplay.innerText = score;
+            spawnFood();
+            gameSpeed = Math.max(60, gameSpeed - 1);
+        } else {
+            swarm.pop();
+        }
+
+        swarm.unshift(head);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawFood();
+        for (let i = swarm.length - 1; i >= 0; i--) {
+            drawStingray(swarm[i].x * gridSize, swarm[i].y * gridSize, swarm[i].angle, i, swarm.length);
+        }
+
+        setTimeout(update, gameSpeed);
+    }
+
+    function handleGameOver() {
+        isGameOver = true;
+        overlay.style.display = "flex";
+        setTimeout(() => {
+            score = 1;
+            scoreDisplay.innerText = score;
+            swarm = [{x: 10, y: 10, angle: 0}];
+            dx = 1; dy = 0;
+            gameSpeed = 100;
+            isGameOver = false;
+            overlay.style.display = "none";
+            spawnFood();
+            update();
+        }, 1500);
+    }
+
+    window.addEventListener("keydown", e => {
+        if (isGameOver) return;
+        const key = e.key;
+        if (key === "ArrowUp" && dy === 0) { dx = 0; dy = -1; }
+        if (key === "ArrowDown" && dy === 0) { dx = 0; dy = 1; }
+        if (key === "ArrowLeft" && dx === 0) { dx = -1; dy = 0; }
+        if (key === "ArrowRight" && dx === 0) { dx = 1; dy = 0; }
+    });
+
+    spawnFood();
+    update();
+</script>
+</body>
+</html>

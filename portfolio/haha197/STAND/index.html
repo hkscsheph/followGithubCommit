@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>JoJo 替身產生器 - 完整功能版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@200..900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #f8f9fa;
+        font-family: 'Chiron Sung HK', serif;
+        padding: 20px;
+        margin: 10px;
+      }
+
+      /* 16:9 容器 */
+      .container {
+        width: 90vw;
+        max-width: 1000px;
+        aspect-ratio: 16 / 9;
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        padding: 30px;
+        box-sizing: border-box;
+        border-radius: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+
+        /* 預設背景設定 */
+        background-color: #fff;
+        background-image: url('https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTLUmyyhQqiPlFtUMUbMnGkJMk4SV9zguVMT44ET6A2bGwTt-Kj'); /* 這裡佔位，JS會載入預設圖 */
+        background-size: cover;
+        background-position: center;
+        transition: background-image 0.5s ease-in-out;
+      }
+
+      /* 替身圖片容器 - 上下置中 */
+      .stand-image-wrapper {
+        position: absolute;
+        right: -50px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 90%;
+        width: 60%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        pointer-events: none;
+        opacity: 0;
+        transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 2;
+      }
+
+      .stand-image-wrapper.fade-in {
+        right: 0;
+        opacity: 10;
+        transform: translateY(-50%);
+      }
+
+      #stand-photo {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+        filter: drop-shadow(-20px -7px 2px rgba(0, 0, 0, 0.4));
+      }
+
+      .stand-info, .sub-text {
+        position: absolute;
+        top: 7vh;
+        left: 5%;
+        text-align: left;
+        z-index: 10;
+        text-shadow: 0px 0px 7px rgba(255, 255, 255, 1),1.5px 2px 0 #222; /* 增加可讀性 */
+      }
+      .sub-text {
+        font-size: 2%;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: #fff;
+        text-transform: uppercase;
+        margin-top: -20%;
+      }
+      .sub-use-text {
+        font-size: 2vw;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: #fff;
+        text-transform: uppercase;
+        margin-top: 0%;
+        z-index: 9;
+        text-shadow: 0px 0px 7px rgba(255, 255, 255, 1),1.5px 2px 0 #222; /* 增加可讀性 */
+      }
+      #display-stand-name ,#display-name{
+        font-size: 450%;
+        color: #fff;
+        margin: 5px 0 0 0;
+        font-weight: 500;
+        z-index: 11;
+        text-shadow: 0px 0px 7px #fff;
+      }
+
+      #none {
+        position: absolute;
+        width:100vw;
+        display: flex;
+        justify-content: center;
+      }
+      #display-name,#user-name {
+        color: #fff;
+        position: relative;
+        z-index: 10;
+        text-shadow: 0px 0px 7px rgba(255, 255, 255, 1),1.5px 2px 0 #222;
+      }
+      #user-name {
+        font-size: 1vw;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: #fff;
+        text-transform: uppercase;
+        margin-top: -2vh;
+      }
+
+      svg {
+        width: 35%;
+        height: auto;
+        z-index: 5;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        width: 90vw;
+        max-width: 800px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      label {
+        font-weight: bold;
+        font-size: 13px;
+        color: #555;
+      }
+      select,
+      input {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+
+      .label-text {
+        font-size: 18px;
+        font-weight: 900;
+        fill: #000;
+      }
+      .rank-value {
+        font-size: 28px;
+        font-weight: 900;
+        fill: #000;
+      }
+      #stat-polygon {
+        fill-opacity: 0.35;
+        stroke-width: 3;
+      }
+
+      .the222 {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      
+      .show {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div class="container" id="main-container">
+      <div class="stand-info">
+        <h1 class="sub-text">[STAND NAME]</h1>
+        <div id="display-stand-name">Good Boy</div>
+      </div>
+      <div id="none">
+        <h1 class="sub-use-text">[STAND USER NAME]</h1>
+        <div id="display-name">Good Boy</div>
+      </div>
+
+      <div class="stand-image-wrapper" id="image-wrapper">
+        <img id="stand-photo" src="https://i.ibb.co/bgBPGq1j/30080-removebg-preview.png" alt="" />
+      </div>
+      
+      <svg viewBox="0 0 550 550">
+        <g transform="translate(275, 275)"> <circle cx="0" cy="0" r="270" fill="none" stroke="#000" stroke-width="3"/>
+          <circle cx="0" cy="0" r="180" fill="none" stroke="black" stroke-width="2" />
+          <circle cx="0" cy="0" r="144" fill="none" stroke="#555" stroke-width="0.5" />
+          <circle cx="0" cy="0" r="120" fill="none" stroke="#555" stroke-width="0.5" />
+          <circle cx="0" cy="0" r="96" fill="none" stroke="#555" stroke-width="0.5" />
+          <circle cx="0" cy="0" r="96" fill="none" stroke="#555" stroke-width="0.1" />
+          <circle cx="0" cy="0" r="72" fill="none" stroke="#555" stroke-width="0.5" />
+          <circle cx="0" cy="0" r="48" fill="none" stroke="#555" stroke-width="0.5" />
+          <g stroke="black" stroke-width="2" opacity="1">
+            <line x1="0" y1="0" x2="0" y2="-180" />
+            <line x1="0" y1="0" x2="155.8" y2="-90" />
+            <line x1="0" y1="0" x2="155.8" y2="90" />
+            <line x1="0" y1="0" x2="0" y2="180" />
+            <line x1="0" y1="0" x2="-155.8" y2="90" />
+            <line x1="0" y1="0" x2="-155.8" y2="-90" />
+          </g>
+          <text x="0" y="-240" text-anchor="middle" class="label-text">破壞力</text>
+          <text x="207.8" y="-120" text-anchor="middle" class="label-text" transform="rotate(60, 207.8, -120)" >速度</text>
+          <text x="-207.8" y="-120" text-anchor="middle" class="label-text" transform="rotate(300, -207.8, -120)" > 成長性</text>
+          <text x="207.8" y="120" text-anchor="middle" class="label-text" transform="rotate(300, 207.8, 120)" >射程距離</text>
+          <text x="0" y="240" text-anchor="middle" class="label-text">持續力</text>
+          <text x="-207.8" y="120" text-anchor="middle" class="label-text" transform="rotate(60, -207.8, 120)" >精密度</text>
+          <polygon id="stat-polygon" points="0,0 0,0 0,0 0,0 0,0 0,0" />
+          <text x="0" y="-210" text-anchor="middle" class="rank-value display-rank" > C</text>
+          <text x="181.8" y="-105" text-anchor="middle" class="rank-value display-rank" > C</text>
+          <text x="181.8" y="105" text-anchor="middle" class="rank-value display-rank" > C </text>
+          <text x="0" y="210" text-anchor="middle" class="rank-value display-rank" > C </text>
+          <text x="-181.8" y="105" text-anchor="middle" class="rank-value display-rank" > C</text>
+          <text x="-181.8" y="-105" text-anchor="middle" class="rank-value display-rank" > C</text>
+        </g>
+      </svg>
+    </div>
+
+
+<div class="controls" id="controls-container">
+  <div class="field" style="grid-column: span 3">
+      <div class="the222">
+        <label>替身名稱 (STAND NAME)</label>
+        <input type="text" id="input-stand-name" value="Good Boy" />
+        <label>替身使者名稱 (STAND USER NAME)</label>
+        <input type="text" id="input-name" value="Night Cheung" />
+      </div>
+    <div>
+      <div class="field">
+        <label>上傳替身本體</label>
+        <input type="file" id="input-stand-image" accept="image/*" />
+        <label>上載背景圖片</label>
+        <input type="file" id="input-bg-image" accept="image/*" />
+      </div>
+    </div>
+
+    <script>
+      // 這裡放入你提供的紅黃漸變圖作為預設值 (簡化為Base64或外部連結)
+      const defaultBg =
+        'https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTLUmyyhQqiPlFtUMUbMnGkJMk4SV9zguVMT44ET6A2bGwTt-Kj';
+
+      const containerUI = document.getElementById('controls-container');
+      const statsArr = [
+        '破壞力',
+        '速度',
+        '射程距離',
+        '持續力',
+        '精密度',
+        '成長性',
+      ];
+      const possibleRanks = ['A', 'B', 'C', 'D', 'E', '∞', '?'];
+
+      
+      statsArr.forEach((name, i) => {
+        containerUI.innerHTML += `
+          <div class="field">
+            <label>${name}</label>
+            <select class="stat-input" data-index="${i}">
+              <option value="180" selected>∞</option><option value="144">A</option><option value="120">B</option>
+              <option value="96">C</option><option value="72">D</option><option value="48">E</option>
+              <option value="0">?</option>
+            </select>
+          </div>`;
+      });
+      containerUI.innerHTML += `<div class="field show"><label>陰影顏色</label><input type="color" id="shadow-color" value="#ffaa00"></div>`;
+
+      const mainContainer = document.getElementById('main-container');
+      const inputs = document.querySelectorAll('.stat-input');
+      const polygon = document.getElementById('stat-polygon');
+      const displayRanks = document.querySelectorAll('.display-rank');
+      const colorPicker = document.getElementById('shadow-color');
+      const nameInput = document.getElementById('input-stand-name');
+      const nameDisplay = document.getElementById('display-stand-name');
+      const nameStandInput = document.getElementById('input-name');
+      const nameStandDisplay = document.getElementById('display-name');
+      const imageInput = document.getElementById('input-stand-image');
+      const bgInput = document.getElementById('input-bg-image');
+      const imageWrapper = document.getElementById('image-wrapper');
+      const standPhoto = document.getElementById('stand-photo');
+
+      let lastPoints = '0,0 0,0 0,0 0,0 0,0 0,0';
+
+      // 預設載入背景
+      mainContainer.style.backgroundImage = `url(${defaultBg})`;
+
+      function triggerImageFade() {
+        imageWrapper.classList.remove('fade-in');
+        void imageWrapper.offsetWidth;
+        imageWrapper.classList.add('fade-in');
+      }
+
+      // 替身圖片上傳
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            standPhoto.src = event.target.result;
+            triggerImageFade();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // 背景圖片上傳
+      bgInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            mainContainer.style.backgroundImage = `url(${event.target.result})`;
+            triggerImageFade(); // 背景更改也觸發圖片動一下
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      nameInput.addEventListener('input', () => {
+        nameDisplay.textContent = nameInput.value || 'Good Boy';
+      });
+
+      nameStandInput.addEventListener('input', () => {
+        nameStandDisplay.textContent = nameStandInput.value || 'Night Cheung';
+      });
+
+      function updatePolygonStyle() {
+        const color = colorPicker.value;
+        polygon.style.fill = color;
+        polygon.style.stroke = color;
+        polygon.style.filter = `drop-shadow(0 0 8px ${color}88)`;
+      }
+
+      function getPointsString() {
+        return Array.from(inputs)
+          .map((input, i) => {
+            const r = parseInt(input.value);
+            const angle = i * 60 * (Math.PI / 180);
+            return `${(r * Math.sin(angle)).toFixed(2)},${(
+              -r * Math.cos(angle)
+            ).toFixed(2)}`;
+          })
+          .join(' ');
+      }
+
+      function runAnimation() {
+        const currentPoints = getPointsString();
+        polygon.animate([{ points: lastPoints }, { points: currentPoints }], {
+          duration: 1800,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          fill: 'forwards',
+        });
+        setTimeout(() => {
+          polygon.setAttribute('points', currentPoints);
+          lastPoints = currentPoints;
+        }, 1800);
+        displayRanks.forEach((element, i) => {
+          startLabelRandomizer(
+            element,
+            inputs[i].options[inputs[i].selectedIndex].text,
+            1800
+          );
+        });
+        triggerImageFade();
+      }
+
+      function startLabelRandomizer(element, finalValue, duration) {
+        let startTime = Date.now();
+        if (element.dataset.timer) clearInterval(element.dataset.timer);
+        const timer = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          if (elapsed >= duration) {
+            element.textContent = finalValue;
+            element.style.opacity = '1';
+            element.style.fill = '#000';
+            clearInterval(timer);
+          } else {
+            element.textContent =
+              possibleRanks[Math.floor(Math.random() * possibleRanks.length)];
+            element.style.opacity = '0.6';
+            element.style.fill = '#000';
+          }
+        }, 70);
+        element.dataset.timer = timer;
+      }
+
+      inputs.forEach((input) => input.addEventListener('change', runAnimation));
+      colorPicker.addEventListener('input', updatePolygonStyle);
+
+      window.onload = () => {
+        updatePolygonStyle();
+        runAnimation();
+      };
+    </script>
+  </body>
+</html>

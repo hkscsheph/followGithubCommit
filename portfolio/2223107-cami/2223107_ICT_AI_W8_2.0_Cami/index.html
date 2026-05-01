@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>魔鬼魚繪畫水族箱</title>
+    <style>
+        :root {
+            --sea-dark: #001529;
+            --sea-light: #005073;
+            --accent: #00d2ff;
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Microsoft JhengHei', sans-serif; }
+        
+        /* 深度感海洋背景 */
+        #aquarium {
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 30%, var(--sea-light) 0%, var(--sea-dark) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 繪圖介面 */
+        #draw-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(5px);
+        }
+
+        .canvas-container {
+            background: white; padding: 10px; border-radius: 20px; box-shadow: 0 0 30px var(--accent);
+        }
+
+        canvas#paintCanvas { 
+            background: #fdfdfd; border-radius: 15px; cursor: url('https://cur.cursors-4u.net/others/oth-2/oth197.cur'), auto; 
+            touch-action: none;
+        }
+
+        /* 工具列 */
+        .toolbar {
+            margin-top: 20px; display: flex; gap: 15px; align-items: center;
+            background: rgba(255, 255, 255, 0.1); padding: 15px 30px; border-radius: 50px;
+        }
+
+        button {
+            padding: 10px 20px; border: none; border-radius: 20px; cursor: pointer;
+            font-weight: bold; transition: 0.3s;
+        }
+
+        .btn-save { background: var(--accent); color: white; }
+        .btn-clear { background: #ff4d4d; color: white; }
+        .btn-close { background: #777; color: white; }
+
+        /* 入口按鈕 */
+        #open-btn {
+            position: absolute; bottom: 30px; right: 30px;
+            width: 80px; height: 80px; border-radius: 50%;
+            background: var(--accent); color: white; border: none;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.5); cursor: pointer; font-size: 14px;
+        }
+
+        /* 新增：刪除按鈕樣式 */
+        #clear-all-btn {
+            position: absolute; bottom: 30px; left: 30px;
+            padding: 12px 20px; border-radius: 30px;
+            background: rgba(255, 77, 77, 0.7); color: white; border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer; font-size: 14px; transition: 0.3s;
+        }
+        #clear-all-btn:hover { background: rgba(255, 77, 77, 1); }
+
+        /* 魚隻樣式 */
+        .manta {
+            position: absolute; transform-origin: center;
+            transition: transform 0.5s ease-out; pointer-events: none;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.4));
+        }
+
+        /* 氣泡效果 */
+        .bubble {
+            position: absolute; background: rgba(255, 255, 255, 0.3); border-radius: 50%;
+            bottom: -50px; animation: rise 10s infinite ease-in;
+        }
+
+        @keyframes rise {
+            to { transform: translateY(-110vh); opacity: 0; }
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="aquarium">
+    <button id="clear-all-btn" onclick="clearOcean()">清空水族箱</button>
+    <button id="open-btn" onclick="openEditor()">畫一隻魚</button>
+</div>
+
+<div id="draw-overlay">
+    <div class="canvas-container">
+        <canvas id="paintCanvas" width="600" height="400"></canvas>
+    </div>
+    <div class="toolbar">
+        <input type="color" id="colorPicker" value="#00d2ff">
+        <input type="range" id="sizePicker" min="2" max="20" value="8">
+        <button class="btn-clear" onclick="clearCanvas()">清空畫板</button>
+        <button class="btn-save" onclick="saveManta()">讓牠游進海裡</button>
+        <button class="btn-close" onclick="closeEditor()">離開</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const aquarium = document.getElementById('aquarium');
+    let isDrawing = false;
+    let mantaHistory = JSON.parse(localStorage.getItem('oceanMantas')) || [];
+
+    // --- 繪畫功能邏輯 ---
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    function startDrawing(e) {
+        isDrawing = true;
+        draw(e);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        ctx.lineWidth = document.getElementById('sizePicker').value;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = document.getElementById('colorPicker').value;
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+        ctx.beginPath();
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function openEditor() { document.getElementById('draw-overlay').style.display = 'flex'; }
+    function closeEditor() { document.getElementById('draw-overlay').style.display = 'none'; }
+
+    // --- 保存與生成魚 ---
+    function saveManta() {
+        const dataUrl = canvas.toDataURL();
+        mantaHistory.push(dataUrl);
+        localStorage.setItem('oceanMantas', JSON.stringify(mantaHistory));
+        createManta(dataUrl);
+        clearCanvas();
+        closeEditor();
+    }
+
+    function createManta(src) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = 'manta';
+        const size = Math.random() * 100 + 150;
+        img.style.width = size + 'px';
+        aquarium.appendChild(img);
+        
+        // 賦予初始位置與隨機游動方向
+        animateManta(img);
+    }
+
+    function animateManta(el) {
+        // 如果元素已經被移除則停止動畫
+        if (!el.parentElement) return;
+
+        const x = Math.random() * (window.innerWidth - 100);
+        const y = Math.random() * (window.innerHeight - 100);
+        const duration = Math.random() * 15000 + 10000;
+        
+        const nextX = Math.random() * window.innerWidth;
+        const nextY = Math.random() * window.innerHeight;
+        const angle = Math.atan2(nextY - y, nextX - x) * 180 / Math.PI;
+
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        
+        // 營造優雅的滑行感
+        setTimeout(() => {
+            if (!el.parentElement) return;
+            el.style.transition = `all ${duration}ms cubic-bezier(0.42, 0, 0.58, 1)`;
+            el.style.left = nextX + 'px';
+            el.style.top = nextY + 'px';
+            el.style.transform = `rotate(${angle + 90}deg)`; 
+        }, 100);
+
+        setTimeout(() => animateManta(el), duration);
+    }
+
+    // --- 新增功能：清空所有畫作 ---
+    function clearOcean() {
+        if (confirm("確定要放生水族箱裡所有的魚嗎？")) {
+            // 1. 清除 localStorage
+            mantaHistory = [];
+            localStorage.removeItem('oceanMantas');
+            
+            // 2. 從 DOM 中移除所有帶有 .manta 類別的圖片
+            const mantas = document.querySelectorAll('.manta');
+            mantas.forEach(m => m.remove());
+        }
+    }
+
+    // --- 環境裝飾：氣泡 ---
+    function createBubble() {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        const size = Math.random() * 15 + 'px';
+        bubble.style.width = size;
+        bubble.style.height = size;
+        bubble.style.left = Math.random() * 100 + 'vw';
+        bubble.style.animationDuration = (Math.random() * 5 + 5) + 's';
+        aquarium.appendChild(bubble);
+        setTimeout(() => bubble.remove(), 10000);
+    }
+
+    // --- 初始化 ---
+    setInterval(createBubble, 1000);
+    window.onload = () => {
+        mantaHistory.forEach(src => createManta(src));
+    };
+</script>
+
+</body>
+</html>

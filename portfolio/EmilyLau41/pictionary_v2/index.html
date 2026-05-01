@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI 幾何辨識 - 進階圖案版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #121212;
+            overflow: hidden;
+            font-family: 'Segoe UI', '微軟正黑體', sans-serif;
+        }
+
+        #input_video {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            transform: scaleX(-1);
+            opacity: 0.15;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            background: rgba(25, 25, 25, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            color: white;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        #res {
+            font-size: 36px;
+            color: #00ffcc;
+            font-weight: 800;
+            display: block;
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        .status-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        #indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            box-shadow: 0 0 8px #ff4444;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00ffcc, #00aba9);
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: 0.3s;
+            color: #121212;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+
+<body>
+    <img id="input_video" autoplay playsinline></img>
+    <div class="ui">
+        <div class="status-box">
+            <div id="indicator"></div>
+            <span id="state_text">等待相機權限...</span>
+        </div>
+        <span>辨識結果：</span>
+        <span id="res">---</span>
+        <button onclick="startCapture()">啟動螢幕 / 相機擷取</button>
+        <div class="hint">
+            • <b>繪製：</b>伸出食指 (其他手指握拳)<br>
+            • <b>停止/辨識：</b>收回食指 (握拳)<br>
+            • <b>支援：</b>圓形、正方形、三角形、愛心、星星
+        </div>
+    </div>
+
+    <script>
+        let hands, pg, path = [], handResults = null, isDrawing = false;
+        const imgElement = document.getElementById('input_video');
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            pg = createGraphics(windowWidth, windowHeight);
+            pg.stroke(0, 255, 204);
+            pg.strokeWeight(8);
+            pg.strokeCap(ROUND);
+            pg.strokeJoin(ROUND);
+
+            hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+            hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
+            hands.onResults(r => handResults = r.multiHandLandmarks);
+        }
+
+        // 前端修正
+        async function startCapture() {
+            // 不再需要 navigator.mediaDevices.getUserMedia
+            // 直接將 proxy URL 設定給 video 標籤
+            imgElement.crossOrigin = "anonymous"; // 避免畫布污染 (Canvas Tainting)
+            imgElement.src = "http://localhost:3000/video_feed";
+
+            imgElement.onload = () => {
+                const loop = async () => {
+                    if (!imgElement.paused) await hands.send({ image: imgElement });
+                    requestAnimationFrame(loop);
+                };
+                loop();
+            };
+        }
+
+        function draw() {
+            clear();
+            // 繪製背景軌跡
+            image(pg, 0, 0);
+
+            if (handResults && handResults.length > 0) {
+                let pts = handResults[0];
+                let x = (1 - pts[8].x) * width;
+                let y = pts[8].y * height;
+
+                // 判別手勢：食指伸直 (8 < 6)，中指/無名指收起 (12 > 10, 16 > 14)
+                let isPointing = pts[8].y < pts[6].y && pts[12].y > pts[10].y;
+
+                const indicator = document.getElementById('indicator');
+                const stateText = document.getElementById('state_text');
+
+                if (isPointing) {
+                    indicator.style.background = "#00ffcc";
+                    indicator.style.boxShadow = "0 0 10px #00ffcc";
+                    stateText.innerText = "正在錄製軌跡...";
+
+                    if (!isDrawing) { path = []; pg.clear(); isDrawing = true; }
+
+                    // 平滑化處理
+                    if (path.length > 0) {
+                        let lastP = path[path.length - 1];
+                        x = lerp(lastP.x, x, 0.4);
+                        y = lerp(lastP.y, y, 0.4);
+                    }
+
+                    path.push({ x, y });
+                    if (path.length > 1) {
+                        let p = path[path.length - 2];
+                        pg.line(p.x, p.y, x, y);
+                    }
+                } else {
+                    indicator.style.background = "orange";
+                    indicator.style.boxShadow = "0 0 10px orange";
+                    stateText.innerText = "準備就緒";
+
+                    if (isDrawing && path.length > 15) {
+                        analyzeShape(path);
+                    }
+                    isDrawing = false;
+                }
+
+                // 繪製指尖游標
+                fill(255);
+                noStroke();
+                ellipse(x, y, 12, 12);
+                noFill();
+                stroke(0, 255, 204);
+                ellipse(x, y, 20, 20);
+            }
+        }
+            function analyzeShape(pts) {
+    let xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    let minX = Math.min(...xs), maxX = Math.max(...xs);
+    let minY = Math.min(...ys), maxY = Math.max(...ys);
+    let w = maxX - minX, h = maxY - minY;
+    let aspectRatio = w / h;
+    
+    // 計算路徑長度與閉合度
+    let pathLength = 0;
+    for(let i=1; i<pts.length; i++) pathLength += dist(pts[i-1].x, pts[i-1].y, pts[i].x, pts[i].y);
+    let closedness = dist(pts[0].x, pts[0].y, pts[pts.length - 1].x, pts[pts.length - 1].y);
+    let isClosed = closedness < (pathLength * 0.25); // 起終點距離小於總長 25%
+
+    // 圓形判斷：計算點到中心的平均距離標準差
+    let centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
+    let radii = pts.map(p => dist(p.x, p.y, centerX, centerY));
+    let avgRadius = radii.reduce((a, b) => a + b) / radii.length;
+    let stdDev = Math.sqrt(radii.reduce((a, b) => a + Math.pow(b - avgRadius, 2), 0) / radii.length);
+    let varCoeff = stdDev / avgRadius;
+
+    let guess = "🤔 辨識中...";
+
+    // --- 強化版判定邏輯 ---
+    if (!isClosed && aspectRatio > 3.0) {
+        guess = "📏 直線 (Line)";
+    } else if (varCoeff < 0.16 && isClosed) {
+        guess = "⚪ 圓形 (Circle)";
+    } else if (aspectRatio > 0.7 && aspectRatio < 1.4) {
+        // 在長寬比接近 1:1 的情況下
+        // 如果變異係數較大（代表不是圓形），且有一定的閉合度，就傾向判定為正方形
+        if (varCoeff > 0.18) {
+            guess = "⬜ 正方形 (Square)";
+        } else {
+            guess = "⚪ 圓形 (Circle)";
+        }
+    } else if (aspectRatio > 0.5 && aspectRatio < 2.0) {
+        guess = "📦 矩形 (Rectangle)";
+    } else {
+        guess = "🎨 自由曲線";
+    }
+
+    document.getElementById('res').innerText = guess;
+}
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            let newPg = createGraphics(windowWidth, windowHeight);
+            newPg.image(pg, 0, 0);
+            pg = newPg;
+        }
+    </script>
+</body>
+
+</html>

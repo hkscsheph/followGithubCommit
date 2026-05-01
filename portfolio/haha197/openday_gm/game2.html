@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>32:9 體感對戰：魚魚大戰</title>
+    <style>
+      /* 基礎樣式重置 */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #050505;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        color: white;
+        font-family: 'Microsoft JhengHei', sans-serif;
+        overflow: hidden;
+      }
+
+      /* 遊戲容器：強制 32:9 比例 */
+      #game-wrapper {
+        position: relative;
+        width: 95vw;
+        max-width: 1600px;
+        aspect-ratio: 32 / 9;
+        border: 3px solid #444;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        background: #001220; /* 深海背景色 */
+      }
+
+      /* 主要繪圖畫布 */
+      canvas#gameCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* UI 層：血量條與資訊 */
+      .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* 讓點擊穿透 */
+      }
+
+      /* 隱藏攝影機畫面 (偵測用，不顯示給玩家) */
+      #video-container {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 200px;
+        border: 2px solid #555;
+        display: none; /* 開發完畢可隱藏 */
+      }
+
+      video#webcam {
+        width: 100%;
+        transform: scaleX(-1); /* 鏡像翻轉，讓玩家直覺移動 */
+      }
+
+      /* 遊戲狀態提示 */
+      #status {
+        position: absolute;
+        top: 10px;
+        width: 100%;
+        text-align: center;
+        font-size: 1.2rem;
+        color: #00d4ff;
+        text-shadow: 0 0 5px #000;
+      }
+      #game-over-screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7); /* 半透明黑背景 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+
+      /* 贏家顏色正方形 */
+      #winner-square {
+        width: 200px;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: bold;
+        color: white;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        margin-bottom: 30px;
+      }
+
+      #button-container {
+        display: flex;
+        gap: 20px;
+      }
+
+      .game-btn {
+        padding: 15px 30px;
+        font-size: 20px;
+        cursor: pointer;
+        background: #444;
+        color: white;
+        border: 2px solid white;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: 0.3s;
+      }
+
+      .game-btn:hover {
+        background: white;
+        color: black;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">正在加載 AI 模型，請稍候...</div>
+
+    <div id="game-wrapper">
+      <canvas id="gameCanvas"></canvas>
+
+      <div class="overlay" id="ui-layer"></div>
+    </div>
+
+    <div id="video-container">
+        <video  id="webcam"  autoplay  playsinline  muted  crossorigin="anonymous"  src="http://localhost:3000/video_feed"></video>
+    </div>
+
+    <div id="game-over-screen" style="display: none">
+      <div id="winner-box">
+        <div id="winner-square">Win</div>
+      </div>
+      <div id="button-container">
+        <a href="/index.html" class="game-btn">前往 Page 2</a>
+        <button onclick="resetGame()" class="game-btn">重新開始</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+    <script src="game.js"></script>
+  </body>
+</html>

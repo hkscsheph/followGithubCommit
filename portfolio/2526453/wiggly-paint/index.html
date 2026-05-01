@@ -1,0 +1,600 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <meta charset="UTF-8">
+    <title>RAGE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+    <style type="text/css">
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body { 
+            background: #020502; color: #4a7c59; 
+            font-family: 'VT323', monospace; margin: 0; padding: 10px;
+            cursor: crosshair; overflow: hidden;
+        }
+
+        #window { 
+            width: 1350px; margin: 0 auto; background: rgba(5, 8, 5, 0.98); 
+            border: 2px solid #1a2e1f; box-shadow: 0 0 60px #000; display: flex; flex-direction: column;
+        }
+
+        #title-bar { 
+            background: #0a1a0f; color: #5ea371; padding: 10px; font-size: 24px; 
+            display: flex; justify-content: space-between; border-bottom: 2px solid #1a2e1f;
+        }
+
+        .main-layout { display: flex; padding: 15px; gap: 15px; background: #000; height: 650px;}
+
+        .sidebar { width: 240px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;}
+        .panel { background: #050805; border: 1px solid #1a2e1f; padding: 10px; position: relative; }
+        .panel-h { font-size: 14px; color: #2d4d36; margin-bottom: 8px; text-transform: uppercase; border-bottom: 1px solid #0f1a11; }
+
+        button { 
+            font-family: 'VT323'; font-size: 16px; padding: 4px; cursor: pointer;
+            background: #0a120a; color: #4a7c59; border: 1px solid #1a2e1f; width: 100%; margin-bottom: 2px;
+        }
+        button:hover { background: #1a2e1f; color: #8fbc8f; }
+        .active { background: #0f1a11 !important; color: #8fbc8f !important; border-color: #4a7c59 !important; }
+        .link-panel { margin-top: 10px; padding: 10px; background: #050805; border: 1px solid #1a2e1f; color: #8fbc8f; font-size: 13px; }
+        .link-panel a { color: #74c278; word-break: break-all; }
+        .status-label { color: #8fbc8f; font-size: 12px; margin-top: 6px; }
+        #canvas-frame { background: #000; border: 1px solid #1a2e1f; position: relative; flex-grow: 1; overflow: hidden;}
+        canvas { display: block; image-rendering: pixelated; width: 100%; height: 100%;}
+
+        .layer-item { 
+            padding: 6px; border: 1px solid #1a2e1f; margin-bottom: 4px; 
+            background: #020502; display: flex; justify-content: space-between; align-items: center;
+        }
+        .active-layer { border-color: #4a7c59; background: #0a1a0f; color: #8fbc8f; }
+        .tiny-btn { width: 22px; height: 22px; font-size: 10px; padding: 0; margin-left: 2px;}
+
+        input[type=range] { appearance: none; background: #0a120a; border: 1px solid #1a2e1f; height: 4px; width: 100%; margin: 6px 0; }
+        input[type=range]::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; background: #4a7c59; cursor: pointer; }
+        #colorWheel { width: 100%; height: auto; cursor: crosshair; border: 1px solid #1a2e1f; margin-bottom: 5px; }
+
+        #qr-overlay { 
+            position: absolute; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.9); display: none; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 100;
+        }
+
+        .footer { padding: 6px 20px; background: #0a1a0f; font-size: 12px; color: #2d4d36; display: flex; justify-content: space-between; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="window">
+    <div id="title-bar">
+        <span>💚 RAGE_v69 // BBbbBbBBRRRrRRrrRRR</span>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="undo()" style="width: 60px;">Undo</button>
+            <button onclick="redo()" style="width: 60px;">Redo</button>
+            <button onclick="exportGif()" style="width: 100px;">EXPORT_GIF</button>
+            <button onclick="uploadGifToSupabase()" style="width: 130px;">UPLOAD_TO_SUPABASE</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-h">Tools</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                    <button id="t-brush" class="active" onclick="setTool('brush')">Layer</button>
+                    <button id="t-select" onclick="setTool('select')">Select</button>
+                    <button id="t-rect" onclick="setTool('rect')">Square</button>
+                    <button id="t-circle" onclick="setTool('circle')">Circle</button>
+                    <button id="t-eraser" onclick="setTool('eraser')">Void</button>
+                    <button onclick="nukeEverything()" style="color:#f55">Purge</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-h">Vibration_Engine</div>
+                <select id="vibeSelect" onchange="updateActiveLayerSettings()" style="width:100%; background:#000; color:#4a7c59; border:1px solid #1a2e1f; font-family:'VT323';">
+                    <option value="classic">Classic_Sway</option>
+                    <option value="ethereal">Ethereal_Float</option>
+                    <option value="punk">Punk_Jitter</option>
+                    <option value="orbital">Orbital_Decay</option>
+                </select>
+                <input type="range" id="disruptSlider" min="0" max="60" value="5" oninput="updateActiveLayerSettings()">
+            </div>
+
+            <div class="panel">
+                <div class="panel-h">Alchemy</div>
+                <button onclick="makeVibrant()" style="background: #1a331a; color: #0f0; border-color: #0f0;">+ BOOST_VIBRANCY</button>
+                <label>SIZE</label>
+                <input type="range" id="sizeSlider" min="1" max="100" value="2">
+            </div>
+
+            <div class="panel">
+                <div class="panel-h">Color</div>
+                <canvas id="colorWheel" width="200" height="200"></canvas>
+                <input type="range" id="alphaSlider" min="0" max="100" value="80" oninput="updatePreview()">
+                <div id="color-preview" style="height:15px; border:1px solid #1a2e1f; margin-top:5px;"></div>
+                <div id="color-hover-label" style="font-size:12px; color:#8fbc8f; margin-top:5px;">Hover color: none</div>
+            </div>
+        </div>
+
+        <div id="canvas-frame">
+            <canvas id="paintCanvas" width="800" height="600"></canvas>
+            <div id="qr-overlay">
+                <div style="text-align: center;">
+                    <canvas id="qr-canvas"></canvas>
+                    <p id="qr-label">SCAN TO HARVEST PNG/GIF</p>
+                    <button onclick="document.getElementById('qr-overlay').style.display='none'" style="width:200px; margin-top: 15px;">RETURN_TO_VOID</button>
+                    <button onclick="downloadQrImage()" style="width:200px; margin-top: 5px; background: #332d1a;">⬇ SAVE_QR_CODE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar" style="width:220px">
+            <div class="panel" style="flex-grow:1; display:flex; flex-direction:column;">
+                <div class="panel-h">Layers</div>
+                <div id="layerList" style="overflow-y:auto; flex-grow:1;"></div>
+                <button onclick="addLayer()" style="background:#1a2e1f; margin-top:5px;">+ NEW_LAYER</button>
+                <div class="link-panel" id="gifLinkPanel" style="display:none;">
+                    <div class="panel-h" style="margin-bottom:6px;">GIF DOWNLOAD</div>
+                    <div id="gifLinkText">No GIF created yet.</div>
+                    <button onclick="copyGifLink()" style="margin-top:8px; width:100%;">COPY_LINK</button>
+                    <div class="status-label" id="gifStatusLabel"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span>X/Y: <span id="coords">0,0</span></span>
+        <span>UNDO_STACK: <span id="undoCount">0</span></span>
+        <span>ENGINE: 4M Felix Meow MeOw</span>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    let tool = 'brush', color = { r:74, g:124, b:89, a:0.8 }, thickness = 2, painting = false, selectedObj = null, offset = {x:0, y:0};
+    
+    let layers = [{ id: Date.now(), visible: true, objects: [], vibe: 'classic', disruption: 5 }];
+    let activeIdx = 0;
+
+    let undoStack = [];
+    let redoStack = [];
+
+    // --- History Management ---
+    function saveState() {
+        undoStack.push(JSON.stringify(layers));
+        if(undoStack.length > 50) undoStack.shift();
+        redoStack = [];
+        updateFooter();
+    }
+
+    function undo() {
+        if(undoStack.length === 0) return;
+        redoStack.push(JSON.stringify(layers));
+        layers = JSON.parse(undoStack.pop());
+        activeIdx = Math.min(activeIdx, layers.length - 1);
+        updateUI();
+    }
+
+    function redo() {
+        if(redoStack.length === 0) return;
+        undoStack.push(JSON.stringify(layers));
+        layers = JSON.parse(redoStack.pop());
+        updateUI();
+    }
+
+    // --- Vibrant Engine ---
+    function makeVibrant() {
+        saveState();
+        layers.forEach(lyr => {
+            lyr.objects.forEach(obj => {
+                let rgba = obj.color.match(/\d+(\.\d+)?/g);
+                if(rgba) {
+                    let r = Math.min(255, rgba[0] * 1.5);
+                    let g = Math.min(255, rgba[1] * 1.5);
+                    let b = Math.min(255, rgba[2] * 1.5);
+                    obj.color = `rgba(${r},${g},${b},${rgba[3]})`;
+                }
+            });
+        });
+    }
+
+    // --- Export / Supabase ---
+    const SUPABASE_URL = 'https://ufeoeutoegjptrbnpvcb.supabase.co/rest/v1/';
+    const SUPABASE_ANON_KEY = 'sb_publishable_A0mVZrliFf-AYZE9XVqsEg_IL7ex22y';
+    const SUPABASE_BUCKET = 'gifs';
+    const supabaseClient = window.supabase && window.supabase.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    let latestGifBlob = null;
+    let latestGifUrl = null;
+
+    function generateQR() {
+        const dataURL = canvas.toDataURL("image/png");
+        const qr = new QRious({
+            element: document.getElementById('qr-canvas'),
+            value: dataURL,
+            size: 250,
+            background: '#000',
+            foreground: '#4a7c59'
+        });
+        document.getElementById('qr-label').innerText = "SCAN_FOR_PNG";
+        document.getElementById('qr-overlay').style.display = 'flex';
+    }
+
+    function downloadQrImage() {
+        const qrCanvas = document.getElementById('qr-canvas');
+        const a = document.createElement('a');
+        a.href = qrCanvas.toDataURL('image/png');
+        a.download = `qr-code_${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function setGifStatus(message, isError = false) {
+        const label = document.getElementById('gifStatusLabel');
+        label.innerText = message;
+        label.style.color = isError ? '#f55' : '#8fbc8f';
+    }
+
+    function getDeterministicNoise(seed) {
+        const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453123;
+        return x - Math.floor(x);
+    }
+
+    function getDistort(i, t, vibe, disruption) {
+        if (vibe === 'classic') return { x: Math.sin(t + i * 0.2) * disruption, y: 0 };
+        if (vibe === 'ethereal') return { x: Math.sin(t + i * 0.5) * disruption, y: Math.cos(t + i * 0.5) * disruption };
+        if (vibe === 'punk') {
+            const seed = i * 31 + Math.floor(t * 3);
+            return {
+                x: (getDeterministicNoise(seed) - 0.5) * disruption * 2,
+                y: (getDeterministicNoise(seed + 1) - 0.5) * disruption * 2
+            };
+        }
+        if (vibe === 'orbital') return { x: Math.cos(t * 2 + i) * disruption, y: Math.sin(t * 0.5 + i) * disruption };
+        return { x: 0, y: 0 };
+    }
+
+    function renderFrame(time, renderCtx) {
+        renderCtx.clearRect(0, 0, canvas.width, canvas.height);
+        layers.forEach(lyr => {
+            if (!lyr.visible) return;
+            lyr.objects.forEach(o => {
+                renderCtx.beginPath();
+                renderCtx.strokeStyle = o.type === 'eraser' ? '#000' : o.color;
+                renderCtx.lineWidth = o.thickness;
+                renderCtx.lineCap = 'round';
+                if (o.type === 'brush' || o.type === 'eraser') {
+                    o.pts.forEach((p, i) => {
+                        const dr = getDistort(i, time, lyr.vibe, lyr.disruption);
+                        if (i === 0) renderCtx.moveTo(p.x + dr.x, p.y + dr.y);
+                        else renderCtx.lineTo(p.x + dr.x, p.y + dr.y);
+                    });
+                } else if (o.type === 'rect') {
+                    const dr = getDistort(0, time, lyr.vibe, lyr.disruption);
+                    renderCtx.strokeRect(o.x + dr.x, o.y + dr.y, o.w, o.h);
+                } else if (o.type === 'circle') {
+                    const dr = getDistort(0, time, lyr.vibe, lyr.disruption);
+                    const rad = Math.sqrt(o.w ** 2 + o.h ** 2);
+                    renderCtx.arc(o.x + dr.x, o.y + dr.y, rad, 0, Math.PI * 2);
+                }
+                renderCtx.stroke();
+            });
+        });
+    }
+
+    async function exportGif() {
+        setGifStatus('Rendering GIF...', false);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        const gif = new GIF({
+            workers: 2,
+            quality: 10,
+            width: canvas.width,
+            height: canvas.height,
+            workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+        });
+
+        const frameCount = 24;
+        const frameDelay = 100;
+        for (let frame = 0; frame < frameCount; frame++) {
+            const time = frame * 0.12;
+            renderFrame(time, tempCtx);
+            gif.addFrame(tempCanvas, { copy: true, delay: frameDelay });
+        }
+
+        gif.on('finished', function(blob) {
+            latestGifBlob = blob;
+            const url = URL.createObjectURL(blob);
+            latestGifUrl = url;
+            document.getElementById('gifLinkPanel').style.display = 'block';
+            document.getElementById('gifLinkText').innerHTML = `<a href="${url}" target="_blank">Download GIF</a>`;
+            setGifStatus('GIF ready. You can download it or upload it to Supabase.', false);
+        });
+
+        gif.render();
+    }
+
+    async function uploadGifToSupabase() {
+        if (!latestGifBlob) {
+            setGifStatus('Create a GIF first using EXPORT_GIF.', true);
+            return;
+        }
+        if (!supabaseClient) {
+            setGifStatus('Supabase client is not initialized. Set SUPABASE_URL and SUPABASE_ANON_KEY.', true);
+            return;
+        }
+
+        setGifStatus('Uploading GIF to Supabase...', false);
+        const fileName = `wiggly_paint_${Date.now()}.gif`;
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from(SUPABASE_BUCKET)
+            .upload(fileName, latestGifBlob, { contentType: 'image/gif', upsert: true });
+
+        if (uploadError) {
+            setGifStatus(`Upload failed: ${uploadError.message}`, true);
+            return;
+        }
+
+        const { data: publicData, error: publicError } = await supabaseClient.storage
+            .from(SUPABASE_BUCKET)
+            .createSignedUrl(fileName, 60 * 60);
+
+        if (publicError) {
+            setGifStatus(`Could not create download link: ${publicError.message}`, true);
+            return;
+        }
+
+        latestGifUrl = publicData.signedUrl;
+        document.getElementById('gifLinkPanel').style.display = 'block';
+        document.getElementById('gifLinkText').innerHTML = `<a href="${latestGifUrl}" target="_blank">Download GIF from Supabase</a>`;
+        setGifStatus('Uploaded successfully. Share the generated download link.', false);
+    }
+
+    function copyGifLink() {
+        if (!latestGifUrl) return;
+        navigator.clipboard.writeText(latestGifUrl).then(() => {
+            setGifStatus('Link copied to clipboard.', false);
+        }, () => {
+            setGifStatus('Unable to copy link.', true);
+        });
+    }
+
+    // --- Color ---
+    const wheel = document.getElementById('colorWheel');
+    const wctx = wheel.getContext('2d');
+    const outerRadius = Math.min(wheel.width, wheel.height) / 2 - 1;
+    const colorRadius = outerRadius - 18;
+    const wheelCenter = { x: wheel.width / 2, y: wheel.height / 2 };
+
+    function hsvToRgb(h, s, v) {
+        let c = v * s;
+        let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        let m = v - c;
+        let r = 0, g = 0, b = 0;
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+        return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+    }
+
+    function initWheel() {
+        const img = wctx.createImageData(wheel.width, wheel.height);
+        for (let y = 0; y < wheel.height; y++) {
+            for (let x = 0; x < wheel.width; x++) {
+                const dx = x - wheelCenter.x;
+                const dy = y - wheelCenter.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const idx = (y * wheel.width + x) * 4;
+                if (dist <= colorRadius) {
+                    const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+                    const sat = dist / colorRadius;
+                    const [r, g, b] = hsvToRgb(hue, sat, 1);
+                    img.data[idx] = r;
+                    img.data[idx + 1] = g;
+                    img.data[idx + 2] = b;
+                    img.data[idx + 3] = 255;
+                } else if (dist <= outerRadius) {
+                    img.data[idx] = 0;
+                    img.data[idx + 1] = 0;
+                    img.data[idx + 2] = 0;
+                    img.data[idx + 3] = 255;
+                } else {
+                    img.data[idx] = 10;
+                    img.data[idx + 1] = 10;
+                    img.data[idx + 2] = 10;
+                    img.data[idx + 3] = 255;
+                }
+            }
+        }
+        wctx.putImageData(img, 0, 0);
+    }
+
+    function getWheelColorAt(x, y) {
+        const dx = x - wheelCenter.x;
+        const dy = y - wheelCenter.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > outerRadius) return null;
+        if (dist > colorRadius) return { r: 0, g: 0, b: 0 };
+        const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+        const sat = dist / colorRadius;
+        const [r, g, b] = hsvToRgb(hue, sat, 1);
+        return { r, g, b };
+    }
+
+    initWheel();
+    updatePreview();
+    wheel.onclick = (e) => {
+        const r = wheel.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        const selected = getWheelColorAt(x, y);
+        if (!selected) return;
+        color.r = selected.r;
+        color.g = selected.g;
+        color.b = selected.b;
+        updatePreview();
+    };
+
+    wheel.onmousemove = (e) => {
+        const r = wheel.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        const hover = getWheelColorAt(x, y);
+        const label = document.getElementById('color-hover-label');
+        const preview = document.getElementById('color-preview');
+        const alpha = document.getElementById('alphaSlider').value / 100;
+        if (hover) {
+            label.innerText = `Hover color: rgba(${hover.r}, ${hover.g}, ${hover.b}, ${alpha.toFixed(2)})`;
+            preview.style.background = `rgba(${hover.r},${hover.g},${hover.b},${alpha})`;
+        } else {
+            label.innerText = 'Hover color: none';
+            updatePreview();
+        }
+    };
+
+    wheel.onmouseout = () => {
+        document.getElementById('color-hover-label').innerText = 'Hover color: none';
+        updatePreview();
+    };
+
+    function updatePreview() {
+        color.a = document.getElementById('alphaSlider').value / 100;
+        document.getElementById('color-preview').style.background = `rgba(${color.r},${color.g},${color.b},${color.a})`;
+    }
+
+    // --- Layers & UI ---
+    function setTool(t) { tool = t; updateUI(); }
+    function setVibe(v) { layers[activeIdx].vibe = v; updateUI(); }
+    function updateActiveLayerSettings() { 
+        layers[activeIdx].vibe = document.getElementById('vibeSelect').value;
+        layers[activeIdx].disruption = document.getElementById('disruptSlider').value; 
+    }
+
+    function addLayer() {
+        saveState();
+        layers.push({ id: Date.now(), visible: true, objects: [], vibe: 'classic', disruption: 5 });
+        activeIdx = layers.length-1;
+        updateUI();
+    }
+
+    function moveLayer(idx, dir) {
+        if (idx + dir < 0 || idx + dir >= layers.length) return;
+        saveState();
+        const temp = layers[idx];
+        layers[idx] = layers[idx + dir];
+        layers[idx + dir] = temp;
+        activeIdx = idx + dir;
+        updateUI();
+    }
+
+    function deleteLayer(idx, e) {
+        e.stopPropagation(); if(layers.length <= 1) return;
+        saveState();
+        layers.splice(idx, 1); activeIdx = Math.max(0, activeIdx - 1); updateUI();
+    }
+
+    function updateUI() {
+        const list = document.getElementById('layerList'); list.innerHTML = "";
+        layers.forEach((l, i) => {
+            const div = document.createElement('div');
+            div.className = "layer-item " + (i==activeIdx?'active-layer':'');
+            div.onclick = () => { activeIdx=i; syncSettings(); updateUI(); };
+            div.innerHTML = `<span>Layer_${i}</span> <div class="layer-btn-row">
+                <button class="tiny-btn" onclick="moveLayer(${i}, 1); event.stopPropagation();">▲</button>
+                <button class="tiny-btn" onclick="moveLayer(${i}, -1); event.stopPropagation();">▼</button>
+                <button class="tiny-btn" onclick="layers[${i}].visible=!layers[${i}].visible; event.stopPropagation(); updateUI();">${l.visible?'👁':'◻'}</button>
+                <button class="tiny-btn" style="color:#a44" onclick="deleteLayer(${i}, event)">✕</button>
+            </div>`;
+            list.prepend(div);
+        });
+        syncSettings();
+        updateFooter();
+    }
+
+    function syncSettings() {
+        const lyr = layers[activeIdx];
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        document.getElementById('t-'+tool).classList.add('active');
+        document.getElementById('vibeSelect').value = lyr.vibe;
+        document.getElementById('disruptSlider').value = lyr.disruption;
+    }
+
+    function updateFooter() {
+        document.getElementById('undoCount').innerText = undoStack.length;
+    }
+
+    function nukeEverything() { if(confirm("VOID ALL?")) { saveState(); layers = [{ id: Date.now(), visible: true, objects: [], vibe: 'classic', disruption: 5 }]; activeIdx = 0; updateUI(); } }
+
+    // --- Input Interaction ---
+    canvas.onmousedown = (e) => {
+        const r = canvas.getBoundingClientRect(); const x = e.clientX-r.left, y = e.clientY-r.top;
+        if(tool === 'select') {
+            selectedObj = null;
+            for(let i=layers[activeIdx].objects.length-1; i>=0; i--) {
+                let o = layers[activeIdx].objects[i];
+                if((o.type === 'brush' && o.pts.some(p => Math.abs(p.x-x)<15 && Math.abs(p.y-y)<15)) || 
+                   ((o.type === 'rect' || o.type === 'circle') && Math.abs(o.x-x)<30 && Math.abs(o.y-y)<30)) {
+                    saveState(); selectedObj = o; offset = {x, y}; break;
+                }
+            } return;
+        }
+        saveState();
+        painting = true;
+        layers[activeIdx].objects.push({
+            type: tool, color: `rgba(${color.r},${color.g},${color.b},${color.a})`,
+            thickness: document.getElementById('sizeSlider').value, pts: [{x, y}], x, y, w: 0, h: 0
+        });
+    };
+
+    canvas.onmousemove = (e) => {
+        const r = canvas.getBoundingClientRect(); const x = e.clientX-r.left, y = e.clientY-r.top;
+        document.getElementById('coords').innerText = Math.floor(x)+","+Math.floor(y);
+        if(tool === 'select' && selectedObj) {
+            const dx = x - offset.x, dy = y - offset.y;
+            if(selectedObj.pts) selectedObj.pts.forEach(p => { p.x += dx; p.y += dy; });
+            selectedObj.x += dx; selectedObj.y += dy; offset = {x, y}; return;
+        }
+        if(!painting) return;
+        let o = layers[activeIdx].objects[layers[activeIdx].objects.length-1];
+        if(o.type === 'brush' || o.type === 'eraser') o.pts.push({x, y}); else { o.w = x-o.x; o.h = y-o.y; }
+    };
+    window.onmouseup = () => { painting = false; selectedObj = null; };
+
+    function animate() {
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        const t = Date.now() * 0.005;
+        layers.forEach(lyr => {
+            if(!lyr.visible) return;
+            const d = lyr.disruption, v = lyr.vibe;
+            lyr.objects.forEach(o => {
+                ctx.beginPath(); ctx.strokeStyle = o.color; ctx.lineWidth = o.thickness; ctx.lineCap = 'round';
+                const distort = (i) => {
+                    if(v === 'classic') return { x: Math.sin(t + i*0.2)*d, y: 0 };
+                    if(v === 'ethereal') return { x: Math.sin(t + i*0.5)*d, y: Math.cos(t + i*0.5)*d };
+                    if(v === 'punk') return { x: (Math.random()-0.5)*d, y: (Math.random()-0.5)*d };
+                    if(v === 'orbital') return { x: Math.cos(t*2 + i)*d, y: Math.sin(t*0.5 + i)*d };
+                    return {x:0, y:0};
+                };
+                if(o.type === 'brush' || o.type === 'eraser') {
+                    if(o.type === 'eraser') ctx.strokeStyle = "#000";
+                    o.pts.forEach((p, i) => { const dr = distort(i); if(i===0) ctx.moveTo(p.x+dr.x, p.y+dr.y); else ctx.lineTo(p.x+dr.x, p.y+dr.y); });
+                } else if(o.type === 'rect') { const dr = distort(0); ctx.strokeRect(o.x+dr.x, o.y+dr.y, o.w, o.h); }
+                else if(o.type === 'circle') { const dr = distort(0); const rad = Math.sqrt(o.w**2 + o.h**2); ctx.arc(o.x+dr.x, o.y+dr.y, rad, 0, Math.PI*2); }
+                ctx.stroke();
+            });
+        });
+        requestAnimationFrame(animate);
+    }
+    updateUI(); animate();
+</script>
+</body>
+</html>
