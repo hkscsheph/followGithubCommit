@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>3D River Run: Pose Control Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #001a0d;
+            font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* 遊戲 UI 樣式 */
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 1);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #warning {
+            color: #ff4444;
+            display: none;
+            font-weight: bold;
+            font-size: 2em;
+            animation: blink 0.5s infinite;
+        }
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 26, 13, 0.9);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            border: 2px solid #00ffcc;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
+            min-width: 300px;
+        }
+        /* 骨架偵測偵錯視窗樣式 */
+        .detector-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 240px;
+            height: 180px;
+            border: 2px solid #555;
+            z-index: 50;
+            background: #000;
+        }
+        #video_source { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
+        #output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #status { position: absolute; top: -30px; right: 0; color: #0f0; font-size: 12px; }
+        #debug_info { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.5); font-size: 10px; padding: 2px; }
+
+        @keyframes blink {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div style="font-size: 1.8em; font-weight: 800">距離: <span id="dist">0</span>m</div>
+        <div style="font-size: 1.1em; color: #ffcc00">最高紀錄: <span id="best">0</span>m</div>
+        <div id="stageInfo" style="color: #00ffcc">環境: 山間溪流</div>
+        <div id="warning">⚠️ 掠食者接近中 ⚠️</div>
+    </div>
+
+    <div id="overlay">
+        <h1 id="overTitle">遊戲結束</h1>
+        <div id="finalResult"></div>
+        <div id="timerBox"><span id="count">5</span> 秒後返回主選單...</div>
+    </div>
+
+    <div class="detector-container">
+        <div id="status">正在初始化模型...</div>
+        <img id="video_source" src="http://localhost:3000/video_feed" crossorigin="anonymous" >
+        <canvas id="output_canvas"></canvas>
+        <div id="debug_info">偵測狀態：等待中</div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- 原始遊戲變數 ---
+        const SPEEDS = { UPSTREAM: 0.4, STREAM: 0.8, OCEAN: 1.0 };
+        let scene, camera, renderer, player, shark, riverBed, banks;
+        let obstacles = [];
+        let distance = 0;
+        let bestDistance = parseInt(localStorage.getItem('fish_run_v4_best')) || 0;
+        let currentSpeed = SPEEDS.UPSTREAM;
+        let gameActive = true;
+        let keys = {};
+        let clock = new THREE.Clock();
+
+        // --- 骨架控制變數 ---
+        let detector;
+        let bodyControl = "center"; // "left", "right", "center"
+        let bothHandsUpStart = null;
+        let singleHandUpStart = null;
+        const img = document.getElementById('video_source');
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const statusMsg = document.getElementById('status');
+        const debugInfo = document.getElementById('debug_info');
+
+        document.getElementById('best').innerText = bestDistance;
+
+        // --- 偵測初始化 ---
+        async function initDetector() {
+            try {
+                const model = poseDetection.SupportedModels.MoveNet;
+                const detectorConfig = {
+                    modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
+                    enableTracking: true
+                };
+                statusMsg.innerText = "正在載入模型...";
+                detector = await poseDetection.createDetector(model, detectorConfig);
+                statusMsg.innerText = "模型載入完成";
+                detectPose();
+            } catch (error) {
+                console.error("初始化失敗:", error);
+                statusMsg.innerText = "模型初始化失敗";
+            }
+        }
+
+        let smoothLean = 0;
+
+        async function detectPose() {
+            // 確保偵測器與影像都準備好了
+            if (detector && img.complete && img.naturalWidth !== 0) {
+                
+                // 自動校正畫布尺寸
+                if (canvas.width !== img.width) {
+                    canvas.width = img.width || 640;
+                    canvas.height = img.height || 480;
+                }
+
+                const poses = await detector.estimatePoses(img);
+                
+                // 繪製背景影像
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                if (poses.length > 0) {
+                    const pose = poses[0]; // 只追蹤第一個人
+                    const kp = pose.keypoints;
+                    
+                    drawKeypoints(kp);
+                    drawSkeleton(kp);
+
+                    // --- 行為偵測邏輯開始 ---
+                    const nose = kp[0];
+                    const leftWrist = kp[9], rightWrist = kp[10];
+                    const leftShoulder = kp[5], rightShoulder = kp[6];
+                    const leftHip = kp[11], rightHip = kp[12];
+
+                    const now = Date.now();
+
+                    // A. 手部控制 (跳轉與重啟)
+                    const isLeftUp = leftWrist.score > 0.3 && leftWrist.y < nose.y;
+                    const isRightUp = rightWrist.score > 0.3 && rightWrist.y < nose.y;
+
+                    if (isLeftUp && isRightUp) {
+                        if (!bothHandsUpStart) bothHandsUpStart = now;
+                        if (now - bothHandsUpStart > 2000) location.reload();
+                    } else { bothHandsUpStart = null; }
+
+                    if ((isLeftUp && !isRightUp) || (!isLeftUp && isRightUp)) {
+                        if (!singleHandUpStart) singleHandUpStart = now;
+                        if (now - singleHandUpStart > 2000) window.location.href = "./index";
+                    } else { singleHandUpStart = null; }
+
+                    // B. 身體傾斜控制 (更靈敏的算法)
+                    if (leftShoulder.score > 0.3 && rightShoulder.score > 0.3 && leftHip.score > 0.3 && rightHip.score > 0.3) {
+                        const midShoulderX = (leftShoulder.x + rightShoulder.x) / 2;
+                        const midHipX = (leftHip.x + rightHip.x) / 2;
+                        
+                        // 計算肩膀寬度作為基準單位 (解決距離遠近問題)
+                        const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+                        const leanRatio = (midShoulderX - midHipX) / shoulderWidth;
+
+                        // 平滑處理：0.7 舊值 + 0.3 新值，防止雜訊抖動
+                        smoothLean = smoothLean * 0.7 + leanRatio * 0.3;
+
+                        // 靈敏度門檻：只要偏移肩膀寬度的 12% 就算傾斜
+                        const sensitivity = 0.12; 
+
+                        if (smoothLean < -sensitivity) {
+                            bodyControl = "left"; // 向左游
+                            debugInfo.innerText = "行為：向左傾";
+                            debugInfo.style.color = "#ff00ff";
+                        } else if (smoothLean > sensitivity) {
+                            bodyControl = "right"; // 向右游
+                            debugInfo.innerText = "行為：向右傾";
+                            debugInfo.style.color = "#00ffff";
+                        } else {
+                            bodyControl = "center";
+                            debugInfo.innerText = "行為：站姿端正";
+                            debugInfo.style.color = "#ffffff";
+                        }
+                    }
+                } else {
+                    debugInfo.innerText = "偵測中：未發現人影";
+                }
+            }
+            requestAnimationFrame(detectPose);
+        }
+        // --- 繪圖輔助函數 ---
+        function drawKeypoints(keypoints) {
+            keypoints.forEach(keypoint => {
+                if (keypoint.score > 0.3) {
+                    ctx.beginPath();
+                    ctx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = "#00FF00"; ctx.fill();
+                }
+            });
+        }
+        function drawSkeleton(keypoints) {
+            const pairs = [[5, 6], [5, 7], [7, 9], [6, 8], [8, 10], [5, 11], [6, 12], [11, 12]];
+            pairs.forEach(([i, j]) => {
+                const kp1 = keypoints[i], kp2 = keypoints[j];
+                if (kp1 && kp2 && kp1.score > 0.3 && kp2.score > 0.3) {
+                    ctx.beginPath(); ctx.moveTo(kp1.x, kp1.y); ctx.lineTo(kp2.x, kp2.y);
+                    ctx.strokeStyle = "#FFFF00"; ctx.lineWidth = 3; ctx.stroke();
+                }
+            });
+        }
+
+        // --- 3D 遊戲核心邏輯 ---
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0a2a24, 0.015);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 6, 15);
+            camera.lookAt(0, 1, -5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2);
+            scene.add(hemiLight);
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(5, 15, 10);
+            scene.add(sun);
+
+            // 地形
+            const terrainGroup = new THREE.Group();
+            riverBed = new THREE.Mesh(new THREE.PlaneGeometry(40, 2000), new THREE.MeshStandardMaterial({ color: 0x142b26 }));
+            riverBed.rotation.x = -Math.PI / 2; riverBed.position.y = -4.5;
+            terrainGroup.add(riverBed);
+
+            const bankMat = new THREE.MeshStandardMaterial({ color: 0x0d211a });
+            const leftBank = new THREE.Mesh(new THREE.PlaneGeometry(120, 2000), bankMat);
+            leftBank.rotation.x = -Math.PI / 2; leftBank.position.set(-80, -4.48, 0);
+            terrainGroup.add(leftBank);
+            const rightBank = leftBank.clone(); rightBank.position.x = 80;
+            terrainGroup.add(rightBank);
+            banks = [leftBank, rightBank];
+            scene.add(terrainGroup);
+
+            createSlimGoldfish();
+            createDetailedShark();
+
+            window.addEventListener('keydown', (e) => (keys[e.code] = true));
+            window.addEventListener('keyup', (e) => (keys[e.code] = false));
+            window.addEventListener('resize', onWindowResize);
+
+            initDetector();
+            animate();
+        }
+
+        function createSlimGoldfish() {
+            player = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshPhongMaterial({ color: 0xff6600, shininess: 90 }));
+            body.scale.set(0.5, 0.7, 2.2); player.add(body);
+            
+            const blackMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            [[-0.35, 0.2, -1.6], [0.35, 0.2, -1.6]].forEach((pos) => {
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), blackMat);
+                eye.position.set(...pos); player.add(eye);
+            });
+
+            const finMat = new THREE.MeshPhongMaterial({ color: 0xff9933, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+            const sideFin = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape().moveTo(0,0).lineTo(1,-0.5).lineTo(0.8,0.5).lineTo(0,0)), finMat);
+            sideFin.position.set(0.3, -0.2, -0.5); sideFin.rotation.set(Math.PI / 2, 0, -0.5);
+            player.add(sideFin);
+            const rightFin = sideFin.clone(); rightFin.position.x = -0.3; rightFin.rotation.z = 0.5 + Math.PI;
+            player.add(rightFin);
+
+            player.tailGroup = new THREE.Group();
+            const tail = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape().moveTo(0,0).lineTo(1.5,1.2).lineTo(1.5,-1.2).lineTo(0,0)), finMat);
+            tail.rotation.y = Math.PI/2; player.tailGroup.add(tail);
+            player.tailGroup.position.z = 2.0; player.add(player.tailGroup);
+            scene.add(player);
+        }
+
+        function createDetailedShark() {
+            shark = new THREE.Group();
+            const sBody = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 16), new THREE.MeshStandardMaterial({ color: 0x334455 }));
+            sBody.scale.set(0.8, 1, 4.5); shark.add(sBody);
+            const sFin = new THREE.Mesh(new THREE.ConeGeometry(0.6, 2, 3), new THREE.MeshStandardMaterial({ color: 0x334455 }));
+            sFin.position.y = 1.6; sFin.rotation.x = 0.4; shark.add(sFin);
+            shark.position.set(0, 0, 70); scene.add(shark);
+        }
+
+        function spawnRock() {
+            const size = Math.random() * 2 + 0.8;
+            const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 0), new THREE.MeshStandardMaterial({ color: 0x3d3d3d }));
+            rock.position.set((Math.random() - 0.5) * 32, -3.5, -120);
+            rock.hitRadius = size * 0.75; scene.add(rock); obstacles.push(rock);
+        }
+
+        function update() {
+            if (!gameActive) return;
+            const time = clock.getElapsedTime();
+
+            // 混合控制：鍵盤 或 身體傾斜
+            if ((keys['ArrowLeft'] || bodyControl === "left") && player.position.x > -15) {
+                player.position.x -= 0.35;
+                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, 0.5, 0.1);
+            } else if ((keys['ArrowRight'] || bodyControl === "right") && player.position.x < 15) {
+                player.position.x += 0.35;
+                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, -0.5, 0.1);
+            } else {
+                player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, 0, 0.1);
+            }
+
+            player.tailGroup.rotation.y = Math.sin(time * 12) * 0.4;
+            player.position.y = Math.sin(time * 2.5) * 0.15;
+
+            distance += currentSpeed * 0.5;
+            document.getElementById('dist').innerText = Math.floor(distance);
+
+            // 環境階段切換
+            if (distance < 300) { currentSpeed = SPEEDS.UPSTREAM; }
+            else if (distance < 800) {
+                currentSpeed = SPEEDS.STREAM;
+                document.getElementById('stageInfo').innerText = '環境: 下游出口';
+                scene.fog.color.set(0x003344); scene.background = new THREE.Color(0x003344);
+            } else {
+                currentSpeed = SPEEDS.OCEAN;
+                document.getElementById('stageInfo').innerText = '環境: 開闊海洋';
+                document.getElementById('warning').style.display = 'block';
+                banks.forEach(b => (b.position.y = THREE.MathUtils.lerp(b.position.y, -20, 0.01)));
+                scene.fog.color.set(0x000d1a); scene.background = new THREE.Color(0x000d1a);
+                shark.position.z = THREE.MathUtils.lerp(shark.position.z, 6, 0.004);
+                shark.position.x = THREE.MathUtils.lerp(shark.position.x, player.position.x, 0.015);
+                if (shark.position.distanceTo(player.position) < 3.5) gameOver('被掠食者抓住了...');
+            }
+
+            if (Math.random() < 0.1) spawnRock();
+            obstacles.forEach((rock, i) => {
+                rock.position.z += currentSpeed * 2.5;
+                const dx = player.position.x - rock.position.x, dz = player.position.z - rock.position.z;
+                if (Math.sqrt(dx * dx + dz * dz) < rock.hitRadius + 0.45) gameOver('撞到岩石了！');
+                if (rock.position.z > 20) { scene.remove(rock); obstacles.splice(i, 1); }
+            });
+        }
+
+        function gameOver(msg) {
+            if (!gameActive) return;
+            gameActive = false;
+            const finalDist = Math.floor(distance);
+            const isNewBest = finalDist > bestDistance;
+            if (isNewBest) { bestDistance = finalDist; localStorage.setItem('fish_run_v4_best', finalDist); }
+
+            document.getElementById('finalResult').innerHTML = `
+                <div style="color: #ccc; margin-bottom: 10px;">${msg}</div>
+                <div style="font-size: 1.2em">本次距離: <b>${finalDist}</b>m</div>
+                ${isNewBest ? '<div style="color: #ffcc00; font-weight: bold; margin-top: 5px;">🔥 新紀錄保持者！ 🔥</div>' : ''}
+            `;
+            document.getElementById('overlay').style.display = 'block';
+
+            let timeLeft = 5;
+            const timer = setInterval(() => {
+                timeLeft--; document.getElementById('count').innerText = timeLeft;
+                if (timeLeft <= 0) { clearInterval(timer); window.location.href = './indexload.html'; }
+            }, 1000);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

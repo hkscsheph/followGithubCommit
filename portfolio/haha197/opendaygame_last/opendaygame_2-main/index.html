@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>IPcam 骨架偵測系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #222; color: white; font-family: sans-serif; }
+        .container { position: relative; margin-top: 20px; }
+        canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+        #status { margin: 10px; color: #0f0; font-size: 1.2em; font-weight: bold; }
+
+        /* 黑色主題方塊按鈕 */
+        nav { display: flex; gap: 15px; margin-top: 20px; }
+        .nav-btn {
+            padding: 15px 30px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #444;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+        /* 默認選取狀態 */
+        .nav-btn.selected {
+            border-color: #00FF00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h2>IPcam 即時骨架偵測 (2人)</h2>
+    <div id="status">準備中...</div>
+
+    <div class="container">
+        <img id="video_source" src="http://localhost:3000/video_feed" crossorigin="anonymous" onerror="handleImageError()">
+        <canvas id="output_canvas"></canvas>
+    </div>
+
+    <nav id="menu">
+        <a href="./game1load.html" class="nav-btn">game1</a>
+        <a href="./game2load.html" class="nav-btn">game2</a>
+        <a href="./game3load.html" class="nav-btn">game3</a>
+        <a href="./game4load.html" class="nav-btn">game4</a>
+        <!-- <a href="./tex.html" class="nav-btn">tex</a> -->
+    </nav>
+
+    <script>
+        const videoUrl = "http://localhost:3000/video_feed";
+        const img = document.getElementById('video_source');
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const menuButtons = document.querySelectorAll('.nav-btn');
+        
+        let detector;
+        let selectedIndex = 0; 
+        let bothHandsUpStart = null;
+        let lastSwitchTime = 0; 
+        const SWITCH_COOLDOWN = 1000; 
+        const WAIT_SECONDS = 3; 
+
+        // 監控 500 錯誤的函式
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(videoUrl, { method: 'HEAD', mode: 'no-cors' });
+                // 注意：由於跨域串流(mjpeg)通常無法直接讀取 status code，
+                // 這裡我們主要依賴下面的 handleImageError 和定期檢查。
+            } catch (e) {
+                console.log("偵測到連接異常");
+            }
+        }
+
+        // 當圖片載入失敗（如 500 錯誤導致串流中斷）立即重整
+        function handleImageError() {
+            console.log("影像來源錯誤，正在重新載入頁面...");
+            location.reload();
+        }
+
+        function updateMenuUI() {
+            menuButtons.forEach((btn, idx) => {
+                if (idx === selectedIndex) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        }
+
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function init() {
+            updateMenuUI();
+
+            // 開頭等待
+            for (let i = WAIT_SECONDS; i > 0; i--) {
+                status.innerText = `請稍候... 系統將在 ${i} 秒後啟動`;
+                await delay(1000);
+            }
+
+            try {
+                const model = poseDetection.SupportedModels.MoveNet;
+                const detectorConfig = {
+                    modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
+                    enableTracking: true
+                };
+                
+                status.innerText = "正在載入模型...";
+                detector = await poseDetection.createDetector(model, detectorConfig);
+                status.innerText = "偵測中：左/右手切換，雙手高舉確認";
+                
+                detectPose();
+                
+                // 每 5 秒額外檢查一次影像節點是否掛掉
+                setInterval(() => {
+                    if (img.naturalWidth === 0 && img.complete) {
+                        handleImageError();
+                    }
+                }, 5000);
+
+            } catch (error) {
+                status.innerText = "初始化失敗，3秒後嘗試重整...";
+                await delay(3000);
+                location.reload();
+            }
+        }
+
+        async function detectPose() {
+            if (detector && img.complete && img.naturalWidth !== 0) {
+                canvas.width = img.width || 640;
+                canvas.height = img.height || 480;
+
+                const poses = await detector.estimatePoses(img);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                if (poses.length > 0) {
+                    processGestures(poses[0].keypoints);
+                    poses.slice(0, 2).forEach(p => {
+                        drawKeypoints(p.keypoints);
+                        drawSkeleton(p.keypoints);
+                    });
+                }
+            }
+            requestAnimationFrame(detectPose);
+        }
+
+        function processGestures(keypoints) {
+            const now = Date.now();
+            const leftWrist = keypoints[9];
+            const rightWrist = keypoints[10];
+            const leftShoulder = keypoints[5];
+            const rightShoulder = keypoints[6];
+
+            const isLeftUp = leftWrist.score > 0.3 && leftWrist.y < leftShoulder.y;
+            const isRightUp = rightWrist.score > 0.3 && rightWrist.y < rightShoulder.y;
+
+            if (isLeftUp && isRightUp) {
+                if (!bothHandsUpStart) bothHandsUpStart = now;
+                if (now - bothHandsUpStart > 2000) {
+                    window.location.href = menuButtons[selectedIndex].href;
+                }
+            } else {
+                bothHandsUpStart = null;
+                if (now - lastSwitchTime > SWITCH_COOLDOWN) {
+                    if (isRightUp && !isLeftUp) {
+                        selectedIndex = (selectedIndex + 1) % menuButtons.length;
+                        lastSwitchTime = now;
+                        updateMenuUI();
+                    } else if (isLeftUp && !isRightUp) {
+                        selectedIndex = (selectedIndex - 1 + menuButtons.length) % menuButtons.length;
+                        lastSwitchTime = now;
+                        updateMenuUI();
+                    }
+                }
+            }
+        }
+
+        // 繪製邏輯保持不變...
+        function drawKeypoints(keypoints) {
+            keypoints.forEach(kp => {
+                if (kp.score > 0.3) {
+                    ctx.beginPath();
+                    ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = "#00FF00";
+                    ctx.fill();
+                }
+            });
+        }
+
+        function drawSkeleton(keypoints) {
+            const pairs = [[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12]];
+            pairs.forEach(([i,j]) => {
+                const kp1 = keypoints[i], kp2 = keypoints[j];
+                if (kp1.score > 0.3 && kp2.score > 0.3) {
+                    ctx.beginPath(); ctx.moveTo(kp1.x, kp1.y); ctx.lineTo(kp2.x, kp2.y);
+                    ctx.strokeStyle = "#FFFF00"; ctx.lineWidth = 3; ctx.stroke();
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

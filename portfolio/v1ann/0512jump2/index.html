@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Emoji Jump Mobile</title>
+    <style>
+        :root {
+            --bg: #d0d0d0;
+            --wechat-green: #07c160;
+        }
+        * {
+            /* 禁用手機上的長按選單與點擊高亮 */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            font-family: -apple-system, system-ui, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw;
+            overflow: hidden; touch-action: none;
+        }
+        #game-container {
+            position: relative; width: 100%; height: 100%;
+            max-width: 500px; /* 電腦版限制寬度，手機版會自動 100% */
+            background: #b4ced1; overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        /* 介面樣式 */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        #score-hud {
+            position: absolute; top: 10%; left: 10%;
+            font-size: 50px; font-weight: 800; color: #353535;
+            pointer-events: none; z-index: 50;
+        }
+        input {
+            border: none; border-bottom: 2px solid #ddd;
+            padding: 10px; font-size: 18px; text-align: center;
+            width: 200px; outline: none; margin-bottom: 20px;
+            background: transparent;
+        }
+        button {
+            background: var(--wechat-green); color: white;
+            border: none; padding: 15px 50px; font-size: 18px;
+            border-radius: 10px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(7, 193, 96, 0.3);
+        }
+        .rank-box {
+            width: 80%; max-width: 280px; margin-top: 20px; 
+            background: #f7f7f7; padding: 15px; border-radius: 12px;
+        }
+        .rank-item {
+            display: flex; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="game-container">
+    <div id="score-hud">0</div>
+
+    <div id="menu-start" class="overlay">
+        <div style="font-size: 60px; margin-bottom: 10px;">🐱</div>
+        <h2 style="margin-bottom: 30px;">跳一跳距離賽</h2>
+        <input type="text" id="player-name" placeholder="輸入你的名字" maxlength="8">
+        <button id="start-btn">開始遊戲</button>
+    </div>
+
+    <div id="menu-over" class="overlay" style="display: none;">
+        <h3 style="color: #999; margin: 0;">本次得分</h3>
+        <h1 id="last-score" style="font-size: 50px; margin: 10px 0;">0</h1>
+        <div class="rank-box">
+            <div id="rank-list"></div>
+        </div>
+        <button id="retry-btn" style="margin-top: 30px;">重新挑戰</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const scoreHud = document.getElementById('score-hud');
+    const menuStart = document.getElementById('menu-start');
+    const menuOver = document.getElementById('menu-over');
+    const nameInput = document.getElementById('player-name');
+
+    let width, height, dpr;
+    let score = 0, playerName = "", platforms = [], player = {};
+    let isPressing = false, pressTime = 0, gameState = 'START', lastTimestamp = 0;
+
+    function initCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        width = window.innerWidth > 500 ? 500 : window.innerWidth;
+        height = window.innerHeight;
+        // 根據 DPR 調整畫布大小以確保高清
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+    }
+
+    function resetGameData() {
+        score = 0;
+        scoreHud.innerText = "0";
+        platforms = [{ x: 50, y: height * 0.75, w: 90, h: 70, color: '#95a5a6' }];
+        addNextPlatform();
+        player = {
+            x: platforms[0].x + platforms[0].w / 2,
+            y: platforms[0].y,
+            vx: 0, vy: 0, squish: 1, onPlatform: platforms[0]
+        };
+    }
+
+    function addNextPlatform() {
+        const last = platforms[platforms.length - 1];
+        const dist = 100 + Math.random() * 120;
+        platforms.push({
+            x: last.x + dist,
+            y: height * 0.4 + Math.random() * (height * 0.4),
+            w: 70 + Math.random() * 40,
+            h: 70,
+            color: `hsl(${Math.random() * 360}, 40%, 65%)`
+        });
+    }
+
+    // 事件監聽優化
+    const onStart = (e) => {
+        if(gameState === 'PLAYING' && player.onPlatform) isPressing = true;
+    };
+    const onEnd = (e) => {
+        if(isPressing) {
+            const p = Math.min(pressTime / 8, 21);
+            player.vx = p * 0.85;
+            player.vy = -p * 1.4;
+            player.onPlatform = null;
+            player.squish = 1;
+            pressTime = 0;
+            isPressing = false;
+        }
+    };
+
+    // 同時支援滑鼠與觸控
+    canvas.addEventListener('mousedown', onStart);
+    window.addEventListener('mouseup', onEnd);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onStart(); }, {passive: false});
+    window.addEventListener('touchend', onEnd);
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+        playerName = nameInput.value.trim() || "玩家";
+        menuStart.style.display = 'none';
+        gameState = 'PLAYING';
+        initCanvas();
+        resetGameData();
+        requestAnimationFrame(gameLoop);
+    });
+
+    document.getElementById('retry-btn').addEventListener('click', () => {
+        menuOver.style.display = 'none';
+        resetGameData();
+        gameState = 'PLAYING';
+    });
+
+    function update(dt) {
+        if (gameState !== 'PLAYING') return;
+        const factor = dt / 16.67;
+
+        if (isPressing) {
+            pressTime += 1.5 * factor;
+            player.squish = Math.max(0.5, 1 - pressTime / 220);
+        }
+
+        if (!player.onPlatform) {
+            player.vy += 0.75 * factor;
+            player.x += player.vx * factor;
+            player.y += player.vy * factor;
+
+            for (let p of platforms) {
+                if (player.vy > 0 && player.x > p.x && player.x < p.x + p.w &&
+                    player.y >= p.y && player.y <= p.y + player.vy + 5) {
+                    player.y = p.y;
+                    player.vy = 0; player.vx = 0;
+                    if (player.onPlatform !== p) {
+                        player.onPlatform = p;
+                        score++;
+                        scoreHud.innerText = score;
+                        addNextPlatform();
+                        if(platforms.length > 5) platforms.shift();
+                    }
+                    break;
+                }
+            }
+        }
+
+        const scrollEdge = width * 0.3;
+        if (player.x > scrollEdge) {
+            const offset = (player.x - scrollEdge) * 0.1 * factor;
+            player.x -= offset;
+            platforms.forEach(p => p.x -= offset);
+        }
+        if (player.y > height + 100) gameOver();
+    }
+
+    function draw() {
+        ctx.fillStyle = "#b4ced1";
+        ctx.fillRect(0, 0, width, height);
+        platforms.forEach(p => {
+            ctx.fillStyle = "rgba(0,0,0,0.1)";
+            ctx.fillRect(p.x + 6, p.y + 6, p.w, p.h);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = "rgba(255,255,255,0.15)";
+            ctx.fillRect(p.x, p.y, p.w, 8);
+        });
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.scale(1, player.squish);
+        ctx.font = "46px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("🐱", 0, -5);
+        ctx.restore();
+    }
+
+    function gameLoop(t) {
+        const dt = t - lastTimestamp;
+        lastTimestamp = t;
+        if (dt < 100) { // 避免切換標籤後的極大 dt
+            update(dt);
+            draw();
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver() {
+        gameState = 'OVER';
+        document.getElementById('last-score').innerText = score;
+        saveScore(playerName, score);
+        showRank();
+        menuOver.style.display = 'flex';
+    }
+
+    function saveScore(n, s) {
+        let l = JSON.parse(localStorage.getItem('jump_m_rank') || "[]");
+        l.push({n, s});
+        l.sort((a,b) => b.s - a.s);
+        localStorage.setItem('jump_m_rank', JSON.stringify(l.slice(0, 5)));
+    }
+
+    function showRank() {
+        const l = JSON.parse(localStorage.getItem('jump_m_rank') || "[]");
+        document.getElementById('rank-list').innerHTML = l.map((i, r) => `
+            <div class="rank-item"><span>${r+1}. ${i.n}</span><b>${i.s}</b></div>
+        `).join('');
+    }
+
+    window.addEventListener('resize', initCanvas);
+    initCanvas();
+</script>
+</body>
+</html>

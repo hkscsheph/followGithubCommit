@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Clicker Challenge</title>
+    <style>
+        :root {
+            --bg: #1e272e;
+            --card: #2f3542;
+            --text: #ffffff;
+            --accent: #ff5e57;
+            --primary: #0be881;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        .container {
+            background: var(--card);
+            width: 90%;
+            max-width: 450px;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .hidden { display: none !important; }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: none;
+            font-size: 18px;
+            text-align: center;
+            outline: none;
+        }
+
+        .btn-start {
+            background: var(--primary);
+            color: #1e272e;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn-start:active { transform: scale(0.95); }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .stat-circle {
+            width: 100px;
+            height: 100px;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #tap-area {
+            height: 200px;
+            border: 3px dashed #57606f;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.05);
+            transition: background 0.05s;
+        }
+
+        .pulse { animation: pulse-green 0.1s linear; }
+        @keyframes pulse-green {
+            0% { background: rgba(11, 232, 129, 0.3); }
+            100% { background: transparent; }
+        }
+
+        #timer.danger { color: var(--accent); font-weight: bold; }
+
+        table { width: 100%; margin-top: 20px; color: #ced4da; border-collapse: collapse; }
+        th { border-bottom: 2px solid #57606f; padding: 10px; font-size: 14px; }
+        td { padding: 8px; border-bottom: 1px solid #3d4451; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="screen-setup" class="container">
+        <h1>⌨️ Ultimate Clicker</h1>
+        <p>Keyboard, Mouse, or Screen taps all count!</p>
+        <input type="text" id="username" placeholder="Enter Your Name" maxlength="10">
+        <br>
+        <button class="btn-start" onclick="startGame()">START CHALLENGE</button>
+    </div>
+
+    <div id="screen-game" class="container hidden">
+        <div class="game-info">
+            <div class="stat-circle">
+                <small>TIME</small>
+                <div id="timer" style="font-size: 24px;">30.0</div>
+            </div>
+            <div class="stat-circle">
+                <small>SCORE</small>
+                <div id="counter" style="font-size: 24px;">0</div>
+            </div>
+        </div>
+        <div id="tap-area">
+            <h2 style="margin: 0; color: var(--primary);">SMASH IT!</h2>
+            <p>Any key or click works</p>
+        </div>
+        <p id="player-msg">Go for it, <span id="p-name" style="color:var(--primary)"></span>!</p>
+    </div>
+
+    <div id="screen-result" class="container hidden">
+        <h1>🏁 TIME'S UP!</h1>
+        <div style="font-size: 48px; margin: 20px 0;">SCORE: <span id="final-score" style="color:var(--primary)">0</span></div>
+        <button class="btn-start" onclick="location.reload()" style="background:var(--accent); color:white">TRY AGAIN</button>
+        
+        <h3>🏆 Leaderboard (Top 5)</h3>
+        <table id="leaderboard">
+            <thead><tr><th>Rank</th><th>Name</th><th>Score</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        let score = 0;
+        let isGaming = false;
+        let timerId = null;
+
+        function startGame() {
+            const name = document.getElementById('username').value.trim();
+            if (!name) return alert("Please enter your name!");
+            
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            
+            isGaming = true;
+            
+            // Listen to Keyboard, Mouse, and Touch
+            window.addEventListener('keydown', handleInput);
+            window.addEventListener('mousedown', handleInput);
+            window.addEventListener('touchstart', handleInput, { passive: false });
+
+            startCountdown();
+        }
+
+        function handleInput(e) {
+            if (!isGaming) return;
+            
+            // Prevent scrolling on spacebar, etc.
+            if(e.type === 'keydown') {
+                if(e.repeat) return; // Prevent holding down a key
+            } else if (e.type === 'touchstart') {
+                e.preventDefault(); // Prevent zooming/scrolling on mobile
+            }
+
+            score++;
+            document.getElementById('counter').innerText = score;
+            
+            // Visual Feedback
+            const area = document.getElementById('tap-area');
+            area.classList.remove('pulse');
+            void area.offsetWidth; // Trigger reflow
+            area.classList.add('pulse');
+        }
+
+        function startCountdown() {
+            const startTime = Date.now();
+            const duration = 30000;
+
+            timerId = setInterval(() => {
+                const now = Date.now();
+                const diff = duration - (now - startTime);
+                const timeLeft = Math.max(0, diff / 1000);
+                
+                const timerText = document.getElementById('timer');
+                timerText.innerText = timeLeft.toFixed(1);
+
+                if (timeLeft <= 5) timerText.classList.add('danger');
+                if (timeLeft <= 0) endGame();
+            }, 100);
+        }
+
+        function endGame() {
+            isGaming = false;
+            clearInterval(timerId);
+            
+            window.removeEventListener('keydown', handleInput);
+            window.removeEventListener('mousedown', handleInput);
+            window.removeEventListener('touchstart', handleInput);
+
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            saveData();
+        }
+
+        function saveData() {
+            const name = document.getElementById('username').value;
+            let list = JSON.parse(localStorage.getItem('ultimate_tap_rank_en')) || [];
+            list.push({ name, score });
+            list.sort((a, b) => b.score - a.score);
+            list = list.slice(0, 5);
+            localStorage.setItem('ultimate_tap_rank_en', JSON.stringify(list));
+
+            const tbody = document.querySelector('#leaderboard tbody');
+            tbody.innerHTML = list.map((item, i) => `
+                <tr><td>${i+1}</td><td>${item.name}</td><td>${item.score}</td></tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

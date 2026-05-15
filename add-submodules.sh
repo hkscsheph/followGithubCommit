@@ -1,3 +1,4 @@
+git submodule add https://github.com/2223179/leopard-print-underwear.git portfolio/2223179/leopard-print-underwear
 git submodule add https://github.com/2223179/funny-gamee.git portfolio/2223179/funny-gamee
 git submodule add https://github.com/2223179/funny-game.git portfolio/2223179/funny-game
 git submodule add https://github.com/2223179/photo2pdf.git portfolio/2223179/photo2pdf
@@ -25,6 +26,7 @@ git submodule add https://github.com/Koodybiglookyea/koody1.git portfolio/Koodyb
 git submodule add https://github.com/Koodybiglookyea/word-game.git portfolio/Koodybiglookyea/word-game
 git submodule add https://github.com/Koodybiglookyea/game2.0.git portfolio/Koodybiglookyea/game2.0
 git submodule add https://github.com/Koodybiglookyea/stackblitz-starters-dvua41te.git portfolio/Koodybiglookyea/stackblitz-starters-dvua41te
+git submodule add https://github.com/haha197/opendaygame_last.git portfolio/haha197/opendaygame_last
 git submodule add https://github.com/haha197/opendaygame_2.git portfolio/haha197/opendaygame_2
 git submodule add https://github.com/haha197/openday_game.git portfolio/haha197/openday_game
 git submodule add https://github.com/haha197/openday_gm.git portfolio/haha197/openday_gm
@@ -37,7 +39,6 @@ git submodule add https://github.com/haha197/new_chat.git portfolio/haha197/new_
 git submodule add https://github.com/haha197/jslearning.git portfolio/haha197/jslearning
 git submodule add https://github.com/haha197/chat.git portfolio/haha197/chat
 git submodule add https://github.com/Kory520/clicker-game.git portfolio/kory520/clicker-game
-git submodule add https://github.com/kou1gn/stackblitz-openingday.git portfolio/kou1gn/stackblitz-openingday
 git submodule add https://github.com/kou1gn/stackblitz-instagram-screenshot-maker.git portfolio/kou1gn/stackblitz-instagram-screenshot-maker
 git submodule add https://github.com/kou1gn/stackblitz-starters-chatroom.git portfolio/kou1gn/stackblitz-starters-chatroom
 git submodule add https://github.com/kou1gn/20250912-1st-repo.git portfolio/kou1gn/20250912-1st-repo
@@ -52,6 +53,10 @@ git submodule add https://github.com/BARON1118/hksc-water.git portfolio/BARON111
 git submodule add https://github.com/BARON1118/stackblitz-hksc-daily.git portfolio/BARON1118/stackblitz-hksc-daily
 git submodule add https://github.com/BARON1118/liftCounter.git portfolio/BARON1118/liftCounter
 git submodule add https://github.com/BARON1118/cotd.git portfolio/BARON1118/cotd
+git submodule add https://github.com/v1ann/0512jump2.git portfolio/v1ann/0512jump2
+git submodule add https://github.com/v1ann/jump0512.git portfolio/v1ann/jump0512
+git submodule add https://github.com/v1ann/260512.git portfolio/v1ann/260512
+git submodule add https://github.com/v1ann/speed.git portfolio/v1ann/speed
 git submodule add https://github.com/v1ann/3.0waterfisheatshit.git portfolio/v1ann/3.0waterfisheatshit
 git submodule add https://github.com/v1ann/stackblitz-2.0wf.git portfolio/v1ann/stackblitz-2.0wf
 git submodule add https://github.com/v1ann/stackblitz-starters-z3zmr9en.git portfolio/v1ann/stackblitz-starters-z3zmr9en
@@ -64,6 +69,7 @@ git submodule add https://github.com/v1ann/stackblitz-starters-hkqewboi.git port
 git submodule add https://github.com/v1ann/chatroom1.git portfolio/v1ann/chatroom1
 git submodule add https://github.com/v1ann/chatroom.git portfolio/v1ann/chatroom
 git submodule add https://github.com/v1ann/1.git portfolio/v1ann/1
+git submodule add https://github.com/EmilyLau41/magic.git portfolio/EmilyLau41/magic
 git submodule add https://github.com/EmilyLau41/pictionary_v2.git portfolio/EmilyLau41/pictionary_v2
 git submodule add https://github.com/EmilyLau41/multiCamMap.git portfolio/EmilyLau41/multiCamMap
 git submodule add https://github.com/EmilyLau41/message-board.git portfolio/EmilyLau41/message-board
@@ -85,6 +91,7 @@ git submodule add https://github.com/EmilyLau41/-.git portfolio/EmilyLau41/-
 git submodule add https://github.com/EmilyLau41/emotionapp.git portfolio/EmilyLau41/emotionapp
 git submodule add https://github.com/giovanniuufj/Aemeath.git portfolio/giovanniuufj/Aemeath
 git submodule add https://github.com/giovanniuufj/pet.git portfolio/giovanniuufj/pet
+git submodule add https://github.com/2526452-cmd/GIF-.git portfolio/2526452-cmd/GIF-
 git submodule add https://github.com/2526452-cmd/theworld_tao.git portfolio/2526452-cmd/theworld_tao
 git submodule add https://github.com/2526452-cmd/q1.git portfolio/2526452-cmd/q1
 git submodule add https://github.com/2526452-cmd/hksc-interactive-map.git portfolio/2526452-cmd/hksc-interactive-map
@@ -111,6 +118,8 @@ git submodule add https://github.com/2526454-ship-it/CW-chcicken-Warfare.git por
 git submodule add https://github.com/2526454-ship-it/my-eng-persent.git portfolio/2526454-ship-it/my-eng-persent
 git submodule add https://github.com/2526454-ship-it/GT.git portfolio/2526454-ship-it/GT
 git submodule add https://github.com/2526454-ship-it/ni.git portfolio/2526454-ship-it/ni
+git submodule add https://github.com/hayden626/NEURAL_MEMO.git portfolio/hayden626/NEURAL_MEMO
+git submodule add https://github.com/hayden626/NASA.git portfolio/hayden626/NASA
 git submodule add https://github.com/hayden626/cam.git portfolio/hayden626/cam
 git submodule add https://github.com/hayden626/universe.git portfolio/hayden626/universe
 git submodule add https://github.com/hayden626/hong-kong.git portfolio/hayden626/hong-kong
@@ -151,6 +160,7 @@ git submodule add https://github.com/2526470-collab/hk-public-holiday.git portfo
 git submodule add https://github.com/2526470-collab/-messages.git portfolio/2526470-collab/-messages
 git submodule add https://github.com/2526470-collab/hksc-woman-toilet.git portfolio/2526470-collab/hksc-woman-toilet
 git submodule add https://github.com/2526470-collab/Krystal.git portfolio/2526470-collab/Krystal
+git submodule add https://github.com/crazyjayhm/game-3.git portfolio/crazyjayhm/game-3
 git submodule add https://github.com/crazyjayhm/Sports-field-circle-keyboard-race.git portfolio/crazyjayhm/Sports-field-circle-keyboard-race
 git submodule add https://github.com/crazyjayhm/camera-01.git portfolio/crazyjayhm/camera-01
 git submodule add https://github.com/crazyjayhm/weather-2.git portfolio/crazyjayhm/weather-2

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <title>BIO_CORE_SYSTEM // v9.0</title>
+    <link rel="stylesheet" href="styles.css">
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+    <div id="boot-overlay">
+        <div class="boot-content">
+            <h1 class="white-text">BIO_LINK_ESTABLISHED</h1>
+            <p class="guide-text">核心頻率同步中... 請感受系統的脈搏</p>
+            <button id="start-btn">進入神經網絡</button>
+        </div>
+    </div>
+
+    <div id="app-shell">
+        <canvas id="mainCanvas"></canvas>
+        
+        <div class="ui-container">
+            <div class="glass-panel left-panel">
+                <div class="tag">SYNAPSE_FEED // 數據流</div>
+                <div id="data-stream"></div>
+                <div class="stats">系統負載: <span id="load">12%</span></div>
+            </div>
+
+            <div class="glass-panel right-panel">
+                <div class="tag">NEURAL_MEMO // 意識記錄</div>
+                <div class="memo-area" contenteditable="true">> 核心正在呼吸...</div>
+                <hr>
+                <div class="tag">CORE_INTERACT // 核心互動</div>
+                <div class="score-board">數據能量: <span id="score">0</span></div>
+                <button class="action-btn" onclick="emitPulse()">釋放共振脈衝</button>
+            </div>
+        </div>
+
+        <div class="system-time white-text" id="clock">00:00:00</div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

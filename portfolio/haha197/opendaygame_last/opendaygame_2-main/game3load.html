@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>載入中...</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* 防止出現捲軸 */
+            background-color: black; /* 預設背景色 */
+            display: flex; 
+            justify-content: center;
+        }
+
+        .fullscreen-gif {
+            width: auto;
+            height: 100
+            vh;
+            
+            object-fit: cover; /* 確保 GIF 填滿整個畫面，可能會裁切邊緣以維持比例 */
+            display: block;
+        }
+    </style>
+    <meta http-equiv="refresh" content="3;url=./game2.html">
+</head>
+<body>
+
+    <img src="https://media.tenor.com/khzZ7-YSJW4AAAAM/cargando.gif" alt="Loading" class="fullscreen-gif">
+
+    <script>
+        // 使用 JavaScript 作為備援轉址（有些瀏覽器可能會阻擋 meta refresh）
+        setTimeout(function() {
+            window.location.href = "./game3.html";
+        }, 3000);
+    </script>
+</body>
+</html>

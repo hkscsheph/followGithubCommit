@@ -1,0 +1,56 @@
+:root {
+  --bg: #000005;
+  --accent: #00f2ff;
+  --market-up: #00ff88;
+  --market-down: #ff3366;
+  --bright-white: #ffffff;
+}
+
+body {
+  margin: 0; background: var(--bg); color: var(--bright-white);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden;
+}
+
+#boot-overlay {
+  position: fixed; inset: 0; background: #000; z-index: 1000;
+  display: flex; justify-content: center; align-items: center; text-align: center;
+}
+#boot-overlay.hidden { opacity: 0; pointer-events: none; transition: 1s; }
+
+#universeCanvas { position: absolute; inset: 0; z-index: 0; }
+
+.ui-layer {
+  position: relative; z-index: 10; display: grid; grid-template-columns: 350px 1fr 350px;
+  height: 100vh; padding: 30px; box-sizing: border-box; pointer-events: none;
+}
+
+.panel {
+  background: rgba(0, 5, 15, 0.85); border: 1px solid rgba(0, 242, 255, 0.2);
+  padding: 20px; backdrop-filter: blur(10px); pointer-events: all;
+  box-shadow: 0 0 40px rgba(0,0,0,0.9);
+  transform: perspective(1000px) rotateY(5deg); /* 增加立體傾斜感 */
+}
+
+.stock-panel { transform: perspective(1000px) rotateY(-5deg); }
+
+.tag { color: var(--accent); font-size: 10px; letter-spacing: 2px; margin-bottom: 15px; font-weight: bold; }
+
+/* 股市列表樣式 */
+.stock-item { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: monospace; font-size: 14px; }
+.up { color: var(--market-up); }
+.down { color: var(--market-down); }
+
+.mini-chart-container { width: 100%; height: 100px; margin-top: 20px; border-top: 1px solid #222; }
+
+.music-visualizer { display: flex; align-items: flex-end; gap: 3px; height: 40px; margin-top: 10px; }
+.bar { flex: 1; background: var(--accent); height: 20%; transition: height 0.1s; }
+
+.utility-btn {
+  width: 100%; padding: 10px; margin: 10px 0; background: transparent;
+  border: 1px solid #333; color: #fff; cursor: pointer; transition: 0.3s;
+}
+.utility-btn:hover { border-color: var(--accent); background: rgba(0,242,255,0.1); }
+
+.memo-area { min-height: 100px; outline: none; font-size: 13px; color: #ccc; }
+
+.top-bar { position: absolute; top: 0; width: 100%; padding: 15px 30px; display: flex; justify-content: space-between; z-index: 20; background: rgba(0,0,0,0.5); box-sizing: border-box; }

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <title>VOID_MARKET_OBSERVATORY v6.0</title>
+    <link rel="stylesheet" href="styles.css">
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+    <div id="boot-overlay">
+        <div class="boot-content">
+            <h1 class="white-text">NASA_DATA_SYNC_INITIALIZING</h1>
+            <p class="guide-text">正在對準太陽系座標... 獲取虛擬市場行情...</p>
+            <button id="start-btn">進入星際終端</button>
+        </div>
+    </div>
+
+    <div id="app-shell">
+        <canvas id="universeCanvas"></canvas>
+        
+        <header class="top-bar">
+            <div class="white-text">SOLAR_SYSTEM_MONITOR // DATA_FEED: NASA_API_SIM</div>
+            <div id="clock" class="white-text">12:00:00</div>
+        </header>
+
+        <main class="ui-layer">
+            <div class="panel stock-panel">
+                <div class="tag">VOID_MARKET // 虛擬股市</div>
+                <div id="market-list">
+                    </div>
+                <div class="mini-chart-container">
+                    <canvas id="stockChart"></canvas>
+                </div>
+            </div>
+
+            <div class="center-zone">
+                </div>
+
+            <div class="panel utility-panel">
+                <div class="tag">MISSION_LOG // 記事本</div>
+                <div class="memo-area" contenteditable="true">> 輸入任務...</div>
+                <hr>
+                <div class="tag">RESONANCE // 音樂視覺儀</div>
+                <div class="music-visualizer" id="visualizer">
+                    </div>
+                <button class="utility-btn" onclick="randomizeMarket()">重置市場波動</button>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

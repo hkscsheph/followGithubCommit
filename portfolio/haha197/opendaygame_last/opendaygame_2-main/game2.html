@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>IPcam 骨架偵測對戰系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #222; color: white; }
+        .container { position: relative; margin-top: 20px; }
+        canvas { position: absolute; top: 0; left: 0; }
+        #status { margin: 10px; color: #0f0; }
+        #action-overlay { position: absolute; top: 10px; left: 10px; pointer-events: none; }
+        #end-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; padding: 28px 32px; border-radius: 18px; color: white; text-align: center; min-width: 280px; box-shadow: 0 0 26px rgba(0,0,0,0.5); font-family: sans-serif; }
+        #end-screen h1 { margin: 0 0 10px; font-size: 48px; letter-spacing: 4px; }
+        #end-screen p { margin: 6px 0; font-size: 18px; }
+        #end-screen .countdown { margin-top: 12px; opacity: 0.9; }
+        .action-label { background: rgba(0,0,0,0.6); padding: 5px 10px; margin-bottom: 5px; border-radius: 5px; font-family: sans-serif; }
+    </style>
+</head>
+<body>
+
+    <h2>IPcam 即時骨架偵測 (支援 2 人) - 魚魚對戰模式</h2>
+    <div id="status">正在初始化模型...</div>
+
+    <div class="container">
+        <img id="video_source" src="http://localhost:3000/video_feed" crossorigin="anonymous" >
+        <canvas id="output_canvas"></canvas>
+        <div id="action-overlay"></div>
+        <div id="end-screen"></div>
+    </div>
+
+    <script>
+        const img = document.getElementById('video_source');
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const actionOverlay = document.getElementById('action-overlay');
+        const endScreen = document.getElementById('end-screen');
+    
+        let detector;
+        
+        // --- 遊戲邏輯變數 ---
+        let lastTime = performance.now();
+        let gameOver = false;
+        let winnerIndex = null;
+        let countdownSeconds = 5;
+        let countdownTimer = null;
+        const gameState = [
+            { hp: 1000, charge: 0, damage: 20, isBlocking: false, pos: 'left', color: '#4444FF', fishColor: 'blue', attackCount: 0, blockCount: 0, defenseDisabledTime: 0 },
+            { hp: 1000, charge: 0, damage: 20, isBlocking: false, pos: 'right', color: '#FF4444', fishColor: 'red', attackCount: 0, blockCount: 0, defenseDisabledTime: 0 }
+        ];
+        let projectiles = [];
+
+        async function init() {
+            try {
+                const model = poseDetection.SupportedModels.MoveNet;
+                const detectorConfig = {
+                    modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
+                    enableTracking: true
+                };
+                
+                status.innerText = "正在載入模型引擎...";
+                detector = await poseDetection.createDetector(model, detectorConfig);
+                status.innerText = "模型初始化成功，偵測中...";
+                
+                detectPose();
+            } catch (error) {
+                console.error("初始化失敗:", error);
+                status.innerText = "初始化失敗: " + error.message;
+            }
+        }
+    
+        async function detectPose() {
+            const now = performance.now();
+            const deltaTime = (now - lastTime) / 1000;
+            lastTime = now;
+
+            if (detector && img.complete && img.naturalWidth !== 0) {
+                canvas.width = img.width || 640;
+                canvas.height = img.height || 480;
+    
+                const poses = await detector.estimatePoses(img);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                actionOverlay.innerHTML = '';
+
+                // 重置每幀的防禦狀態
+                gameState[0].isBlocking = false;
+                gameState[1].isBlocking = false;
+
+                // 依據 X 座標排序，確保左邊的玩家控制左邊的魚
+                const sortedPoses = poses
+                    .filter(p => p.score > 0.2)
+                    .sort((a, b) => a.keypoints[0].x - b.keypoints[0].x)
+                    .slice(0, 2);
+
+                sortedPoses.forEach((pose, index) => {
+                    drawKeypoints(pose.keypoints);
+                    drawSkeleton(pose.keypoints);
+                    checkActions(pose.keypoints, index, deltaTime);
+                });
+
+                if (!gameOver) {
+                    updateGamePhysics(deltaTime);
+                }
+                updateStatusTimers(deltaTime);
+                drawGameUI();
+            }
+            requestAnimationFrame(detectPose);
+        }
+    
+        function drawKeypoints(keypoints) {
+            keypoints.forEach(kp => {
+                if (kp.score > 0.3) {
+                    ctx.beginPath();
+                    ctx.arc(kp.x, kp.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = "#00FF00";
+                    ctx.fill();
+                }
+            });
+        }
+    
+        function drawSkeleton(keypoints) {
+            const pairs = [[5, 6], [5, 7], [7, 9], [6, 8], [8, 10], [5, 11], [6, 12], [11, 12]];
+            pairs.forEach(([i, j]) => {
+                const kp1 = keypoints[i];
+                const kp2 = keypoints[j];
+                if (kp1 && kp2 && kp1.score > 0.3 && kp2.score > 0.3) {
+                    ctx.beginPath();
+                    ctx.moveTo(kp1.x, kp1.y);
+                    ctx.lineTo(kp2.x, kp2.y);
+                    ctx.strokeStyle = "#FFFF00";
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function checkActions(keypoints, personIndex, dt) {
+            const getKP = (idx) => (keypoints[idx] && keypoints[idx].score > 0.3) ? keypoints[idx] : null;
+            const lShoulder = getKP(5);
+            const rShoulder = getKP(6);
+            const lWrist = getKP(9);
+            const rWrist = getKP(10);
+            const lHip = getKP(11);
+
+            let actionName = "站立中";
+            let color = "white";
+            let state = gameState[personIndex];
+
+            if (lShoulder && rShoulder && lWrist && rWrist) {
+                const shoulderWidth = Math.abs(lShoulder.x - rShoulder.x);
+                const centerX = (lShoulder.x + rShoulder.x) / 2;
+
+                // 1. 雙手向上高過頭頂 (累積攻擊)
+                if (lWrist.y < lShoulder.y - 50 && rWrist.y < rShoulder.y - 50) {
+                    actionName = "雙手高舉過頭";
+                    color = "#FF5733";
+                    if (state.damage < 200) {
+                        state.damage = Math.min(200, state.damage + 40 * dt);
+                        state.charge += 40 * dt; // 用於視覺顯示圓形大小
+                    } else {
+                        state.damage = 300;
+                    }
+                } 
+                // 2. 雙手橫向伸開 (發動攻擊)
+                else {
+                    const handSpan = Math.abs(lWrist.x - rWrist.x);
+                    const isLevel = Math.abs(lWrist.y - lShoulder.y) < 100 && Math.abs(rWrist.y - rShoulder.y) < 100;
+                    const isAtSides = (lWrist.x < centerX && rWrist.x > centerX) || (rWrist.x < centerX && lWrist.x > centerX);
+                    
+                    if (handSpan > (shoulderWidth * 1.6) && isLevel && isAtSides) {
+                        actionName = "雙手橫向伸開";
+                        color = "#33FF57";
+                        if (state.damage > 10) {
+                            fireProjectile(personIndex);
+                        }
+                    }
+                    // 3. 雙掌放在胸前 (防禦)
+                    else {
+                        const isWristInCenter = (lWrist.x > Math.min(lShoulder.x, rShoulder.x)) && 
+                                                (rWrist.x < Math.max(lShoulder.x, rShoulder.x));
+                        const isWristAtChestHeight = lWrist.y > lShoulder.y && lWrist.y < (lHip ? lHip.y : lShoulder.y + 150);
+                        const wristsClose = Math.abs(lWrist.x - rWrist.x) < (shoulderWidth * 0.6);
+
+                        if (isWristInCenter && isWristAtChestHeight && wristsClose && state.defenseDisabledTime <= 0) {
+                            actionName = "雙掌放在胸前";
+                            color = "#3357FF";
+                            state.isBlocking = true;
+                            // 格擋時圓形稍微減少
+                            if (state.charge > 0) {
+                                state.charge -= 10 * dt;
+                                state.damage -= 5 * dt;
+                            }
+                        } else if (isWristInCenter && isWristAtChestHeight && state.defenseDisabledTime > 0) {
+                            actionName = "防禦禁用中";
+                            color = "#FFDD33";
+                        }
+                    }
+                }
+            }
+
+            const div = document.createElement('div');
+            div.className = 'action-label';
+            div.style.color = color;
+            div.innerHTML = `人員 ${personIndex + 1}: ${actionName} (威力: ${Math.floor(state.damage)})`;
+            actionOverlay.appendChild(div);
+        }
+
+        // --- 遊戲引擎函式 ---
+
+        function fireProjectile(index) {
+            const state = gameState[index];
+            if (gameOver || state.damage <= 10) return;
+            state.attackCount += 1;
+            const speedBase = 600;
+            // 圓形越大(damage大)速度越慢
+            const speed = Math.max(150, speedBase - (state.damage / 3));
+            const isSpecial = state.damage >= 200;
+            
+            projectiles.push({
+                x: index === 0 ? 150 : canvas.width - 150,
+                y: canvas.height / 2,
+                radius: 10 + (state.damage / 20),
+                damage: state.damage,
+                speed: index === 0 ? speed : -speed,
+                owner: index,
+                isSpecial
+            });
+            
+            // 重置
+            state.damage = 10;
+            state.charge = 0;
+        }
+
+        function updateGamePhysics(dt) {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                p.x += p.speed * dt;
+
+                // 碰撞檢測
+                let hitPlayer = -1;
+                if (p.owner === 0 && p.x > canvas.width - 100) hitPlayer = 1;
+                if (p.owner === 1 && p.x < 100) hitPlayer = 0;
+
+                if (hitPlayer !== -1) {
+                    let target = gameState[hitPlayer];
+                    if (!target.isBlocking) {
+                        if (p.isSpecial) {
+                            target.defenseDisabledTime = 2;
+                            const attacker = gameState[p.owner];
+                            attacker.hp = Math.min(1500, attacker.hp + 200);
+                        }
+                        target.hp -= p.damage;
+                        // 受傷重置
+                        target.damage = 10;
+                        target.charge = -1;
+                    } else {
+                        target.blockCount += 1;
+                    }
+                    projectiles.splice(i, 1);
+                } else if (p.x < 0 || p.x > canvas.width) {
+                    projectiles.splice(i, 1);
+                }
+            }
+
+            if (!gameOver && (gameState[0].hp <= 0 || gameState[1].hp <= 0)) {
+                const winner = gameState[0].hp > 0 ? 0 : 1;
+                setGameOver(winner);
+            }
+        }
+
+        function drawGameUI() {
+            const arenaW = canvas.width * 0.9;
+            const arenaH = arenaW * (9/32);
+            const arenaX = (canvas.width - arenaW) / 2;
+            const arenaY = (canvas.height - arenaH) / 2;
+
+            // 1. 繪製 32:9 長方形區域
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(arenaX, arenaY, arenaW, arenaH);
+            ctx.fillStyle = "rgba(255,255,255,0.1)";
+            ctx.fillRect(arenaX, arenaY, arenaW, arenaH);
+
+            // 2. 繪製兩端的魚
+            // 左邊藍色魚
+            drawFish(arenaX + 30, arenaY + arenaH/2, 'blue', 'left');
+            // 右邊紅色魚
+            drawFish(arenaX + arenaW - 30, arenaY + arenaH/2, 'red', 'right');
+
+            // 3. 顯示血量與累積能量圓
+            gameState.forEach((state, i) => {
+                const fishX = i === 0 ? arenaX + 30 : arenaX + arenaW - 30;
+                const fishY = arenaY + arenaH/2;
+
+                // 血量文字
+                ctx.fillStyle = "white";
+                ctx.font = "16px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(`HP: ${Math.max(0, Math.floor(state.hp))}`, fishX, fishY + 40);
+
+                // 累積能量圓 (深藍色)
+                if (state.damage > 10) {
+                    ctx.beginPath();
+                    ctx.arc(fishX, fishY - 50, 10 + (state.damage/20), 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(0, 0, 139, 0.8)";
+                    ctx.fill();
+                }
+
+                // 防禦圓形 (半透明淡藍色)
+                if (state.isBlocking) {
+                    ctx.beginPath();
+                    ctx.arc(fishX, fishY, 45, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(173, 216, 230, 0.5)";
+                    ctx.fill();
+                }
+
+                if (state.defenseDisabledTime > 0) {
+                    ctx.fillStyle = "yellow";
+                    ctx.font = "24px Arial";
+                    ctx.fillText("!", fishX, fishY - 70);
+                }
+            });
+
+            // 4. 繪製發射中的能量彈
+            projectiles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                if (p.isSpecial) {
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+                    ctx.strokeStyle = "rgba(255, 255, 0, 0.8)";
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.fillStyle = "rgba(0, 0, 139, 1)";
+                    ctx.strokeStyle = "cyan";
+                    ctx.lineWidth = 1;
+                }
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0,0,0,0.35)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function drawFish(x, y, color, side) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            // 畫一個簡單的魚形狀
+            if(side === 'left') {
+                ctx.ellipse(x, y, 25, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.moveTo(x-20, y);
+                ctx.lineTo(x-35, y-15);
+                ctx.lineTo(x-35, y+15);
+            } else {
+                ctx.ellipse(x, y, 25, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.moveTo(x+20, y);
+                ctx.lineTo(x+35, y-15);
+                ctx.lineTo(x+35, y+15);
+            }
+            ctx.fill();
+        }
+
+        function updateStatusTimers(dt) {
+            gameState.forEach(state => {
+                if (state.defenseDisabledTime > 0) {
+                    state.defenseDisabledTime = Math.max(0, state.defenseDisabledTime - dt);
+                }
+            });
+        }
+
+        function setGameOver(index) {
+            gameOver = true;
+            winnerIndex = index;
+            const winner = gameState[index];
+            status.innerText = `對戰結束，勝利者：人員 ${index + 1}`;
+            endScreen.style.backgroundColor = winner.color;
+            endScreen.innerHTML = `
+                <h1>WIN</h1>
+                <p>勝利方：人員 ${index + 1}</p>
+                <p>總攻擊次數：${winner.attackCount}</p>
+                <p>成功防禦次數：${winner.blockCount}</p>
+                <p class="countdown">${countdownSeconds} 秒後返回 ./index</p>
+            `;
+            endScreen.style.display = 'block';
+            countdownSeconds = 5;
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            countdownTimer = setInterval(() => {
+                countdownSeconds -= 1;
+                const countdownEl = endScreen.querySelector('.countdown');
+                if (countdownEl) {
+                    countdownEl.textContent = `${countdownSeconds} 秒後返回 ./index`;
+                }
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    window.location.href = './indexload.html';
+                }
+            }, 1000);
+        }
+    
+        init();
+    </script>
+</body>
+</html>

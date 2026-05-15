@@ -1,0 +1,10 @@
+.runner {
+  position: absolute;
+  bottom: 120px; /* 初始高度 */
+  left: 20%;
+  width: 60px;
+  height: 120px;
+  /* 這裡原本可能有 bounce 動畫，請將其刪除 */
+  transition: bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+  z-index: 10;
+} 

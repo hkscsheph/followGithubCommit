@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>IPcam 骨架偵測系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #222; color: white; }
+        .container { position: relative; margin-top: 20px; }
+        canvas { position: absolute; top: 0; left: 0; }
+        #status { margin: 10px; color: #0f0; }
+    </style>
+</head>
+<body>
+
+    <h2>IPcam 即時骨架偵測 (2人)</h2>
+    <div id="status">正在初始化模型...</div>
+
+    <div class="container">
+        <img id="video_source" src="http://localhost:3000/video_feed" crossorigin="anonymous" >
+        <canvas id="output_canvas"></canvas>
+    </div>
+
+    <script>
+        const img = document.getElementById('video_source');
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        let bothHandsUpStart = null;
+        let singleHandUpStart = null;
+    
+        let detector;
+    
+        async function init() {
+            try {
+                // 修正點 1: 使用 poseDetection (小駝峰)
+                const model = poseDetection.SupportedModels.MoveNet;
+                const detectorConfig = {
+                    modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
+                    enableTracking: true
+                };
+                
+                status.innerText = "正在載入模型...";
+                detector = await poseDetection.createDetector(model, detectorConfig);
+                status.innerText = "模型載入完成，偵測中...";
+                
+                detectPose();
+            } catch (error) {
+                console.error("初始化失敗:", error);
+                status.innerText = "模型初始化失敗，請檢查網路連線。";
+            }
+        }
+    
+        async function detectPose() {
+            if (detector && img.complete && img.naturalWidth !== 0) {
+                canvas.width = img.width || 640;
+                canvas.height = img.height || 480;
+    
+                // 修正點 2: 使用 detector.estimatePoses
+                const poses = await detector.estimatePoses(img);
+    
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    
+                // 偵測前兩個人
+                poses.slice(0, 2).forEach(pose => {
+                    drawKeypoints(pose.keypoints);
+                    drawSkeleton(pose.keypoints);
+                });
+            }
+            requestAnimationFrame(detectPose);
+        }
+
+        // 1. 偵察當雙手高舉過頭頂持續兩秒，重新開始
+        if (isLeftUp && isRightUp) {
+                if (!bothHandsUpStart) bothHandsUpStart = now;
+                if (now - bothHandsUpStart > 2000) {
+                    location.reload(); // 重新開始
+                }
+            } else {
+                bothHandsUpStart = null;
+            }
+
+            // 2. 當單手舉過頭持續兩秒，轉換頁面至./index
+            // 注意：若雙手同時舉起，優先觸發上面的「重新開始」，這裡排除雙手同時舉起的情況
+            if ((isLeftUp && !isRightUp) || (!isLeftUp && isRightUp)) {
+                if (!singleHandUpStart) singleHandUpStart = now;
+                if (now - singleHandUpStart > 2000) {
+                    window.location.href = "./index"; // 轉換頁面
+                }
+            } else {
+                singleHandUpStart = null;
+            }
+    
+        function drawKeypoints(keypoints) {
+            keypoints.forEach(keypoint => {
+                // 只顯示信心值大於 0.3 的點
+                if (keypoint.score > 0.3) {
+                    ctx.beginPath();
+                    ctx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = "#00FF00"; // 改成亮綠色比較好辨識
+                    ctx.fill();
+                }
+            });
+        }
+    
+        function drawSkeleton(keypoints) {
+            // 1. 在函式內部直接定義連線對，確保不會發生 ReferenceError
+            const pairs = [
+                [5, 6],   // 肩膀連線
+                [5, 7],   // 左上臂 (左肩-左肘)
+                [7, 9],   // 左前臂 (左肘-左腕)
+                [6, 8],   // 右上臂 (右肩-右肘)
+                [8, 10],  // 右前臂 (右肘-右腕)
+                [5, 11],  // 左軀幹 (左肩-左髖)
+                [6, 12],  // 右軀幹 (右肩-右髖)
+                [11, 12]  // 髖部連線
+            ];
+
+            // 2. 遍歷並繪製
+            pairs.forEach(([i, j]) => {
+                const kp1 = keypoints[i];
+                const kp2 = keypoints[j];
+
+                // 只有當兩個點的信心值都夠高時才繪製 (信心值門檻設為 0.3)
+                if (kp1 && kp2 && kp1.score > 0.3 && kp2.score > 0.3) {
+                    ctx.beginPath();
+                    ctx.moveTo(kp1.x, kp1.y);
+                    ctx.lineTo(kp2.x, kp2.y);
+                    ctx.strokeStyle = "#FFFF00"; // 黃色骨架線
+                    ctx.lineWidth = 3;           // 加粗一點比較清楚
+                    ctx.stroke();
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

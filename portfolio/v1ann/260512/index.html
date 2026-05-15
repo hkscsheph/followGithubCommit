@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Clicker Challenge</title>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    
+    <style>
+        :root { --bg: #1e272e; --card: #2f3542; --text: #ffffff; --accent: #ff5e57; --primary: #0be881; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: var(--bg); color: var(--text); overflow: hidden; touch-action: manipulation; user-select: none; }
+        .container { background: var(--card); width: 90%; max-width: 450px; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .hidden { display: none !important; }
+        input { width: 80%; padding: 12px; margin: 20px 0; border-radius: 10px; border: none; font-size: 18px; text-align: center; outline: none; }
+        .btn-start { background: var(--primary); color: #1e272e; padding: 15px 40px; border: none; border-radius: 10px; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .game-info { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .stat-circle { width: 100px; height: 100px; border: 4px solid var(--primary); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #tap-area { height: 150px; border: 3px dashed #57606f; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 20px 0; background: rgba(255,255,255,0.05); }
+        .pulse { animation: pulse-green 0.1s linear; }
+        @keyframes pulse-green { 0% { background: rgba(11, 232, 129, 0.3); } 100% { background: transparent; } }
+        table { width: 100%; margin-top: 15px; color: #ced4da; border-collapse: collapse; }
+        th { border-bottom: 2px solid #57606f; padding: 8px; font-size: 14px; }
+        td { padding: 6px; border-bottom: 1px solid #3d4451; }
+        .loading-text { font-style: italic; color: #aaa; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="screen-setup" class="container">
+        <h1>🌎 GLOBAL Clicker</h1>
+        <p>Compete with players worldwide!</p>
+        <input type="text" id="username" placeholder="Your Name" maxlength="10">
+        <br>
+        <button class="btn-start" onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="screen-game" class="container hidden">
+        <div class="game-info">
+            <div class="stat-circle"><small>TIME</small><div id="timer" style="font-size: 24px;">30.0</div></div>
+            <div class="stat-circle"><small>SCORE</small><div id="counter" style="font-size: 24px;">0</div></div>
+        </div>
+        <div id="tap-area"><h2>SMASH!</h2></div>
+        <p>Player: <span id="p-name" style="color:var(--primary)"></span></p>
+    </div>
+
+    <div id="screen-result" class="container hidden">
+        <h2>🏁 TIME'S UP!</h2>
+        <div style="font-size: 40px; margin: 10px 0;">SCORE: <span id="final-score" style="color:var(--primary)">0</span></div>
+        <button class="btn-start" onclick="location.reload()" style="background:var(--accent); color:white">RETRY</button>
+        
+        <h3>🏆 WORLD RANKING (Top 10)</h3>
+        <table id="leaderboard">
+            <thead><tr><th>Rank</th><th>Name</th><th>Score</th></tr></thead>
+            <tbody id="leaderboard-body">
+                <tr><td colspan="3" class="loading-text">Loading world scores...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // --- ⚠️ 重要：請在這裡填入你的 Firebase 配置 ---
+        const firebaseConfig = {
+            apiKey: "你的API_KEY",
+            databaseURL: "你的DATABASE_URL",
+            projectId: "你的PROJECT_ID",
+        };
+        // ----------------------------------------------
+
+        // 初始化 Firebase (如果沒填配置，會跑 Local 模式)
+        let useFirebase = false;
+        if (firebaseConfig.apiKey !== "你的API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+            useFirebase = true;
+        }
+
+        let score = 0;
+        let isGaming = false;
+        let timerId = null;
+
+        function startGame() {
+            const name = document.getElementById('username').value.trim();
+            if (!name) return alert("Enter name!");
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            isGaming = true;
+            window.addEventListener('keydown', handleInput);
+            window.addEventListener('mousedown', handleInput);
+            startCountdown();
+        }
+
+        function handleInput(e) {
+            if (!isGaming) return;
+            if(e.type === 'keydown' && e.repeat) return;
+            score++;
+            document.getElementById('counter').innerText = score;
+            const area = document.getElementById('tap-area');
+            area.classList.remove('pulse');
+            void area.offsetWidth;
+            area.classList.add('pulse');
+        }
+
+        function startCountdown() {
+            const startTime = Date.now();
+            timerId = setInterval(() => {
+                const diff = 30000 - (Date.now() - startTime);
+                const timeLeft = Math.max(0, diff / 1000);
+                document.getElementById('timer').innerText = timeLeft.toFixed(1);
+                if (timeLeft <= 0) endGame();
+            }, 100);
+        }
+
+        function endGame() {
+            isGaming = false;
+            clearInterval(timerId);
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            
+            if (useFirebase) {
+                uploadScore();
+            } else {
+                alert("Running in LOCAL mode. To see others, please set up Firebase!");
+                showLocalRanking();
+            }
+        }
+
+        // 上傳分數到全球資料庫
+        function uploadScore() {
+            const name = document.getElementById('username').value;
+            const dbRef = firebase.database().ref('scores');
+            dbRef.push({ name, score, time: Date.now() });
+            
+            // 即時獲取全球前 10 名
+            dbRef.orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+                const data = [];
+                snapshot.forEach((child) => { data.push(child.val()); });
+                renderTable(data.reverse());
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = data.map((item, i) => `
+                <tr><td>${i+1}</td><td>${item.name}</td><td>${item.score}</td></tr>
+            `).join('');
+        }
+
+        function showLocalRanking() {
+            // 退回原本的 LocalStorage 邏輯
+            let list = JSON.parse(localStorage.getItem('global_mock_rank')) || [];
+            list.push({ name: document.getElementById('username').value, score });
+            list.sort((a,b)=>b.score-a.score);
+            renderTable(list.slice(0, 10));
+        }
+    </script>
+</body>
+</html>

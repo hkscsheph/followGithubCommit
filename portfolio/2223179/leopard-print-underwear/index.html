@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>豹紋海跑者：鯊魚危機</title>
+    <style>
+        :root {
+            --skin: #ffdbac;
+            --leopard-base: #f0ad4e;
+            --leopard-spot: #332211;
+            --ocean-blue: #0077be;
+            --shark-body: #78909c;
+            --shark-belly: #cfd8dc;
+        }
+
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .game-container { position: relative; width: 100vw; height: 100vh; cursor: pointer; }
+
+        /* UI 面板 */
+        #ui-layer {
+            position: absolute; top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between; z-index: 100;
+        }
+        .stat { font-size: 28px; font-weight: bold; color: white; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        #lives { color: #ff5252; letter-spacing: 5px; }
+
+        /* 海浪 */
+        .ocean {
+            position: absolute; bottom: 0; width: 200%; height: 150px;
+            background: var(--ocean-blue); animation: wave-move 1.5s linear infinite; z-index: 5;
+        }
+        .wave {
+            position: absolute; top: -20px; width: 100%; height: 25px;
+            background-image: radial-gradient(circle at 20px -5px, transparent 20px, white 21px);
+            background-size: 40px 40px;
+        }
+        @keyframes wave-move { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* 跑步者角色 */
+        .runner {
+            position: absolute; bottom: 120px; left: 150px; width: 50px; height: 100px;
+            transition: bottom 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67); z-index: 10;
+        }
+        .head { width: 32px; height: 32px; background: var(--skin); border-radius: 50%; margin: 0 auto; position: relative; }
+        .torso { width: 36px; height: 40px; background: var(--skin); margin: -2px auto 0; }
+        .leopard-briefs {
+            position: absolute; top: 65px; width: 42px; height: 25px; left: 4px;
+            background: var(--leopard-base);
+            background-image: radial-gradient(var(--leopard-spot) 20%, transparent 25%), radial-gradient(var(--leopard-spot) 20%, transparent 25%);
+            background-position: 0 0, 8px 8px; background-size: 12px 12px;
+            border-radius: 0 0 10px 10px; z-index: 12;
+        }
+        .leg { position: absolute; background: var(--skin); width: 12px; height: 38px; top: 85px; border-radius: 5px; }
+        .leg-l { left: 8px; animation: run 0.5s infinite; }
+        .leg-r { right: 8px; animation: run 0.5s infinite reverse; }
+
+        @keyframes run { 0%, 100% { transform: rotate(-30deg); transform-origin: top; } 50% { transform: rotate(30deg); transform-origin: top; } }
+        
+        /* 受傷閃爍動畫 */
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .hurt { animation: blink 0.2s infinite !important; }
+
+        /* 升級版清晰鯊魚 */
+        .obstacle {
+            position: absolute; bottom: 120px; width: 100px; height: 50px; z-index: 4;
+        }
+        /* 鯊魚主體 */
+        .shark-body {
+            position: absolute; bottom: 0; width: 100px; height: 40px;
+            background: linear-gradient(to bottom, var(--shark-body) 60%, var(--shark-belly) 60%);
+            border-radius: 50% 80% 20% 50%;
+        }
+        /* 鯊魚背鰭 */
+        .shark-fin {
+            position: absolute; top: -15px; left: 30px; width: 30px; height: 30px;
+            background: var(--shark-body);
+            clip-path: polygon(0% 100%, 100% 100%, 0% 0%);
+            transform: rotate(-10deg);
+        }
+        /* 鯊魚眼睛 */
+        .shark-eye {
+            position: absolute; top: 10px; right: 20px; width: 6px; height: 6px;
+            background: black; border-radius: 50%; border: 1px solid white;
+        }
+        /* 鯊魚尾巴 */
+        .shark-tail {
+            position: absolute; left: -15px; top: 5px; width: 25px; height: 30px;
+            background: var(--shark-body);
+            clip-path: polygon(100% 50%, 0% 0%, 20% 50%, 0% 100%);
+        }
+
+        @keyframes moveLeft { from { left: 100vw; } to { left: -150px; } }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+    <div class="game-container" id="gameArea">
+        <div id="ui-layer">
+            <div id="lives" class="stat">生命值: ❤️❤️❤️</div>
+            <div id="score" class="stat">分數: 0</div>
+        </div>
+        
+        <div class="ocean"><div class="wave"></div></div>
+
+        <div class="runner" id="player">
+            <div class="head"></div>
+            <div class="torso"></div>
+            <div class="leopard-briefs"></div>
+            <div class="leg leg-l"></div>
+            <div class="leg leg-r"></div>
+        </div>
+
+        <div id="obstacles-container"></div>
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const container = document.getElementById('obstacles-container');
+        
+        let score = 0;
+        let lives = 3;
+        let isJumping = false;
+        let isInvincible = false;
+        let gameActive = true;
+
+        // 更新分數
+        setInterval(() => {
+            if (!gameActive) return;
+            score++;
+            scoreDisplay.innerText = "分數: " + score;
+        }, 100);
+
+        // 跳躍邏輯
+        function jump() {
+            if (isJumping || !gameActive) return;
+            isJumping = true;
+            player.style.bottom = "320px";
+            setTimeout(() => {
+                player.style.bottom = "120px";
+                setTimeout(() => isJumping = false, 300);
+            }, 350);
+        }
+
+        // 生成清晰鯊魚
+        function spawnShark() {
+            if (!gameActive) return;
+
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            
+            // 組合鯊魚外觀
+            obstacle.innerHTML = `
+                <div class="shark-fin"></div>
+                <div class="shark-body"></div>
+                <div class="shark-eye"></div>
+                <div class="shark-tail"></div>
+            `;
+            
+            const speed = Math.random() * 1.2 + 1.3; // 速度更快一點
+            obstacle.style.animation = `moveLeft ${speed}s linear forwards`;
+            container.appendChild(obstacle);
+
+            // 碰撞檢測
+            const checkCollision = setInterval(() => {
+                if (!gameActive) { clearInterval(checkCollision); return; }
+                
+                const pRect = player.getBoundingClientRect();
+                const oRect = obstacle.getBoundingClientRect();
+
+                // 稍微縮小碰撞體積，讓判定更公平 (角色寬度縮減 10px)
+                if (
+                    pRect.left + 10 < oRect.right &&
+                    pRect.right - 10 > oRect.left &&
+                    pRect.top < oRect.bottom &&
+                    pRect.bottom > oRect.top
+                ) {
+                    hit();
+                }
+            }, 30);
+
+            setTimeout(() => {
+                obstacle.remove();
+                clearInterval(checkCollision);
+            }, speed * 1000);
+
+            // 隨著分數增加，生成速度變快
+            const nextSpawn = Math.max(800, 2000 - (score * 2));
+            setTimeout(spawnShark, Math.random() * 500 + nextSpawn);
+        }
+
+        // 受傷處理
+        function hit() {
+            if (isInvincible || !gameActive) return;
+            
+            lives--;
+            updateLivesUI();
+            
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                isInvincible = true;
+                player.classList.add('hurt'); // 加入閃爍動畫
+                setTimeout(() => {
+                    isInvincible = false;
+                    player.classList.remove('hurt');
+                }, 1200);
+            }
+        }
+
+        function updateLivesUI() {
+            let hearts = "";
+            for(let i=0; i<3; i++) hearts += (i < lives) ? "❤️" : "🖤";
+            livesDisplay.innerText = "生命值: " + hearts;
+        }
+
+        function gameOver() {
+            gameActive = false;
+            alert("遊戲結束！豹紋跑者被鯊魚抓住了！\n最終得分: " + score);
+            location.reload();
+        }
+
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space') jump(); });
+        document.getElementById('gameArea').addEventListener('mousedown', jump);
+
+        // 啟動遊戲
+        spawnShark();
+    </script>
+</body>
+</html> 
