@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>即時多人畫板 - Supabase Broadcast</title>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; font-family: sans-serif; }
+        canvas { background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); cursor: crosshair; margin-top: 20px; }
+        .controls { margin-top: 10px; }
+        #status { font-size: 12px; color: #666; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div class="controls">
+        <button id="clearBtn">清除畫板</button>
+        <span id="status">正在連接...</span>
+    </div>
+    
+    <canvas id="paintCanvas" width="800" height="600"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase 即時多人畫板</title>
+    <style>
+        /* CSS 樣式設定 */
+        :root {
+            --primary-bg: #ffffff;
+            --panel-bg: rgba(255, 255, 255, 0.9);
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body { 
+            margin: 0; 
+            padding: 0;
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e5e5f7; /* 背景裝飾 */
+            background-image: radial-gradient(#444cf7 0.5px, #f0f0f0 0.5px);
+            background-size: 20px 20px;
+        }
+
+        canvas { 
+            display: block; 
+            cursor: crosshair; 
+            touch-action: none; /* 防止行動裝置拖曳網頁 */
+        }
+
+        #toolbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+        }
+
+        .color-group {
+            display: flex;
+            gap: 8px;
+            border-right: 1px solid #ddd;
+            padding-right: 15px;
+        }
+
+        .btn-color {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-color:hover { transform: scale(1.2); }
+
+        #colorPicker {
+            width: 35px;
+            height: 35px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        button.clear-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button.clear-btn:hover { background: #ff6b81; }
+
+        #status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="toolbar">
+        <div class="color-group">
+            <div class="btn-color" style="background: #ff7675;" onclick="changeColor('#ff7675')"></div>
+            <div class="btn-color" style="background: #55efc4;" onclick="changeColor('#55efc4')"></div>
+            <div class="btn-color" style="background: #0984e3;" onclick="changeColor('#0984e3')"></div>
+        </div>
+        
+        <input type="color" id="colorPicker" value="#2d3436" title="自定義顏色">
+        
+        <button class="clear-btn" onclick="clearLocal()">清除畫面</button>
+    </div>
+
+    <div id="status">連線中...</div>
+    <canvas id="paintCanvas"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 配置你的 Supabase 資訊
+        const SUPABASE_URL = 'https://wmpehsgqpjurzqphzetn.supabase.co'; 
+        const SUPABASE_KEY = 'sb_publishable_cIOKp3SdJrc7D76CrWK-PA_A3JvShVD';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const canvas = document.getElementById('paintCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const statusEl = document.getElementById('status');
+
+        let isDrawing = false;
+        let lastPoint = { x: 0, y: 0 };
+
+        // 初始化畫布大小
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 建立 Supabase Channel
+        const channel = supabaseClient.channel('drawing_board', {
+            config: { broadcast: { self: false } }
+        });
+
+        // 監聽廣播事件
+        channel
+            .on('broadcast', { event: 'draw' }, ({ payload }) => {
+                drawLine(payload.start, payload.end, payload.color, false);
+            })
+            .subscribe((status) => {
+                statusEl.innerText = status === 'SUBSCRIBED' ? '● 在線 (Realtime 已啟動)' : '○ 斷線';
+            });
+
+        // 繪圖核心 Function
+        function drawLine(start, end, color, shouldBroadcast = true) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(end.x, end.y);
+            ctx.stroke();
+            ctx.closePath();
+
+            if (shouldBroadcast) {
+                channel.send({
+                    type: 'broadcast',
+                    event: 'draw',
+                    payload: { start, end, color }
+                });
+            }
+        }
+
+        // 滑鼠與觸控事件處理
+        function getXY(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function startPosition(e) {
+            isDrawing = true;
+            lastPoint = getXY(e);
+        }
+
+        function finishedPosition() {
+            isDrawing = false;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const currentPoint = getXY(e);
+            drawLine(lastPoint, currentPoint, colorPicker.value);
+            lastPoint = currentPoint;
+        }
+
+        // 註冊監聽器
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', finishedPosition);
+
+        // 支援行動裝置觸控
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPosition(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { passive: false });
+        canvas.addEventListener('touchend', finishedPosition);
+
+        // 工具 Function
+        function changeColor(hex) {
+            colorPicker.value = hex;
+        }
+
+        function clearLocal() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+</html>

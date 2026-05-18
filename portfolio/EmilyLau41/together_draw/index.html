@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>即時畫板測試 (含橡皮擦)</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #e0e0e0;
+        font-family: sans-serif;
+      }
+      #canvas {
+        display: block;
+        background: #ffffff;
+        cursor: crosshair;
+      }
+      .controls {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+      #status {
+        font-weight: bold;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .status-offline {
+        color: red;
+      }
+      .status-online {
+        color: green;
+      }
+
+      /* 工具按鈕樣式 */
+      .tool-btn {
+        padding: 5px 10px;
+        margin-right: 5px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #f9f9f9;
+      }
+      .tool-btn.active {
+        background: #4caf50;
+        color: white;
+        border-color: #4caf50;
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div class="controls">
+      <span id="status" class="status-offline"
+        >狀態：尚未連線 (僅限本地繪圖)</span
+      >
+
+      <div style="margin-bottom: 10px">
+        <button id="penBtn" class="tool-btn active" onclick="setMode('pen')">
+          🖌️ 畫筆
+        </button>
+        <button id="eraserBtn" class="tool-btn" onclick="setMode('eraser')">
+          🧽 橡皮擦
+        </button>
+      </div>
+
+      <label
+        >顏色: <input type="color" id="colorPicker" value="#000000" /></label
+      ><br /><br />
+      <label
+        >粗細:
+        <input type="range" id="sizePicker" min="1" max="50" value="5" /></label
+      ><br /><br />
+      <button onclick="clearCanvas()">清空畫布</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const colorPicker = document.getElementById('colorPicker');
+      const sizePicker = document.getElementById('sizePicker');
+      const statusText = document.getElementById('status');
+
+      const penBtn = document.getElementById('penBtn');
+      const eraserBtn = document.getElementById('eraserBtn');
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let drawing = false;
+      let lastPos = { x: 0, y: 0 };
+      let currentMode = 'pen'; // 追蹤目前是畫筆還是橡皮擦
+
+      // 切換畫筆/橡皮擦模式
+      function setMode(mode) {
+        currentMode = mode;
+        if (mode === 'pen') {
+          penBtn.classList.add('active');
+          eraserBtn.classList.remove('active');
+          canvas.style.cursor = 'crosshair';
+        } else {
+          eraserBtn.classList.add('active');
+          penBtn.classList.remove('active');
+          canvas.style.cursor = 'cell'; // 改變游標樣式提示目前是橡皮擦
+        }
+      }
+
+      // 繪圖函數 (新增 isErase 參數)
+      function drawLine(x1, y1, x2, y2, color, size, isErase) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round'; // 讓線條轉折處更平滑
+
+        // 關鍵：如果是橡皮擦，改變合成模式來「擦除」像素
+        if (isErase) {
+          ctx.globalCompositeOperation = 'destination-out';
+        } else {
+          ctx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.closePath();
+
+        // 畫完後恢復預設模式，以免影響後續繪圖
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      // 滑鼠事件
+      canvas.addEventListener('mousedown', (e) => {
+        drawing = true;
+        lastPos = { x: e.clientX, y: e.clientY };
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (!drawing) return;
+        const currentPos = { x: e.clientX, y: e.clientY };
+        const currentColor = colorPicker.value;
+        const currentSize = sizePicker.value;
+        const isErase = currentMode === 'eraser'; // 判斷目前是否為橡皮擦
+
+        // 1. 在本地執行繪圖或擦除
+        drawLine(
+          lastPos.x,
+          lastPos.y,
+          currentPos.x,
+          currentPos.y,
+          currentColor,
+          currentSize,
+          isErase
+        );
+
+        // 2. 廣播給其他人 (包含 isErase 狀態)
+        if (channel && isConnected) {
+          channel.send({
+            type: 'broadcast',
+            event: 'draw',
+            payload: {
+              x1: lastPos.x,
+              y1: lastPos.y,
+              x2: currentPos.x,
+              y2: currentPos.y,
+              color: currentColor,
+              size: currentSize,
+              isErase: isErase, // 將橡皮擦狀態廣播出去
+            },
+          });
+        }
+
+        lastPos = currentPos;
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        drawing = false;
+      });
+      canvas.addEventListener('mouseout', () => {
+        drawing = false;
+      });
+
+      function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 清空畫布也可以做成廣播，你可以試著挑戰自己加上去！
+      }
+
+      // ==========================================
+      // Supabase 連線設定
+      // ==========================================
+      const SUPABASE_URL = 'https://dhypkutxhcfjpzmlufxr.supabase.co'; // 替換為你的 URL
+      const SUPABASE_KEY = 'sb_publishable_1k3-mNqoqErdRgxC0P11zA_fXVopcwJ'; // 替換為你的 KEY
+
+      let channel = null;
+      let isConnected = false;
+
+      if (!SUPABASE_URL.includes('YOUR_')) {
+        try {
+          const supabase = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+          );
+
+          channel = supabase.channel('drawing-room', {
+            config: { broadcast: { self: false } },
+          });
+
+          // 接收別人的廣播
+          channel.on('broadcast', { event: 'draw' }, ({ payload }) => {
+            // 接收到數據時，將 payload.isErase 傳入函數
+            drawLine(
+              payload.x1,
+              payload.y1,
+              payload.x2,
+              payload.y2,
+              payload.color,
+              payload.size,
+              payload.isErase
+            );
+          });
+
+          channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              isConnected = true;
+              statusText.textContent = '狀態：已連線 (多人模式)';
+              statusText.className = 'status-online';
+            }
+          });
+        } catch (error) {
+          console.error('Supabase 初始化失敗:', error);
+        }
+      }
+    </script>
+  </body>
+</html>

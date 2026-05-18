@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時多人畫板 - 進階版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; background: #eef2f3; margin: 0; padding: 20px; }
+        .toolbar { background: white; padding: 15px 25px; border-radius: 50px; display: flex; gap: 20px; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        canvas { border-radius: 8px; background-color: #fff; cursor: crosshair; touch-action: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .tool-group { display: flex; align-items: center; gap: 8px; }
+        input[type="range"] { cursor: pointer; }
+        button { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; background: #007bff; color: white; }
+        button:hover { background: #0056b3; }
+        button.active { background: #333; }
+        #status { font-size: 12px; margin-top: 10px; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div class="toolbar">
+        <div class="tool-group">
+            <label>顏色</label>
+            <input type="color" id="colorPicker" value="#000000">
+        </div>
+        
+        <div class="tool-group">
+            <label>粗細 (<span id="sizeVal">5</span>)</label>
+            <input type="range" id="sizePicker" min="1" max="50" value="5">
+        </div>
+
+        <div class="tool-group">
+            <button id="penBtn" class="active">畫筆 🖊️</button>
+            <button id="eraserBtn">橡皮擦 🧽</button>
+        </div>
+
+        <button onclick="clearCanvas()" style="background: #dc3545;">全清</button>
+    </div>
+
+    <canvas id="whiteboard" width="1000" height="600"></canvas>
+    <div id="status">連線中...</div>
+
+    <script>
+        const SUPABASE_URL = 'https://msailwslireueorwzwpd.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ue2Vz6XGm37SnPA2nulo4w_OLN0LzKW';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const canvas = document.getElementById('whiteboard');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const sizePicker = document.getElementById('sizePicker');
+        const sizeVal = document.getElementById('sizeVal');
+        const penBtn = document.getElementById('penBtn');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const statusEl = document.getElementById('status');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentMode = 'pen'; // 'pen' 或 'eraser'
+
+        // 1. 初始化 Supabase 頻道
+        const channel = supabaseClient.channel('drawing_room', {
+            config: { broadcast: { self: false } }
+        });
+
+        channel
+            .on('broadcast', { event: 'draw' }, ({ payload }) => {
+                draw(payload.x, payload.y, payload.prevX, payload.prevY, payload.color, payload.size, payload.mode);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') statusEl.innerText = '🟢 已連線';
+            });
+
+        // 2. 核心繪圖函數
+        function draw(x, y, prevX, prevY, color, size, mode) {
+            ctx.beginPath();
+            
+            // 如果是橡皮擦模式，使用 'destination-out' (透明) 或直接畫白色
+            // 這裡為了簡單與同步穩定，使用 'destination-out'
+            if (mode === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = color;
+            }
+
+            ctx.lineWidth = size;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.moveTo(prevX, prevY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.closePath();
+            
+            // 畫完後重置回正常模式
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // 3. 事件監聽
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function handleStart(e) {
+            isDrawing = true;
+            const pos = getPointerPos(e);
+            [lastX, lastY] = [pos.x, pos.y];
+        }
+
+        function handleMove(e) {
+            if (!isDrawing) return;
+            if (e.cancelable) e.preventDefault();
+
+            const pos = getPointerPos(e);
+            const color = colorPicker.value;
+            const size = sizePicker.value;
+
+            // 本地繪圖
+            draw(pos.x, pos.y, lastX, lastY, color, size, currentMode);
+
+            // 廣播
+            channel.send({
+                type: 'broadcast',
+                event: 'draw',
+                payload: { x: pos.x, y: pos.y, prevX: lastX, prevY: lastY, color, size, mode: currentMode }
+            });
+
+            [lastX, lastY] = [pos.x, pos.y];
+        }
+
+        // 4. 工具切換
+        penBtn.addEventListener('click', () => {
+            currentMode = 'pen';
+            penBtn.classList.add('active');
+            eraserBtn.classList.remove('active');
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            currentMode = 'eraser';
+            eraserBtn.classList.add('active');
+            penBtn.classList.remove('active');
+        });
+
+        sizePicker.addEventListener('input', (e) => {
+            sizeVal.innerText = e.target.value;
+        });
+
+        function clearCanvas() {
+            if(confirm('確定要清空畫板嗎？')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // 綁定所有輸入事件
+        canvas.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', () => isDrawing = false);
+
+        canvas.addEventListener('touchstart', handleStart);
+        canvas.addEventListener('touchmove', handleMove);
+        canvas.addEventListener('touchend', () => isDrawing = false);
+
+    </script>
+</body>
+</html>

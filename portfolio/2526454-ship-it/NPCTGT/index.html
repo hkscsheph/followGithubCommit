@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Supabase Multiplayer Shooter</title>
+    <style>
+      :root {
+        --primary: #3498db;
+        --danger: #e74c3c;
+        --bg: #121212;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        font-family: 'Segoe UI', sans-serif;
+      }
+      canvas {
+        display: block;
+        background: #1e1e1e;
+        cursor: crosshair;
+      }
+
+      .game-ui {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        color: white;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 5px solid var(--primary);
+        pointer-events: none;
+        min-width: 200px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .hp-container {
+        width: 100%;
+        height: 12px;
+        background: #333;
+        border-radius: 6px;
+        margin: 10px 0;
+        overflow: hidden;
+      }
+      #hp-bar {
+        width: 100%;
+        height: 100%;
+        background: #2ecc71;
+        transition: width 0.2s ease;
+      }
+
+      .stats {
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        font-weight: bold;
+      }
+      #status {
+        font-size: 12px;
+        margin-top: 10px;
+        color: #7f8c8d;
+      }
+
+      .instructions {
+        position: fixed;
+        bottom: 20px;
+        width: 100%;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 13px;
+      }
+      #damage-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 0, 0, 0.4);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.1s;
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div id="damage-overlay"></div>
+
+    <div class="game-ui">
+      <div style="font-size: 18px; font-weight: bold; letter-spacing: 1px">
+        SOLDIER STATUS
+      </div>
+      <div class="hp-container"><div id="hp-bar"></div></div>
+      <div class="stats">
+        <span>HP: <span id="hp-val">100</span></span>
+        <span>PLAYERS: <span id="player-count">1</span></span>
+      </div>
+      <div id="status">Connecting to HQ...</div>
+    </div>
+
+    <div class="instructions">
+      WASD to Move | Click to Shoot | Open in multiple tabs/PCs to play
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+      // 1. CONFIGURATION
+      const SB_URL = 'https://bmchwfdfbdbwqrjzjtzu.supabase.co';
+      const SB_KEY = 'sb_publishable_eswh-MZMrieiZtg59CiCAQ_q-0--iF6';
+      const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const hpBar = document.getElementById('hp-bar');
+      const hpVal = document.getElementById('hp-val');
+      const statusText = document.getElementById('status');
+      const overlay = document.getElementById('damage-overlay');
+
+      // 2. PLAYER STATE
+      const myId = 'p_' + Math.random().toString(36).substr(2, 5);
+      const P_SIZE = 30; // Player Box Size
+
+      let me = {
+        id: myId,
+        x: Math.random() * (window.innerWidth - 100) + 50,
+        y: Math.random() * (window.innerHeight - 100) + 50,
+        hp: 100,
+        color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+      };
+
+      let players = {};
+      let bullets = [];
+      let keys = {};
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // 3. SUPABASE REALTIME (Broadcast + Presence)
+      const channel = sbClient.channel('warzone', {
+        config: { presence: { key: myId } },
+      });
+
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          players = {};
+          Object.keys(state).forEach((id) => {
+            if (id !== myId) players[id] = state[id][0];
+          });
+          document.getElementById('player-count').innerText =
+            Object.keys(state).length + 1;
+        })
+        .on('broadcast', { event: 'fire' }, ({ payload }) => {
+          bullets.push(payload);
+        })
+        .on('broadcast', { event: 'hit' }, ({ payload }) => {
+          // IMPORTANT: If I am the target, I take damage
+          if (payload.targetId === myId) {
+            takeDamage(payload.damage);
+          }
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            statusText.innerText = '🟢 CONNECTED TO BATTLEFIELD';
+            statusText.style.color = '#2ecc71';
+            await channel.track(me);
+          }
+        });
+
+      // 4. GAME ACTIONS
+      function takeDamage(amount) {
+        me.hp -= amount;
+        if (me.hp < 0) me.hp = 0;
+
+        // Visual Feedback
+        overlay.style.opacity = '1';
+        setTimeout(() => (overlay.style.opacity = '0'), 100);
+
+        updateUI();
+        if (me.hp <= 0) respawn();
+        channel.track(me); // Sync new HP to others via Presence
+      }
+
+      function respawn() {
+        me.hp = 100;
+        me.x = Math.random() * canvas.width;
+        me.y = Math.random() * canvas.height;
+        updateUI();
+        channel.track(me);
+      }
+
+      function updateUI() {
+        hpVal.innerText = me.hp;
+        hpBar.style.width = me.hp + '%';
+        hpBar.style.background = me.hp < 40 ? '#e74c3c' : '#2ecc71';
+      }
+
+      window.addEventListener(
+        'keydown',
+        (e) => (keys[e.key.toLowerCase()] = true)
+      );
+      window.addEventListener(
+        'keyup',
+        (e) => (keys[e.key.toLowerCase()] = false)
+      );
+
+      canvas.addEventListener('mousedown', (e) => {
+        if (me.hp <= 0) return;
+        const angle = Math.atan2(e.clientY - me.y, e.clientX - me.x);
+        const b = {
+          x: me.x,
+          y: me.y,
+          vx: Math.cos(angle) * 14,
+          vy: Math.sin(angle) * 14,
+          owner: myId,
+          color: me.color,
+        };
+        bullets.push(b);
+        channel.send({ type: 'broadcast', event: 'fire', payload: b });
+      });
+
+      // 5. CORE LOOP
+      function update() {
+        let moved = false;
+        const speed = 5;
+        if (keys['w'] && me.y > 0) {
+          me.y -= speed;
+          moved = true;
+        }
+        if (keys['s'] && me.y < canvas.height) {
+          me.y += speed;
+          moved = true;
+        }
+        if (keys['a'] && me.x > 0) {
+          me.x -= speed;
+          moved = true;
+        }
+        if (keys['d'] && me.x < canvas.width) {
+          me.x += speed;
+          moved = true;
+        }
+
+        if (moved) channel.track(me);
+
+        bullets.forEach((b, index) => {
+          b.x += b.vx;
+          b.y += b.vy;
+
+          // Hit Detection (Only the shooter checks if they hit someone)
+          if (b.owner === myId) {
+            for (let id in players) {
+              let p = players[id];
+              // Boundary check: Bullet x/y inside Player box
+              if (
+                b.x > p.x - P_SIZE / 2 &&
+                b.x < p.x + P_SIZE / 2 &&
+                b.y > p.y - P_SIZE / 2 &&
+                b.y < p.y + P_SIZE / 2
+              ) {
+                // Send Hit Event
+                channel.send({
+                  type: 'broadcast',
+                  event: 'hit',
+                  payload: { targetId: id, damage: 20 },
+                });
+
+                bullets.splice(index, 1);
+                return;
+              }
+            }
+          }
+
+          // Cleanup bullets
+          if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+            bullets.splice(index, 1);
+          }
+        });
+
+        draw();
+        requestAnimationFrame(update);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Others
+        for (let id in players) {
+          let p = players[id];
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x - P_SIZE / 2, p.y - P_SIZE / 2, P_SIZE, P_SIZE);
+          // Mini Health Bar
+          ctx.fillStyle = '#444';
+          ctx.fillRect(p.x - 20, p.y - 30, 40, 5);
+          ctx.fillStyle = '#e74c3c';
+          ctx.fillRect(p.x - 20, p.y - 30, 40 * (p.hp / 100), 5);
+        }
+
+        // Draw Bullets
+        bullets.forEach((b) => {
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Draw Me
+        ctx.fillStyle = me.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = me.color;
+        ctx.fillRect(me.x - P_SIZE / 2, me.y - P_SIZE / 2, P_SIZE, P_SIZE);
+        ctx.strokeStyle = 'white';
+        ctx.strokeRect(me.x - P_SIZE / 2, me.y - P_SIZE / 2, P_SIZE, P_SIZE);
+        ctx.shadowBlur = 0;
+      }
+
+      update();
+    </script>
+  </body>
+</html>

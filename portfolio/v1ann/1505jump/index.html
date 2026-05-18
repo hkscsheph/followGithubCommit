@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Emoji Hop: Forward</title>
+    <style>
+        :root {
+            --bg-color: #b4ced1;
+            --wechat-green: #07c160;
+        }
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+        body {
+            margin: 0; padding: 0; background-color: #333;
+            font-family: -apple-system, system-ui, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; overflow: hidden;
+        }
+        #game-container {
+            position: relative; width: 100%; height: 100%; max-width: 500px;
+            background: var(--bg-color); overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        /* UI Layers */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        #score-hud {
+            position: absolute; top: 10%; left: 10%;
+            font-size: 60px; font-weight: 800; color: #353535;
+            pointer-events: none; z-index: 50;
+        }
+
+        /* Buttons & Inputs */
+        input {
+            border: none; border-bottom: 2px solid #ddd;
+            padding: 10px; font-size: 20px; text-align: center;
+            width: 200px; outline: none; margin-bottom: 30px;
+        }
+        button {
+            background: var(--wechat-green); color: white; border: none;
+            padding: 15px 50px; font-size: 18px; border-radius: 12px;
+            cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(7,193,96,0.3);
+        }
+        
+        .rank-box {
+            width: 80%; max-width: 280px; margin: 20px 0;
+            background: #f7f7f7; border-radius: 15px; padding: 15px;
+        }
+        .rank-item {
+            display: flex; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="game-container">
+    <div id="score-hud" style="display:none">0</div>
+
+    <div id="screen-start" class="overlay">
+        <div style="font-size: 60px; margin-bottom: 10px;">🐹</div>
+        <h2 style="margin-bottom: 30px;">Emoji Hop</h2>
+        <input type="text" id="player-name" placeholder="Enter Name" maxlength="10">
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="screen-over" class="overlay" style="display: none;">
+        <h3 style="color: #999; margin: 0;">Final Score</h3>
+        <h1 id="last-score" style="font-size: 50px; margin: 10px 0;">0</h1>
+        
+        <div class="rank-box">
+            <div style="text-align: center; color: #aaa; margin-bottom: 10px; font-size: 12px;">TOP RANKINGS</div>
+            <div id="rank-list"></div>
+        </div>
+        
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const hud = document.getElementById('score-hud');
+    
+    let width, height, dpr;
+    let score = 0, playerName = "", platforms = [], player = {};
+    let isPressing = false, pressTime = 0, gameState = 'START', lastTimestamp = 0;
+
+    function initCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        width = window.innerWidth > 500 ? 500 : window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+    }
+
+    function setupGame() {
+        score = 0;
+        hud.innerText = "0";
+        hud.style.display = "block";
+        platforms = [{ x: 50, y: height * 0.75, w: 100, h: 80, color: '#95a5a6' }];
+        addPlatform();
+        
+        player = {
+            x: platforms[0].x + platforms[0].w / 2,
+            y: platforms[0].y,
+            vx: 0, vy: 0,
+            squish: 1,
+            onPlatform: platforms[0]
+        };
+    }
+
+    function addPlatform() {
+        const last = platforms[platforms.length - 1];
+        const dist = 100 + Math.random() * 140; // Forward gap
+        platforms.push({
+            x: last.x + dist,
+            y: height * 0.4 + Math.random() * (height * 0.35),
+            w: 70 + Math.random() * 40,
+            h: 80,
+            color: `hsl(${Math.random() * 360}, 40%, 65%)`
+        });
+    }
+
+    // Input Handling
+    const startPress = (e) => { 
+        if (gameState === 'PLAYING' && player.onPlatform) isPressing = true; 
+    };
+    
+    const releasePress = () => {
+        if (isPressing) {
+            const power = Math.min(pressTime / 8, 22);
+            // Physics: High X (Forward), Low Y (Jump Height)
+            player.vx = power * 1.15; 
+            player.vy = -power * 0.75; 
+            player.onPlatform = null;
+            player.squish = 1;
+            pressTime = 0;
+            isPressing = false;
+        }
+    };
+
+    canvas.addEventListener('mousedown', startPress);
+    window.addEventListener('mouseup', releasePress);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPress(); }, {passive: false});
+    window.addEventListener('touchend', releasePress);
+
+    function startGame() {
+        playerName = document.getElementById('player-name').value.trim() || "Player";
+        document.getElementById('screen-start').style.display = 'none';
+        initCanvas();
+        setupGame();
+        gameState = 'PLAYING';
+        requestAnimationFrame(gameLoop);
+    }
+
+    function restartGame() {
+        document.getElementById('screen-over').style.display = 'none';
+        setupGame();
+        gameState = 'PLAYING';
+    }
+
+    function update(dt) {
+        if (gameState !== 'PLAYING') return;
+        const factor = dt / 16.67;
+
+        if (isPressing) {
+            pressTime += 1.6 * factor;
+            player.squish = Math.max(0.5, 1 - pressTime / 200);
+        }
+
+        if (!player.onPlatform) {
+            player.vy += 0.85 * factor; // Snappy gravity
+            player.x += player.vx * factor;
+            player.y += player.vy * factor;
+
+            for (let p of platforms) {
+                if (player.vy > 0 && player.x > p.x && player.x < p.x + p.w &&
+                    player.y >= p.y && player.y <= p.y + player.vy + 6) {
+                    player.y = p.y;
+                    player.vy = 0; player.vx = 0;
+                    if (player.onPlatform !== p) {
+                        player.onPlatform = p;
+                        score++;
+                        hud.innerText = score;
+                        addPlatform();
+                        if(platforms.length > 5) platforms.shift();
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Camera scroll
+        const edge = width * 0.25;
+        if (player.x > edge) {
+            const shift = (player.x - edge) * 0.12 * factor;
+            player.x -= shift;
+            platforms.forEach(p => p.x -= shift);
+        }
+
+        if (player.y > height + 100) triggerGameOver();
+    }
+
+    function draw() {
+        ctx.fillStyle = "#b4ced1";
+        ctx.fillRect(0, 0, width, height);
+
+        platforms.forEach(p => {
+            ctx.fillStyle = "rgba(0,0,0,0.1)";
+            ctx.fillRect(p.x + 6, p.y + 6, p.w, p.h);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+        });
+
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.scale(1, player.squish);
+        ctx.font = "46px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("🐹", 0, -5);
+        ctx.restore();
+    }
+
+    function gameLoop(t) {
+        const dt = t - lastTimestamp;
+        lastTimestamp = t;
+        if (dt < 100) { update(dt); draw(); }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function triggerGameOver() {
+        gameState = 'OVER';
+        hud.style.display = "none";
+        document.getElementById('last-score').innerText = score;
+        
+        // Save score
+        let rank = JSON.parse(localStorage.getItem('forward_rank') || "[]");
+        rank.push({name: playerName, score: score});
+        rank.sort((a,b) => b.score - a.score);
+        rank = rank.slice(0, 5);
+        localStorage.setItem('forward_rank', JSON.stringify(rank));
+
+        // Display rank
+        document.getElementById('rank-list').innerHTML = rank.map((r, i) => `
+            <div class="rank-item">
+                <span>${i+1}. ${r.name}</span>
+                <b>${r.score}</b>
+            </div>
+        `).join('');
+
+        document.getElementById('screen-over').style.display = 'flex';
+    }
+
+    initCanvas();
+</script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>水管迷宮</title>
+    <style>
+        body {
+            margin: 0; background-color: #000; color: #0ff;
+            font-family: 'Consolas', monospace;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden;
+        }
+        #game-container { position: relative; display: flex; border: 2px solid #222; }
+        canvas { background-color: #000; }
+        .divider { width: 4px; background: #333; height: 100%; }
+        #ui { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-between; pointer-events: none; padding: 0 20px; box-sizing: border-box; z-index: 10; }
+        .p1-label { color: #00ffff; }
+        .p2-label { color: #ffaa00; }
+        .timer { font-size: 0.8rem; margin-top: 5px; }
+        .winner-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="ui">
+    <div>
+        <div class="p1-label">P1 (WASD)</div>
+        <div id="p1-sonar" class="timer">聲納: 準備就緒</div>
+    </div>
+    <div style="text-align: center;">探索死胡同尋找 [綠色聲納]<br><span style="font-size:0.7rem;color:#777">全地圖顯示 8 秒</span></div>
+    <div style="text-align: right;">
+        <div class="p2-label">P2 (Arrows)</div>
+        <div id="p2-sonar" class="timer">聲納: 準備就緒</div>
+    </div>
+</div>
+
+<div id="game-container">
+    <canvas id="p1Canvas"></canvas>
+    <div class="divider"></div>
+    <canvas id="p2Canvas"></canvas>
+</div>
+
+<div id="winner-overlay" class="winner-overlay">
+    <h1 id="winnerText" style="font-size: 3rem; color: #fff;"></h1>
+    <button onclick="location.reload()" style="padding: 15px 40px; cursor: pointer; background: #0ff; border: none; font-weight: bold;">重新開始</button>
+</div>
+
+<script>
+    const p1Canvas = document.getElementById('p1Canvas');
+    const p2Canvas = document.getElementById('p2Canvas');
+    const ctx1 = p1Canvas.getContext('2d');
+    const ctx2 = p2Canvas.getContext('2d');
+
+    const COLS = 61, ROWS = 51, CELL_SIZE = 35;
+    const halfWidth = window.innerWidth / 2 - 5;
+    const screenHeight = window.innerHeight * 0.85;
+    p1Canvas.width = p2Canvas.width = halfWidth;
+    p1Canvas.height = p2Canvas.height = screenHeight;
+
+    let maze = Array.from({ length: ROWS }, () => Array(COLS).fill(1));
+    let items = []; // 道具位置
+
+    // --- 1. 生成迷宮並放置道具於死胡同 ---
+    function generateGame() {
+        let walls = [];
+        function addWalls(x, y) {
+            if (x > 1 && maze[y][x-2] === 1) walls.push([x-2, y, x-1, y]);
+            if (x < COLS-2 && maze[y][x+2] === 1) walls.push([x+2, y, x+1, y]);
+            if (y > 1 && maze[y-2][x] === 1) walls.push([x, y-2, x, y-1]);
+            if (y < ROWS-2 && maze[y+2][x] === 1) walls.push([x, y+2, x, y+1]);
+        }
+        maze[1][1] = 0;
+        addWalls(1, 1);
+        while (walls.length > 0) {
+            let index = Math.floor(Math.random() * walls.length);
+            let [nx, ny, px, py] = walls.splice(index, 1)[0];
+            if (maze[ny][nx] === 1) {
+                maze[ny][nx] = 0; maze[py][px] = 0;
+                addWalls(nx, ny);
+            }
+        }
+        maze[ROWS - 2][COLS - 2] = 2; // 終點
+
+        // 搜尋死胡同 (只有一個出口的 0)
+        for (let y = 1; y < ROWS - 1; y++) {
+            for (let x = 1; x < COLS - 1; x++) {
+                if (maze[y][x] === 0) {
+                    let paths = 0;
+                    if (maze[y-1][x] === 0) paths++;
+                    if (maze[y+1][x] === 0) paths++;
+                    if (maze[y][x-1] === 0) paths++;
+                    if (maze[y][x+1] === 0) paths++;
+                    // 如果是死胡同且不是起點，有機率放道具
+                    if (paths === 1 && (x !== 1 || y !== 1) && Math.random() < 0.3) {
+                        items.push({x, y, active: true});
+                    }
+                }
+            }
+        }
+    }
+    generateGame();
+
+    // --- 2. 玩家與聲納狀態 ---
+    let p1 = { x: 1, y: 1, color: '#00ffff', sonarTime: 0 };
+    let p2 = { x: 1, y: 1, color: '#ffaa00', sonarTime: 0 };
+    const NORMAL_VIEW = 45;
+    const SONAR_VIEW = 2000; // 顯示全地圖
+
+    function renderScreen(ctx, player, otherPlayer, sonarTimerId) {
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const px = player.x * CELL_SIZE + CELL_SIZE / 2;
+        const py = player.y * CELL_SIZE + CELL_SIZE / 2;
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        // 探照燈半徑
+        let currentRadius = player.sonarTime > 0 ? SONAR_VIEW : NORMAL_VIEW;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+        ctx.clip();
+
+        ctx.translate(centerX - px, centerY - py);
+
+        // 繪製迷宮 (聲納開啟時繪製範圍加大)
+        const drawRange = player.sonarTime > 0 ? 60 : 5;
+        for (let y = Math.max(0, player.y - drawRange); y <= Math.min(ROWS-1, player.y + drawRange); y++) {
+            for (let x = Math.max(0, player.x - drawRange); x <= Math.min(COLS-1, player.x + drawRange); x++) {
+                if (maze[y][x] !== 1) {
+                    const cx = x * CELL_SIZE, cy = y * CELL_SIZE;
+                    ctx.strokeStyle = player.sonarTime > 0 ? '#00bbcc' : '#004455';
+                    ctx.lineWidth = 3;
+                    
+                    const neighbors = [{dx:1,dy:0}, {dx:-1,dy:0}, {dx:0,dy:1}, {dx:0,dy:-1}];
+                    neighbors.forEach(n => {
+                        const nx = x + n.dx, ny = y + n.dy;
+                        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && maze[ny][nx] !== 1) {
+                            ctx.beginPath();
+                            ctx.moveTo(cx + CELL_SIZE/2, cy + CELL_SIZE/2);
+                            ctx.lineTo(cx + CELL_SIZE/2 + n.dx * CELL_SIZE/2, cy + CELL_SIZE/2 + n.dy * CELL_SIZE/2);
+                            ctx.stroke();
+                        }
+                    });
+
+                    if (maze[y][x] === 2) { // 終點
+                        ctx.fillStyle = '#ff00ff';
+                        ctx.beginPath(); ctx.arc(cx+CELL_SIZE/2, cy+CELL_SIZE/2, 12, 0, Math.PI*2); ctx.fill();
+                    }
+                }
+            }
+        }
+
+        // 繪製道具
+        items.forEach(item => {
+            if (item.active) {
+                ctx.fillStyle = '#0f0';
+                ctx.shadowBlur = 15; ctx.shadowColor = '#0f0';
+                ctx.fillRect(item.x * CELL_SIZE + 10, item.y * CELL_SIZE + 10, CELL_SIZE - 20, CELL_SIZE - 20);
+                ctx.shadowBlur = 0;
+            }
+        });
+
+        // 繪製另一個玩家
+        ctx.fillStyle = otherPlayer.color;
+        ctx.beginPath(); ctx.arc(otherPlayer.x * CELL_SIZE + CELL_SIZE/2, otherPlayer.y * CELL_SIZE + CELL_SIZE/2, 6, 0, Math.PI*2); ctx.fill();
+
+        // 繪製自己
+        ctx.fillStyle = player.color;
+        ctx.shadowBlur = 20; ctx.shadowColor = player.color;
+        ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        // 遮罩處理
+        if (player.sonarTime <= 0) {
+            const grad = ctx.createRadialGradient(centerX, centerY, currentRadius * 0.5, centerX, centerY, currentRadius);
+            grad.addColorStop(0, 'transparent');
+            grad.addColorStop(1, 'black');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, width, height);
+            document.getElementById(sonarTimerId).innerText = "聲納: 準備就緒";
+            document.getElementById(sonarTimerId).style.color = "#777";
+        } else {
+            player.sonarTime -= 0.016; // 模擬 60fps 扣除
+            document.getElementById(sonarTimerId).innerText = `聲納掃描中: ${player.sonarTime.toFixed(1)}s`;
+            document.getElementById(sonarTimerId).style.color = "#0f0";
+        }
+    }
+
+    function update() {
+        renderScreen(ctx1, p1, p2, 'p1-sonar');
+        renderScreen(ctx2, p2, p1, 'p2-sonar');
+        requestAnimationFrame(update);
+    }
+
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        const checkMove = (p, nx, ny) => {
+            if (maze[ny] && maze[ny][nx] !== 1) {
+                p.x = nx; p.y = ny;
+                // 吃到道具
+                items.forEach(item => {
+                    if (item.active && item.x === p.x && item.y === p.y) {
+                        item.active = false;
+                        p.sonarTime = 8; // 獲得 8 秒視野
+                    }
+                });
+                if (maze[p.y][p.x] === 2) endGame(p === p1 ? "玩家 1 (藍色) 勝利！" : "玩家 2 (橙色) 勝利！");
+            }
+        };
+
+        if (key === 'w') checkMove(p1, p1.x, p1.y - 1);
+        if (key === 's') checkMove(p1, p1.x, p1.y + 1);
+        if (key === 'a') checkMove(p1, p1.x - 1, p1.y);
+        if (key === 'd') checkMove(p1, p1.x + 1, p1.y);
+
+        if (e.key === 'ArrowUp') checkMove(p2, p2.x, p2.y - 1);
+        if (e.key === 'ArrowDown') checkMove(p2, p2.x, p2.y + 1);
+        if (e.key === 'ArrowLeft') checkMove(p2, p2.x - 1, p2.y);
+        if (e.key === 'ArrowRight') checkMove(p2, p2.x + 1, p2.y);
+    });
+
+    function endGame(msg) {
+        document.getElementById('winner-overlay').style.display = 'flex';
+        document.getElementById('winnerText').innerText = msg;
+    }
+
+    update();
+</script>
+</body>
+</html>

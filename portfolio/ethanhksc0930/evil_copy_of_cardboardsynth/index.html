@@ -1,0 +1,2477 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <script src="./gsn_lib_packed.js"></script>
+    <script src="./gsn_graphdata_CardboardSynth.js"></script>
+
+    <meta
+      name="viewport"
+      content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no"
+    />
+    <meta
+      name="description"
+      content="Online subtractive synthesizer with MIDI support"
+    />
+    <meta
+      name="keywords"
+      content="sound synthesis, subtrative synthesis, web-based synthesizer, MIDI support"
+    />
+    <title>Cardboard Online Synth</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Cardboard Online Synth" />
+    <meta
+      property="og:description"
+      content="Online Subtractive Synthesizer with Web Audio and MIDI support"
+    />
+    <meta
+      property="og:image"
+      content="https://www.gsn-lib.org/apps/cardboardsynth/cardboardsynth_screenshot.jpg"
+    />
+
+    <link rel="stylesheet" href="./CardboardSynth.css" />
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon" />
+
+    <!-- include external libraries (start) -->
+    <!-- MIT license https://jquery.org/license/ -->
+    <script src="./jquery.js"></script>
+    <!-- include external libraries (end) -->
+
+    <script>
+      var nodeNames = [
+        'Osc1Mute',
+        'Osc1Type',
+        'Osc1Oct',
+        'Osc1Env',
+        'Osc1Gain',
+        'Osc1PitchEnv',
+        'Osc1PitchAmp',
+        'Osc2Mute',
+        'Osc2Type',
+        'Osc2Oct',
+        'Osc2Env',
+        'Osc2Gain',
+        'Osc2Detune',
+        'NoiseMute',
+        'NoiseType',
+        'NoiseGain',
+        'NoiseEnv',
+        'LFOMute',
+        'LFOType',
+        'LFOSpeed',
+        'LFORetrigger',
+        'FilterBypass',
+        'FilterType',
+        'FilterFrequency',
+        'FilterQ',
+        'FilterBoostAtten',
+        'FilterLFOGain',
+        'FilterPitchEnv',
+        'FilterPitchGain',
+        'FilterFollowNote',
+        'AmpAttack',
+        'AmpDecay',
+        'AmpSustain',
+        'AmpRelease',
+        'AmpLFOGain',
+        'Env1Attack',
+        'Env1Decay',
+        'Env1Sustain',
+        'Env1Release',
+        'Env2Attack',
+        'Env2Decay',
+        'Env2Sustain',
+        'Env2Release',
+        'Env2LinearDecay',
+        'DistBypass',
+        'DistType',
+        'DistStrength',
+        'DistMix',
+        'EchoBypass',
+        'EchoDelayTime',
+        'EchoFeedback',
+        'EchoMix',
+        'ReverbBypass',
+        'ReverbDelayFactor',
+        'ReverbFeedback',
+        'ReverbMix',
+        'ReverbDamping',
+        'MainGain',
+        'Drum',
+      ];
+
+      var paraMins = [
+        false,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        3,
+        0,
+        0,
+        0,
+        -100,
+        false,
+        0,
+        0,
+        0,
+        false,
+        0,
+        -3000,
+        false,
+        false,
+        0,
+        0,
+        0.2,
+        -20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        false,
+        0,
+        0,
+        0,
+        false,
+        0,
+        0,
+        0,
+        false,
+        0,
+        0,
+        0,
+        200,
+        0,
+        false,
+      ];
+      var paraMaxs = [
+        true,
+        3,
+        4,
+        2,
+        0.25,
+        5,
+        5000,
+        true,
+        3,
+        4,
+        2,
+        0.25,
+        100,
+        true,
+        2,
+        1,
+        2,
+        true,
+        3,
+        3000,
+        true,
+        true,
+        7,
+        100,
+        20,
+        20,
+        1000,
+        5,
+        5000,
+        1,
+        100,
+        100,
+        1,
+        100,
+        1,
+        5,
+        100,
+        1,
+        100,
+        100,
+        100,
+        1,
+        100,
+        true,
+        true,
+        3,
+        20,
+        1,
+        true,
+        1.5,
+        0.9,
+        0.5,
+        true,
+        7,
+        0.9,
+        0.5,
+        4000,
+        1,
+        true,
+      ];
+      var paraNeutral = [
+        false,
+        2,
+        1,
+        0,
+        0.25,
+        0,
+        4750,
+        false,
+        2,
+        3,
+        0,
+        0.25,
+        0,
+        true,
+        1,
+        0.72,
+        1,
+        false,
+        0,
+        1320.000000000001,
+        false,
+        false,
+        0,
+        39.99999999999996,
+        6.536000000000001,
+        0,
+        90,
+        1,
+        1650,
+        0.6799999999999999,
+        13,
+        38.99999999999999,
+        0.35,
+        44.99999999999999,
+        0.13,
+        0.0008920000000000052,
+        50.000000000000014,
+        0,
+        36.00000000000001,
+        100,
+        100,
+        0,
+        47,
+        true,
+        true,
+        0,
+        2.399999999999998,
+        0.48000000000000004,
+        true,
+        0.2099999999999998,
+        0.315,
+        0.14,
+        true,
+        3.4299999999999997,
+        0.441,
+        0.24999999999999997,
+        1244,
+        0.53,
+        false,
+      ];
+      var paraType = [
+        'b',
+        'i',
+        'i',
+        'i',
+        'f',
+        'i',
+        'f',
+        'b',
+        'i',
+        'i',
+        'i',
+        'f',
+        'f',
+        'b',
+        'i',
+        'f',
+        'i',
+        'b',
+        'i',
+        'f',
+        'n',
+        'b',
+        'i',
+        'f',
+        'f',
+        'f',
+        'f',
+        'i',
+        'f',
+        'nf',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'f',
+        'b',
+        'b',
+        'i',
+        'f',
+        'f',
+        'b',
+        'f',
+        'f',
+        'f',
+        'b',
+        'f',
+        'f',
+        'f',
+        'f',
+        'nf',
+        'n',
+      ];
+      var randomCounter = 0;
+      var numberOfInitialPresets = 0;
+
+      var nodes = new Array();
+      var current = new Array();
+      var presets = new Array();
+      var presetNames = new Array();
+      var version = 1;
+      var currentName = 'unnamed';
+      var debug = false; // ALT-T enables debug mode
+      var presetSelected = 0;
+
+      function resizeHelper() {
+        var windowWidth = $(window).width();
+        var windowHeight = $(window).height();
+        var w = windowWidth;
+        var h = windowHeight - 100;
+        //if(h < 256) {
+        //  h = windowHeight - 50;
+        //}
+        if (w / 2631 < h / 1563) {
+          w = Math.max(1200, w);
+          h = Math.round((w / 2631) * 1563);
+        } else {
+          h = Math.max(600, h);
+          w = Math.round((h / 1563) * 2631);
+        }
+        var factorH = 2464 / 2631;
+        var factorV = 1388 / 1563;
+        var marginTopFactor = 88 / 1563;
+        var marginLeftFactor = 70 / 2631;
+
+        $('#myGSNArea_CardboardSynth').width(Math.round(w * factorH));
+        $('#myGSNArea_CardboardSynth').height(Math.round(h * factorV));
+        $('#myGSNArea_CardboardSynth').css(
+          'margin-top',
+          Math.round(h * marginTopFactor)
+        );
+        $('#myGSNArea_CardboardSynth').css(
+          'margin-left',
+          Math.round(w * marginLeftFactor)
+        );
+        $('#cardboard').width(w);
+        $('#cardboard').height(h);
+      }
+
+      $(window).resize(function () {
+        clearTimeout($.data(this, 'resizeTimer'));
+        $.data(
+          this,
+          'resizeTimer',
+          setTimeout(function () {
+            //do something
+            resizeHelper();
+            console.log("Haven't resized in 200ms!");
+            instance_CardboardSynth.ui.update();
+          }, 200)
+        );
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.code === 'KeyT' && event.altKey) {
+          if (debug) {
+            var element = document.getElementById('debugArea');
+            element.classList.add('hidden');
+            debug = false;
+          } else {
+            var element = document.getElementById('debugArea');
+            element.classList.remove('hidden');
+            debug = true;
+          }
+        }
+      });
+
+      function paraToString(cc) {
+        var str = '[';
+        for (var i = 0; i < cc.length; i++) {
+          if (paraType[i] === 'b') {
+            if (cc[i]) {
+              str += 'true';
+            } else {
+              str += 'false';
+            }
+          } else {
+            if (paraType[i] === 'i') {
+              str += cc[i].toString();
+            } else {
+              if (paraType[i] === 'f' || paraType[i] === 'nf') {
+                str += Number(cc[i].toFixed(10)).toString();
+              } else {
+                str += cc[i].toString();
+              }
+            }
+          }
+          if (i < cc.length - 1) {
+            str += ',';
+          }
+        }
+        str += ']';
+        return str;
+      }
+
+      function debugOutput() {
+        var str = "<div class='debugCell'>";
+        for (var i = 0; i < current.length; i++) {
+          var p = current[i];
+          if (typeof p === 'number') {
+            str += nodeNames[i] + ' : ' + p.toFixed(4) + '<br>';
+          } else {
+            str += nodeNames[i] + ' : ' + p + '<br>';
+          }
+
+          if (
+            i === 6 ||
+            i === 12 ||
+            i === 16 ||
+            i === 20 ||
+            i === 29 ||
+            i === 34 ||
+            i === 38 ||
+            i === 43 ||
+            i === 47 ||
+            i === 51 ||
+            i === 56
+          ) {
+            str += "</div><div class='debugCell'>";
+          }
+        }
+        str += '</div>';
+
+        str += '<div> ' + JSON.stringify(current) + '</div>';
+        str += '<div> ' + paraToString(current) + '</div>';
+
+        $('#debugParams').html(str);
+      }
+
+      function getCurrent() {
+        current = new Array(nodes.length);
+        for (var i = 0; i < nodes.length; i++) {
+          var p = instance_CardboardSynth.runMgr.getPublicParameterData(
+            nodes[i]
+          );
+          current[i] = p;
+        }
+      }
+
+      function setCurrent(paraArray) {
+        current = new Array(nodes.length);
+        for (var i = 0; i < nodes.length; i++) {
+          instance_CardboardSynth.runMgr.setPublicParameterData(
+            nodes[i],
+            paraArray[i]
+          );
+        }
+      }
+
+      var callback = function () {
+        getCurrent();
+        if (debug) {
+          debugOutput();
+        }
+
+        recordUpdateDisplay();
+      };
+
+      // one GSN instance for each graph in the project
+      var instance_CardboardSynth; // graph with name "CardboardSynth"
+
+      function gsn_load() {
+        instance_CardboardSynth = gsn.main('myGSNArea_CardboardSynth');
+
+        resizeHelper();
+
+        instance_CardboardSynth.nodeMgrInterface.loadFromString(
+          gsn_data.graph_CardboardSynth,
+          false
+        );
+        instance_CardboardSynth.ui.update();
+        instance_CardboardSynth.ui.setSelectedTool(-1); // -1 = no interaction, 0 = full interaction, 1 = zoom, 2 = pan/zoom
+        instance_CardboardSynth.drawUIBorder = false;
+
+        $('#cardboard').css(
+          'background-image',
+          'url(https://www.gsn-lib.org/apps/cardboardsynth/cardboard_background.jpg)'
+        );
+
+        //debugger;
+        for (var i = 0; i < nodeNames.length; i++) {
+          var n = instance_CardboardSynth.runMgr.getNodeIdByName(nodeNames[i]);
+          var ni = parseInt(n);
+          if (ni >= 0) {
+            nodes.push(n);
+          } else {
+            alert('can not find node ' + nodeNames[i]);
+            nodes.push(-1);
+          }
+        }
+
+        instance_CardboardSynth.runMgr.setUserCallBackFunction(callback);
+
+        presetNames.push('Wild Squelchy Bass');
+        presets.push([
+          false,
+          1,
+          0,
+          2,
+          0.25,
+          0,
+          4750,
+          false,
+          2,
+          1,
+          2,
+          0.25,
+          0,
+          false,
+          1,
+          0.27,
+          2,
+          false,
+          3,
+          1740,
+          true,
+          false,
+          0,
+          45,
+          7.724,
+          0,
+          450,
+          1,
+          4950,
+          0.68,
+          13,
+          39,
+          0.35,
+          45,
+          0.13,
+          0.000892,
+          91,
+          0,
+          36,
+          0,
+          100,
+          0,
+          47,
+          true,
+          false,
+          0,
+          20,
+          1,
+          true,
+          0.21,
+          0.315,
+          0.21,
+          false,
+          4.27,
+          0.504,
+          0.235,
+          2176,
+          0.25,
+          false,
+        ]);
+        presetNames.push('Lollygag');
+        presets.push([
+          false,
+          2,
+          1,
+          0,
+          0.25,
+          0,
+          4750,
+          false,
+          2,
+          3,
+          0,
+          0.25,
+          0,
+          true,
+          1,
+          0.72,
+          1,
+          false,
+          0,
+          1320,
+          false,
+          false,
+          0,
+          40,
+          6.536,
+          0,
+          90,
+          1,
+          1650,
+          0.68,
+          13,
+          39,
+          0.35,
+          45,
+          0.13,
+          0.000892,
+          50,
+          0,
+          36,
+          100,
+          100,
+          0,
+          47,
+          true,
+          true,
+          0,
+          2.4,
+          0.48,
+          true,
+          0.21,
+          0.315,
+          0.14,
+          true,
+          3.43,
+          0.441,
+          0.25,
+          1244,
+          0.53,
+          false,
+        ]);
+        presetNames.push('Sine');
+        presets.push([
+          false,
+          0,
+          2,
+          0,
+          0.25,
+          0,
+          4750,
+          true,
+          2,
+          3,
+          0,
+          0.25,
+          0,
+          true,
+          1,
+          0.72,
+          1,
+          true,
+          0,
+          1320,
+          false,
+          true,
+          0,
+          40,
+          6.536,
+          0,
+          90,
+          1,
+          1650,
+          0.68,
+          12,
+          30,
+          1,
+          33,
+          0,
+          0.000892,
+          50,
+          0,
+          36,
+          100,
+          100,
+          0,
+          47,
+          true,
+          true,
+          0,
+          2.4,
+          0.48,
+          true,
+          0.21,
+          0.315,
+          0.14,
+          true,
+          3.43,
+          0.441,
+          0.25,
+          1244,
+          0.53,
+          false,
+        ]);
+        presetNames.push('Kick Drum');
+        presets.push([
+          false,
+          0,
+          0,
+          0,
+          0.25,
+          1,
+          1750,
+          true,
+          0,
+          0,
+          1,
+          0.25,
+          2,
+          true,
+          1,
+          0.05,
+          0,
+          true,
+          0,
+          1320,
+          false,
+          true,
+          0,
+          49,
+          0.2,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          48,
+          0,
+          0,
+          0,
+          0.000892,
+          60,
+          0,
+          0,
+          0,
+          41,
+          0,
+          0,
+          true,
+          false,
+          0,
+          20,
+          1,
+          true,
+          0.6,
+          0.369,
+          0.14,
+          true,
+          2.24,
+          0.468,
+          0.11,
+          332,
+          0.68,
+          true,
+        ]);
+        presetNames.push('Good Morning Brass');
+        presets.push([
+          false,
+          2,
+          3,
+          0,
+          0.25,
+          0,
+          4750,
+          false,
+          2,
+          2,
+          2,
+          0.1,
+          -12,
+          true,
+          1,
+          0.72,
+          1,
+          false,
+          0,
+          540,
+          false,
+          false,
+          0,
+          55,
+          2.774,
+          0,
+          110,
+          1,
+          500,
+          0.58,
+          9,
+          30,
+          0.39,
+          30,
+          0.11,
+          0.000892,
+          77,
+          0,
+          36,
+          4,
+          74,
+          0.58,
+          47,
+          false,
+          false,
+          0,
+          2,
+          0.25,
+          true,
+          0.66,
+          0.549,
+          0.14,
+          true,
+          3.85,
+          0.459,
+          0.165,
+          1890,
+          1,
+          false,
+        ]);
+        presetNames.push('Sad Pad');
+        presets.push([
+          false,
+          2,
+          2,
+          1,
+          0.25,
+          0,
+          4750,
+          false,
+          1,
+          1,
+          0,
+          0.14,
+          2,
+          false,
+          2,
+          0.02,
+          1,
+          false,
+          0,
+          1200,
+          false,
+          false,
+          0,
+          40,
+          5.942,
+          0,
+          0,
+          2,
+          1250,
+          0.65,
+          53,
+          18,
+          1,
+          51,
+          0.06,
+          0.000892,
+          100,
+          0.37,
+          60,
+          100,
+          17,
+          1,
+          0,
+          true,
+          true,
+          0,
+          2.8,
+          0.64,
+          true,
+          0.21,
+          0.315,
+          0.14,
+          false,
+          4.62,
+          0.513,
+          0.25,
+          1244,
+          0.26,
+          false,
+        ]);
+        presetNames.push('Reverb Strings');
+        presets.push([
+          false,
+          2,
+          3,
+          0,
+          0.25,
+          0,
+          2300,
+          false,
+          2,
+          3,
+          0,
+          0.085,
+          -8,
+          true,
+          1,
+          0.04,
+          1,
+          false,
+          0,
+          1680,
+          true,
+          false,
+          4,
+          56,
+          5.546,
+          -8.4,
+          180,
+          2,
+          1800,
+          0.68,
+          48,
+          37,
+          1,
+          53,
+          0,
+          0.000892,
+          50,
+          0.43,
+          37,
+          63,
+          100,
+          0,
+          47,
+          true,
+          true,
+          0,
+          2.4,
+          0.48,
+          true,
+          0.21,
+          0.315,
+          0.14,
+          false,
+          4.9,
+          0.63,
+          0.245,
+          2118,
+          0.53,
+          false,
+        ]);
+        presetNames.push('Castanets');
+        presets.push([
+          true,
+          0,
+          1,
+          0,
+          0.04,
+          0,
+          2900,
+          true,
+          0,
+          1,
+          0,
+          0.035,
+          -100,
+          false,
+          1,
+          1,
+          1,
+          true,
+          0,
+          1320,
+          false,
+          false,
+          1,
+          53,
+          16.634,
+          -3.2,
+          0,
+          1,
+          250,
+          0.4,
+          0,
+          48,
+          0,
+          0,
+          0,
+          0.000892,
+          60,
+          0,
+          0,
+          12,
+          57,
+          0,
+          0,
+          true,
+          true,
+          3,
+          5.4,
+          1,
+          true,
+          0.21,
+          0.09,
+          0.035,
+          true,
+          5.39,
+          0.36,
+          0.16,
+          978,
+          0.48,
+          true,
+        ]);
+        presetNames.push('Wind');
+        presets.push([
+          true,
+          2,
+          3,
+          1,
+          0.1275,
+          0,
+          2300,
+          true,
+          0,
+          3,
+          0,
+          0.25,
+          0,
+          false,
+          1,
+          1,
+          0,
+          true,
+          0,
+          1560,
+          true,
+          false,
+          0,
+          31,
+          1.784,
+          0,
+          880,
+          2,
+          3050,
+          0.68,
+          54,
+          78,
+          0.46,
+          53,
+          0.54,
+          0.000892,
+          50,
+          0.43,
+          37,
+          93,
+          100,
+          0.42,
+          81,
+          true,
+          true,
+          0,
+          2.4,
+          0.48,
+          true,
+          0.645,
+          0.594,
+          0.13,
+          true,
+          4.06,
+          0.531,
+          0.165,
+          1244,
+          1,
+          false,
+        ]);
+        presetNames.push('Snare Drum');
+        presets.push([
+          false,
+          0,
+          1,
+          0,
+          0.04,
+          0,
+          2900,
+          false,
+          0,
+          1,
+          0,
+          0.035,
+          -100,
+          false,
+          1,
+          1,
+          1,
+          true,
+          0,
+          1320,
+          false,
+          false,
+          1,
+          31,
+          10.298,
+          0,
+          0,
+          1,
+          300,
+          1,
+          0,
+          48,
+          0,
+          0,
+          0,
+          0.000892,
+          60,
+          0,
+          0,
+          12,
+          57,
+          0,
+          0,
+          true,
+          false,
+          3,
+          5.4,
+          1,
+          true,
+          0.21,
+          0.09,
+          0.035,
+          true,
+          5.39,
+          0.36,
+          0.16,
+          978,
+          1,
+          true,
+        ]);
+        presetNames.push('Violine');
+        presets.push([
+          false,
+          2,
+          3,
+          1,
+          0.1275,
+          0,
+          2300,
+          false,
+          0,
+          3,
+          0,
+          0.25,
+          0,
+          true,
+          1,
+          0.04,
+          1,
+          false,
+          0,
+          1680,
+          true,
+          false,
+          0,
+          74,
+          1.784,
+          0,
+          250,
+          0,
+          1650,
+          0.68,
+          43,
+          32,
+          1,
+          53,
+          0,
+          0.000892,
+          50,
+          0.43,
+          37,
+          100,
+          100,
+          0,
+          47,
+          true,
+          true,
+          0,
+          2.4,
+          0.48,
+          true,
+          0.21,
+          0.315,
+          0.14,
+          true,
+          4.06,
+          0.531,
+          0.165,
+          1244,
+          0.53,
+          false,
+        ]);
+        presetNames.push('Saw 5ths');
+        presets.push([
+          false,
+          2,
+          1,
+          0,
+          0.1775,
+          5,
+          1900,
+          false,
+          2,
+          2,
+          0,
+          0.25,
+          0,
+          false,
+          1,
+          0.08,
+          1,
+          false,
+          0,
+          -720,
+          false,
+          false,
+          2,
+          29,
+          0.2,
+          1.2,
+          120,
+          2,
+          4400,
+          1,
+          61,
+          87,
+          0.86,
+          33,
+          0,
+          0.000892,
+          100,
+          0.44,
+          36,
+          100,
+          100,
+          0.41,
+          47,
+          true,
+          true,
+          0,
+          2.4,
+          0.48,
+          false,
+          0.24,
+          0.315,
+          0.065,
+          false,
+          5.46,
+          0.621,
+          0.195,
+          200,
+          0.62,
+          false,
+        ]);
+        presetNames.push('Hello Bass');
+        presets.push([
+          false,
+          0,
+          1,
+          0,
+          0.25,
+          0,
+          4750,
+          false,
+          2,
+          0,
+          0,
+          0.25,
+          0,
+          true,
+          1,
+          0.72,
+          1,
+          false,
+          0,
+          -2220,
+          false,
+          false,
+          0,
+          47,
+          6.536,
+          0,
+          220,
+          1,
+          1550,
+          0.73,
+          12,
+          30,
+          1,
+          33,
+          0,
+          0.000892,
+          50,
+          0,
+          36,
+          100,
+          100,
+          0,
+          47,
+          true,
+          true,
+          0,
+          5.2,
+          0.12,
+          true,
+          0.66,
+          0.549,
+          0.14,
+          true,
+          3.43,
+          0.441,
+          0.25,
+          1244,
+          0.77,
+          false,
+        ]);
+        presetNames.push('SciFi Rumble');
+        presets.push([
+          false,
+          2,
+          2,
+          0,
+          0.25,
+          0,
+          4750,
+          false,
+          2,
+          2,
+          0,
+          0.25,
+          -28,
+          true,
+          1,
+          0.19,
+          1,
+          false,
+          0,
+          1320,
+          false,
+          false,
+          0,
+          20,
+          10.1,
+          0.8,
+          90,
+          2,
+          3500,
+          0.65,
+          20,
+          39,
+          0.35,
+          45,
+          0.13,
+          0.000892,
+          50,
+          0,
+          36,
+          100,
+          100,
+          0,
+          47,
+          true,
+          false,
+          1,
+          4.8,
+          0.53,
+          false,
+          0.315,
+          0.567,
+          0.14,
+          false,
+          3.43,
+          0.63,
+          0.28,
+          1206,
+          0.53,
+          false,
+        ]);
+        presetNames.push('Wobbly Flute');
+        presets.push([
+          false,
+          3,
+          1,
+          1,
+          0.1475,
+          0,
+          4750,
+          false,
+          1,
+          3,
+          2,
+          0.25,
+          22,
+          false,
+          2,
+          0.05,
+          2,
+          false,
+          1,
+          480,
+          true,
+          false,
+          3,
+          65,
+          8.912,
+          -1.2,
+          540,
+          3,
+          3800,
+          0.14,
+          10,
+          77,
+          0.54,
+          45,
+          0.6,
+          0.000892,
+          50,
+          0.4,
+          36,
+          0,
+          60,
+          0.34,
+          44,
+          false,
+          false,
+          1,
+          1.8,
+          0.44,
+          true,
+          0.315,
+          0.702,
+          0.14,
+          true,
+          3.43,
+          0.441,
+          0.25,
+          2308,
+          0.28,
+          false,
+        ]);
+        presetNames.push('Bulan Atmosphere');
+        presets.push([
+          false,
+          0,
+          1,
+          0,
+          0.25,
+          0,
+          1050,
+          false,
+          2,
+          0,
+          1,
+          0.25,
+          0,
+          true,
+          1,
+          0.5931795515,
+          1,
+          false,
+          0,
+          -2220,
+          false,
+          false,
+          0,
+          26,
+          6.536,
+          0,
+          350,
+          2,
+          3714.2387489987,
+          0,
+          12,
+          2.3786768772,
+          1,
+          33,
+          0.0830553502,
+          0.000892,
+          50,
+          0.6981696659,
+          36,
+          77.5749659829,
+          100,
+          0,
+          44.8935345886,
+          true,
+          false,
+          0,
+          3.0376499509,
+          0.38,
+          true,
+          0.66,
+          0.549,
+          0.14,
+          true,
+          3.43,
+          0.1241953733,
+          0.25,
+          1244,
+          0.42,
+          false,
+        ]);
+        presetNames.push('Bright E-Piano');
+        presets.push([
+          false,
+          2,
+          3,
+          0,
+          0.25,
+          0,
+          4750,
+          false,
+          2,
+          3,
+          0,
+          0.25,
+          0,
+          true,
+          1,
+          0.72,
+          1,
+          false,
+          0,
+          -1020,
+          false,
+          false,
+          0,
+          40,
+          5.6438635633,
+          0,
+          0,
+          4,
+          2191.0365092694,
+          0.72,
+          4.2442131477,
+          39,
+          0.35,
+          45,
+          0.0840573387,
+          0.000892,
+          50,
+          0,
+          36,
+          100,
+          0,
+          0,
+          0,
+          true,
+          true,
+          1,
+          5.6,
+          0.5094509373,
+          true,
+          0.21,
+          0.315,
+          0.3833229807,
+          true,
+          4.6659623782,
+          0.441,
+          0.25,
+          1244,
+          1,
+          false,
+        ]);
+        presetNames.push('Seb');
+        presets.push([
+          false,
+          2,
+          2,
+          1,
+          0.25,
+          4,
+          3200,
+          true,
+          2,
+          1,
+          2,
+          0.25,
+          0,
+          true,
+          1,
+          0.27,
+          2,
+          false,
+          3,
+          -60,
+          false,
+          true,
+          0,
+          100,
+          15.05,
+          -10,
+          320,
+          4,
+          4950,
+          0.68,
+          0,
+          38,
+          0.5,
+          51,
+          0.47,
+          12.000892,
+          10,
+          0.41,
+          26,
+          64,
+          40,
+          0.16,
+          31,
+          false,
+          true,
+          0,
+          20,
+          1,
+          true,
+          0.21,
+          0.315,
+          0.21,
+          true,
+          4.27,
+          0.504,
+          0.235,
+          2176,
+          1,
+          false,
+        ]);
+        presetNames.push('Diana Bass');
+        presets.push([
+          false,
+          2,
+          0,
+          0,
+          0.1275,
+          1,
+          1200,
+          false,
+          2,
+          0,
+          0,
+          0.1225,
+          10,
+          true,
+          1,
+          0.27,
+          2,
+          true,
+          3,
+          -1620,
+          true,
+          false,
+          0,
+          41,
+          10.298,
+          0,
+          60,
+          2,
+          850,
+          1,
+          5,
+          57,
+          0.11,
+          43,
+          0.13,
+          0.000892,
+          20,
+          0,
+          27,
+          0,
+          38,
+          0,
+          28,
+          false,
+          false,
+          0,
+          8.6,
+          0.43,
+          true,
+          0.21,
+          0.315,
+          0.21,
+          true,
+          4.27,
+          0.504,
+          0.235,
+          2176,
+          0.62,
+          false,
+        ]);
+        presetNames.push('Marimba');
+        presets.push([
+          false,
+          0,
+          1,
+          0,
+          0.2422691495,
+          0,
+          4750,
+          false,
+          2,
+          3,
+          0,
+          0.1557803192,
+          0,
+          true,
+          1,
+          0.5532165266,
+          1,
+          false,
+          0,
+          1320,
+          false,
+          false,
+          0,
+          40,
+          6.536,
+          14.8803404175,
+          90,
+          1,
+          1650,
+          0.91,
+          13,
+          39,
+          0.35,
+          45,
+          0.13,
+          0.000892,
+          50,
+          0,
+          15.9666593828,
+          100,
+          5.6401810189,
+          0,
+          47,
+          true,
+          true,
+          0,
+          2.4,
+          0.48,
+          true,
+          0.21,
+          0.315,
+          0.14,
+          true,
+          3.43,
+          0.441,
+          0.25,
+          2761.8072674624,
+          1.0,
+          false,
+        ]);
+        presetNames.push('Sober Bass');
+        presets.push([
+          false,
+          2,
+          0,
+          0,
+          0.25,
+          0,
+          4750,
+          true,
+          2,
+          3,
+          0,
+          0.25,
+          0,
+          true,
+          2,
+          0.72,
+          1,
+          true,
+          0,
+          1320,
+          true,
+          false,
+          0,
+          40,
+          6.536,
+          0,
+          90,
+          1,
+          1650,
+          1,
+          0,
+          39,
+          0.35,
+          45,
+          0.13,
+          0.108,
+          36,
+          0.16,
+          35,
+          40,
+          42,
+          0.25,
+          47,
+          false,
+          true,
+          0,
+          2.4,
+          0.48,
+          true,
+          0.21,
+          0.315,
+          0.14,
+          true,
+          3.43,
+          0.441,
+          0.25,
+          1244,
+          1,
+          false,
+        ]);
+        numberOfInitialPresets = presets.length;
+
+        setSound();
+
+        var paramStr = decodeURIComponent(window.location.search).substring(1);
+        var paramParts = paramStr.split(/[?&]/);
+        var sharedName = 'Unnamed';
+        for (var i = 0; i < paramParts.length; i++) {
+          var param = paramParts[i].split('=');
+          if (param[0] === 'version') {
+            console.log('version:' + param[1]);
+          }
+          if (param[0] === 'name') {
+            if (param[1].length > 0) {
+              sharedName = param[1];
+            }
+          }
+          if (param[0] === 'data') {
+            var dcode = decodeURIComponent(param[1]);
+            var array = JSON.parse(dcode);
+            if (array.length === 59) {
+              presetNames.push(sharedName + ' (shared)');
+              presets.push(array);
+              presetSelected = presets.length - 1;
+              setSound();
+            }
+          }
+        }
+
+        gsn_play();
+      }
+      function gsn_play() {
+        instance_CardboardSynth.runMgr.playGraph();
+      }
+      function gsn_restart() {
+        if (stopped) {
+          instance_CardboardSynth.runMgr.playGraph();
+          stopped = false;
+          stoppedFromPageHide = false;
+        }
+      }
+      function enterNewText(event) {
+        var inputText = event.target.value;
+        if (inputText.match(/[^a-zA-Z0-9!_\- ]/g)) {
+          inputText = inputText.replace(/[^a-zA-Z0-9!_\- ]/g, '');
+        }
+        var inputText = inputText.substring(0, 20);
+        event.target.value = inputText;
+        if (inputText.length === 0) {
+          currentName = 'unnamed';
+        } else {
+          currentName = inputText;
+        }
+        $('#lengthCount').html('(' + inputText.length + '/20)');
+        shareLink();
+      }
+      function createNew() {
+        var inputText = document.getElementById('inputText').value;
+        if (inputText.length === 0) {
+          location.href = './index.html';
+        } else {
+          var encodedText = encodeURIComponent(stupidencript(inputText));
+          location.href = './index.html?text=' + encodedText;
+          console.log('text:' + encodedText);
+        }
+      }
+      function shareLink() {
+        var path = window.location.href.split(/[?#]/)[0];
+        var str = path.substring(0, path.lastIndexOf('/')) + '/';
+        str +=
+          'index.html?version=' +
+          version +
+          '&name=' +
+          encodeURIComponent(currentName) +
+          '&data=' +
+          encodeURIComponent(paraToString(current));
+
+        document.getElementById('currentLink').innerHTML = str;
+        document.getElementById('currentLink').href = str;
+
+        var redditStr =
+          'https://www.reddit.com/r/GSN_Composer/submit?title=' +
+          encodeURIComponent('Cardboard Online Synth Sound: ' + currentName) +
+          '&url=' +
+          encodeURIComponent(str);
+        $('#redditLink').attr(
+          'onClick',
+          'window.open("' + redditStr + '","_blank")'
+        );
+
+        var modal = document.getElementById('myModal');
+        modal.style.display = 'block';
+      }
+
+      function closeShareLink() {
+        var modal = document.getElementById('myModal');
+        modal.style.display = 'none';
+      }
+
+      function openExport() {
+        var modal = document.getElementById('myModalExport');
+        modal.style.display = 'block';
+      }
+
+      function gsn_export_project() {
+        var settings = '';
+
+        for (var i = 0; i < nodes.length; i++) {
+          if (nodeNames[i] === 'Osc1Oct' || nodeNames[i] === 'Osc2Oct') {
+            settings +=
+              nodeNames[i] + ':' + 110.0 * Math.pow(2, current[i]) + '\n';
+          } else if (
+            nodeNames[i] === 'Osc1PitchEnv' ||
+            nodeNames[i] === 'FilterPitchEnv'
+          ) {
+            var b = 5;
+            switch (current[i]) {
+              case 0:
+                b = 5;
+                break;
+              case 1:
+              case 2:
+              case 3:
+              case 4:
+                b = current[i];
+                break;
+              case 5:
+                b = 0;
+                break;
+            }
+            settings += nodeNames[i] + ':' + b + '\n';
+          } else if (
+            nodeNames[i] === 'AmpAttack' ||
+            nodeNames[i] === 'AmpDecay' ||
+            nodeNames[i] === 'AmpRelease' ||
+            nodeNames[i] === 'Env1Attack' ||
+            nodeNames[i] === 'Env1Decay' ||
+            nodeNames[i] === 'Env1Release' ||
+            nodeNames[i] === 'Env2Attack' ||
+            nodeNames[i] === 'Env2Decay' ||
+            nodeNames[i] === 'Env2Release'
+          ) {
+            var x = current[i];
+            var b = 0.0;
+            if (x > 0 && x <= 25) {
+              var y0 = 0.0001;
+              var x0 = 0;
+              var y1 = 0.01;
+              var x1 = 25;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            if (x > 25 && x <= 50) {
+              var y0 = 0.01;
+              var x0 = 25.0;
+              var y1 = 0.5;
+              var x1 = 50.0;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            if (x > 50 && x <= 75) {
+              var y0 = 0.5;
+              var x0 = 50.0;
+              var y1 = 1;
+              var x1 = 75.0;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            if (x > 75 && x <= 100) {
+              var y0 = 1;
+              var x0 = 75.0;
+              var y1 = 5;
+              var x1 = 100.0;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            settings += nodeNames[i] + ':' + b + '\n';
+          } else if (nodeNames[i] === 'Env2LinearDecay') {
+            if (current[i]) {
+              settings += nodeNames[i] + ':0\n';
+            } else {
+              settings += nodeNames[i] + ':1\n';
+            }
+          } else if (nodeNames[i] === 'FilterFrequency') {
+            var x = current[i];
+            var b = 0.0;
+            if (x > 0 && x <= 25) {
+              var y0 = 0;
+              var x0 = 0;
+              var y1 = 100;
+              var x1 = 25;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            if (x > 25 && x <= 50) {
+              var y0 = 100;
+              var x0 = 25.0;
+              var y1 = 1000;
+              var x1 = 50.0;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            if (x > 50 && x <= 75) {
+              var y0 = 1000;
+              var x0 = 50.0;
+              var y1 = 4000;
+              var x1 = 75.0;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            if (x > 75 && x <= 100) {
+              var y0 = 4000;
+              var x0 = 75.0;
+              var y1 = 48000;
+              var x1 = 100.0;
+              var m = (y1 - y0) / (x1 - x0);
+              var b = -m * x0 + y0;
+              b = m * x + b;
+            }
+            settings += nodeNames[i] + ':' + b + '\n';
+          } else {
+            settings += nodeNames[i] + ':' + current[i] + '\n';
+          }
+        }
+
+        var formData = new FormData();
+        formData.append('settings', settings);
+
+        var path = window.location.href.split(/[?#]/)[0];
+        var str = path.substring(0, path.lastIndexOf('/')) + '/';
+
+        var req = new XMLHttpRequest();
+        req.addEventListener(
+          'load',
+          function () {
+            if (req.status === 200) {
+              var success = false;
+              if (req.responseText.startsWith('Success')) {
+                var s = req.responseText.split(':');
+                if (s.length >= 2) {
+                  var name = s[1];
+                  success = true;
+                  var linkStr =
+                    path.substring(0, path.lastIndexOf('/apps')) +
+                    '/index.html' +
+                    name;
+                  window.open(linkStr, '_blank');
+                  closeExportDialog();
+                }
+              }
+              if (!success) {
+                alert(req.responseText);
+              }
+            }
+          },
+          false
+        );
+
+        req.addEventListener(
+          'error',
+          function () {
+            alert(req.responseText);
+          },
+          false
+        );
+
+        req.open('POST', str + '/ExportProject.php');
+        req.send(formData);
+      }
+
+      function closeExportDialog() {
+        var modal = document.getElementById('myModalExport');
+        modal.style.display = 'none';
+      }
+
+      function gsn_stop() {
+        instance_CardboardSynth.runMgr.stopGraph();
+        stopped = true;
+      }
+
+      function setSound() {
+        setCurrent(presets[presetSelected]);
+        $('#soundname').html(
+          '' + presetSelected + ': ' + presetNames[presetSelected]
+        );
+      }
+
+      function gsn_next() {
+        presetSelected = presetSelected + 1;
+        if (presetSelected >= presets.length) {
+          presetSelected = 0;
+        }
+        setSound();
+      }
+
+      function gsn_previous() {
+        presetSelected = presetSelected - 1;
+        if (presetSelected < 0) {
+          presetSelected = presets.length - 1;
+        }
+        setSound();
+      }
+
+      var recording = false;
+      var recordingTime = undefined;
+      function record() {
+        recording = !recording;
+        if (
+          typeof window.performance !== 'undefined' &&
+          typeof window.performance.now !== 'undefined'
+        ) {
+          recordingTime = window.performance.now();
+        }
+
+        var nr = instance_CardboardSynth.runMgr.getNodeIdByName('RecordFlag');
+        var nri = parseInt(nr);
+        if (nri < 0) {
+          alert('can not find node RecordFlag');
+          return;
+        }
+        instance_CardboardSynth.runMgr.setPublicParameterData(nri, recording);
+
+        //
+        //  setTimeout(recordReadout, 200);
+        //}
+        if (!recording) {
+          var modal = document.getElementById('myModalRecord');
+          modal.style.display = 'block';
+        }
+      }
+
+      function closeRecordDialog() {
+        var modal = document.getElementById('myModalRecord');
+        modal.style.display = 'none';
+      }
+
+      function recordUpdateDisplay() {
+        if (recording) {
+          if (
+            typeof window.performance !== 'undefined' &&
+            typeof window.performance.now !== 'undefined'
+          ) {
+            var currentTime = window.performance.now();
+            var str = ((currentTime - recordingTime) / 1000).toFixed(2);
+            while (str.length < 6) {
+              str = '0' + str;
+            }
+            $('#recordbutton').html(str);
+          }
+        } else {
+          $('#recordbutton').html('Record');
+        }
+      }
+
+      function recordReadout() {
+        var ns =
+          instance_CardboardSynth.runMgr.getAnyNodeIdByName('RecordLeft');
+        var nsi = parseInt(ns);
+        if (nsi < 0) {
+          alert('can not find node RecordLeft');
+          return;
+        }
+        var signal =
+          instance_CardboardSynth.nodeMgrInterface.getPublicParameterData(nsi);
+        var audioExport = new gsn.AudioExport();
+        var wavArrayBuffer = audioExport.convertToWAVFloat32(signal, 44100);
+        var downloadLink = document.createElement('a');
+        downloadLink.download = 'signal.wav';
+
+        var blob = new Blob([wavArrayBuffer], { type: 'octet/stream' });
+        downloadLink.href = window.URL.createObjectURL(blob);
+        downloadLink.click();
+
+        closeRecordDialog();
+      }
+
+      function randomize() {
+        randomCounter++;
+        presetNames.push('Random' + randomCounter);
+
+        var p = Math.floor(Math.random() * (numberOfInitialPresets - 1));
+
+        var r = presets[p].slice();
+
+        var allRandom = Math.random() > 0.75;
+
+        for (var i = 0; i < paraMaxs.length; i++) {
+          if (Math.random() > 0.8 || allRandom) {
+            var ran = Math.random();
+            if (paraType[i] === 'b') {
+              r[i] = ran >= 0.5;
+            } else {
+              if (paraType[i] === 'i') {
+                r[i] =
+                  Math.floor(ran * (paraMaxs[i] - paraMins[i])) + paraMins[i];
+              } else {
+                if (paraType[i] === 'f') {
+                  r[i] = ran * (paraMaxs[i] - paraMins[i]) + paraMins[i];
+                } else {
+                  r[i] = paraNeutral[i];
+                }
+              }
+            }
+          }
+        }
+
+        presets.push(r);
+        presetSelected = presets.length - 1;
+        setSound();
+      }
+
+      document.addEventListener(
+        'visibilitychange',
+        function () {
+          if (document.hidden) {
+            instance_CardboardSynth.runMgr.stopGraph();
+            stopped = true;
+            stoppedFromPageHide = true;
+          } else {
+            if (stopped && stoppedFromPageHide) {
+              gsn_restart();
+            }
+          }
+        },
+        false
+      );
+    </script>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body onload="gsn_load();" style="">
+    <!-- GSN areas (one for each graph in the project) -->
+    <div id="container">
+      <div
+        id="cardboard"
+        style="
+          width: 1365px;
+          height: 811px;
+          background-image: url('https://www.gsn-lib.org/apps/cardboardsynth/cardboard_background.jpg');
+        "
+      >
+        <div
+          id="myGSNArea_CardboardSynth"
+          class="gsnArea"
+          style="
+            width: 1278px;
+            height: 720px;
+            margin-top: 46px;
+            margin-left: 36px;
+          "
+        >
+          <canvas
+            id="myGSNArea_CardboardSynthCanvas2DBackground"
+            class="canvas2DBackground unselectable"
+            tabindex="102"
+            width="1278"
+            height="720"
+          ></canvas
+          ><canvas
+            id="myGSNArea_CardboardSynthCanvasGL"
+            class="canvasGL unselectable"
+            tabindex="101"
+            width="1278"
+            height="720"
+            style="width: 1278px; height: 720px"
+          ></canvas
+          ><canvas
+            id="myGSNArea_CardboardSynthCanvas2D"
+            class="canvas2D unselectable"
+            tabindex="100"
+            width="1278"
+            height="720"
+          ></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div id="uiMain">
+      <div class="myBlock">
+        <button
+          type="button"
+          class="button buttongreen"
+          onclick="gsn_previous();"
+        >
+          Previous
+        </button>
+        <button type="button" class="button buttongreen" onclick="gsn_next();">
+          Next
+        </button>
+        <span id="soundname">0: Wild Squelchy Bass</span>
+        <button type="button" class="button buttonred" onclick="randomize();">
+          Randomize
+        </button>
+        <button type="button" class="button buttongreen" onclick="shareLink();">
+          Share
+        </button>
+        <button
+          type="button"
+          class="button buttongreen"
+          onclick="openExport();"
+        >
+          Export
+        </button>
+        <button
+          id="recordbutton"
+          type="button"
+          class="button buttonred"
+          onclick="record();"
+        >
+          Record
+        </button>
+        <button
+          type="button"
+          class="button buttongreen"
+          onclick='window.open("../../docs/nodes/ModularSynthesizer.php#SubtractiveSynth","_blank")'
+        >
+          Help
+        </button>
+      </div>
+    </div>
+
+    <div id="myModal" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content">
+        <span class="close" onclick="closeShareLink();">×</span>
+        <p>To share the current sound, enter its name:</p>
+        <div class="myBlock">
+          <input
+            type="text"
+            class="myTextInput"
+            value=""
+            placeholder="Name of sound"
+            id="inputText"
+            oninput="enterNewText(event);"
+          />
+        </div>
+        <div id="lengthCount">(0/20)</div>
+        <p>Afterwards share this link:</p>
+        <p></p>
+        <p><a id="currentLink" href="" target="_blank"></a></p>
+        <p>All shared sounds have a CC0 (public domain) license.</p>
+        <p>
+          Please also consider posting your sound to the GSN Composer subreddit:
+        </p>
+        <button
+          id="redditLink"
+          type="button"
+          class="button buttongreen"
+          onclick='window.open("https://www.reddit.com/r/GSN_Composer/","_blank")'
+        >
+          Submit to Reddit
+        </button>
+      </div>
+    </div>
+
+    <div id="myModalExport" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content">
+        <span class="close" onclick="closeExportDialog();">×</span>
+        <p>Here you can export the current sound to the GSN Composer.</p>
+
+        <p>
+          The GSN Composer is a free online tool for visual programming and
+          modular sound synthesis.<br />
+          You can change the structure of the synthesizer, trigger notes with a
+          step sequencer, <br />
+          record the output and save it as a WAV file, and much more.
+        </p>
+        <button
+          id="rexportGSNButton"
+          type="button"
+          class="button buttongreen"
+          onclick="gsn_export_project();"
+        >
+          Export to GSN Composer
+        </button>
+      </div>
+    </div>
+
+    <div id="myModalRecord" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content">
+        <span class="close" onclick="closeRecordDialog();">×</span>
+        <p>Here you can download your recording as a WAV file.</p>
+        <button
+          type="button"
+          class="button buttongreen"
+          onclick="recordReadout();"
+        >
+          Download
+        </button>
+      </div>
+    </div>
+
+    <div id="footer">
+      <div>
+        CARDBOARD ONLINE SYNTH • works only with a fast machine and Google
+        Chrome or Microsoft Edge (Chromium version) • A GSN Composer App:
+        <a
+          href="../../docs/gallery.php?projectName=CardboardSynth&amp;graphName=CardboardSynth"
+          >visual source code</a
+        >, Graph Licence:
+        <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0</a>
+        (public domain) •
+        <a href="../../docs/notice.php#terms">Terms of Use</a>
+        •
+        <a href="../../docs/notice.php#privacy">Privacy Policy</a>
+        <!--&bull;
+      <a href="">How to create your own synthizer</a>-->
+      </div>
+    </div>
+
+    <div id="debugArea" class="hidden">
+      <div id="debugParams"></div>
+      <button type="button" class="button buttongreen" onclick="gsn_stop();">
+        Stop
+      </button>
+      <button type="button" class="button buttongreen" onclick="gsn_restart();">
+        Restart
+      </button>
+    </div>
+  </body>
+</html>
