@@ -20,14 +20,12 @@ git submodule add https://github.com/Koodybiglookyea/UFCfightersalary.git portfo
 git submodule add https://github.com/Koodybiglookyea/aparmentselling.git portfolio/Koodybiglookyea/aparmentselling
 git submodule add https://github.com/Koodybiglookyea/calnomei.git portfolio/Koodybiglookyea/calnomei
 git submodule add https://github.com/Koodybiglookyea/camera-project.git portfolio/Koodybiglookyea/camera-project
-git submodule add https://github.com/Koodybiglookyea/koody6.git portfolio/Koodybiglookyea/koody6
 git submodule add https://github.com/Koodybiglookyea/KOODY5.git portfolio/Koodybiglookyea/KOODY5
 git submodule add https://github.com/Koodybiglookyea/koody1.git portfolio/Koodybiglookyea/koody1
 git submodule add https://github.com/Koodybiglookyea/word-game.git portfolio/Koodybiglookyea/word-game
 git submodule add https://github.com/Koodybiglookyea/game2.0.git portfolio/Koodybiglookyea/game2.0
 git submodule add https://github.com/Koodybiglookyea/stackblitz-starters-dvua41te.git portfolio/Koodybiglookyea/stackblitz-starters-dvua41te
 git submodule add https://github.com/haha197/hahahah.git portfolio/haha197/hahahah
-git submodule add https://github.com/haha197/stackblitz-starters-wa1bfhwa.git portfolio/haha197/stackblitz-starters-wa1bfhwa
 git submodule add https://github.com/haha197/draw.git portfolio/haha197/draw
 git submodule add https://github.com/haha197/openDayFishTwoPeople.git portfolio/haha197/openDayFishTwoPeople
 git submodule add https://github.com/haha197/opendaygame_last.git portfolio/haha197/opendaygame_last
@@ -35,9 +33,7 @@ git submodule add https://github.com/haha197/opendaygame_2.git portfolio/haha197
 git submodule add https://github.com/haha197/openday_game.git portfolio/haha197/openday_game
 git submodule add https://github.com/haha197/openday_gm.git portfolio/haha197/openday_gm
 git submodule add https://github.com/haha197/STAND.git portfolio/haha197/STAND
-git submodule add https://github.com/haha197/lasttex.git portfolio/haha197/lasttex
 git submodule add https://github.com/haha197/drawbroad_hehe.git portfolio/haha197/drawbroad_hehe
-git submodule add https://github.com/haha197/drawbroad.git portfolio/haha197/drawbroad
 git submodule add https://github.com/haha197/stackblitz-starters-nwue149t.git portfolio/haha197/stackblitz-starters-nwue149t
 git submodule add https://github.com/haha197/new_chat.git portfolio/haha197/new_chat
 git submodule add https://github.com/haha197/jslearning.git portfolio/haha197/jslearning
@@ -61,7 +57,6 @@ git submodule add https://github.com/v1ann/speed.git portfolio/v1ann/speed
 git submodule add https://github.com/v1ann/3.0waterfisheatshit.git portfolio/v1ann/3.0waterfisheatshit
 git submodule add https://github.com/v1ann/stackblitz-starters-dhtjyxmq.git portfolio/v1ann/stackblitz-starters-dhtjyxmq
 git submodule add https://github.com/v1ann/260428.git portfolio/v1ann/260428
-git submodule add https://github.com/v1ann/chatroom1.git portfolio/v1ann/chatroom1
 git submodule add https://github.com/v1ann/chatroom.git portfolio/v1ann/chatroom
 git submodule add https://github.com/v1ann/1.git portfolio/v1ann/1
 git submodule add https://github.com/EmilyLau41/together_draw.git portfolio/EmilyLau41/together_draw

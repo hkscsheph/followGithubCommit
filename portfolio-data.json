@@ -582,11 +582,6 @@
       "repoUrl": "https://github.com/haha197/draw"
     },
     {
-      "name": "drawbroad",
-      "type": "directory",
-      "repoUrl": "https://github.com/haha197/drawbroad"
-    },
-    {
       "name": "drawbroad_hehe",
       "type": "directory",
       "repoUrl": "https://github.com/haha197/drawbroad_hehe"
@@ -600,11 +595,6 @@
       "name": "jslearning",
       "type": "directory",
       "repoUrl": "https://github.com/haha197/jslearning"
-    },
-    {
-      "name": "lasttex",
-      "type": "directory",
-      "repoUrl": "https://github.com/haha197/lasttex"
     },
     {
       "name": "new_chat",
@@ -630,11 +620,6 @@
       "name": "stackblitz-starters-nwue149t",
       "type": "directory",
       "repoUrl": "https://github.com/haha197/stackblitz-starters-nwue149t"
-    },
-    {
-      "name": "stackblitz-starters-wa1bfhwa",
-      "type": "directory",
-      "repoUrl": "https://github.com/haha197/stackblitz-starters-wa1bfhwa"
     },
     {
       "name": "STAND",
@@ -746,11 +731,6 @@
       "repoUrl": "https://github.com/Koodybiglookyea/KOODY5"
     },
     {
-      "name": "koody6",
-      "type": "directory",
-      "repoUrl": "https://github.com/Koodybiglookyea/koody6"
-    },
-    {
       "name": "stackblitz-starters-dvua41te",
       "type": "directory",
       "repoUrl": "https://github.com/Koodybiglookyea/stackblitz-starters-dvua41te"
@@ -810,11 +790,6 @@
       "name": "chatroom",
       "type": "directory",
       "repoUrl": "https://github.com/v1ann/chatroom"
-    },
-    {
-      "name": "chatroom1",
-      "type": "directory",
-      "repoUrl": "https://github.com/v1ann/chatroom1"
     },
     {
       "name": "speed",
