@@ -19,6 +19,11 @@
       "name": "photo2pdf",
       "type": "directory",
       "repoUrl": "https://github.com/2223179/photo2pdf"
+    },
+    {
+      "name": "superbass",
+      "type": "directory",
+      "repoUrl": "https://github.com/2223179/superbass"
     }
   ],
   "2526453": [
@@ -246,6 +251,11 @@
       "repoUrl": "https://github.com/2526454-ship-it/CW-chcicken-Warfare"
     },
     {
+      "name": "Gamble-for-good",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526454-ship-it/Gamble-for-good"
+    },
+    {
       "name": "GT",
       "type": "directory",
       "repoUrl": "https://github.com/2526454-ship-it/GT"
@@ -259,6 +269,11 @@
       "name": "NPCTGT",
       "type": "directory",
       "repoUrl": "https://github.com/2526454-ship-it/NPCTGT"
+    },
+    {
+      "name": "stackblitz-starters-nbdwaf6f",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526454-ship-it/stackblitz-starters-nbdwaf6f"
     }
   ],
   "2526465-lgtm": [
@@ -402,6 +417,11 @@
       "name": "Adrian-6",
       "type": "directory",
       "repoUrl": "https://github.com/crazyjayhm/Adrian-6"
+    },
+    {
+      "name": "Adrian-7",
+      "type": "directory",
+      "repoUrl": "https://github.com/crazyjayhm/Adrian-7"
     },
     {
       "name": "adrian-ai",
@@ -634,6 +654,11 @@
       "repoUrl": "https://github.com/hayden626/4M24"
     },
     {
+      "name": "black-sound",
+      "type": "directory",
+      "repoUrl": "https://github.com/hayden626/black-sound"
+    },
+    {
       "name": "cam",
       "type": "directory",
       "repoUrl": "https://github.com/hayden626/cam"
@@ -772,6 +797,11 @@
   ],
   "v1ann": [
     {
+      "name": "0522",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/0522"
+    },
+    {
       "name": "1",
       "type": "directory",
       "repoUrl": "https://github.com/v1ann/1"
@@ -795,6 +825,21 @@
       "name": "speed",
       "type": "directory",
       "repoUrl": "https://github.com/v1ann/speed"
+    },
+    {
+      "name": "stackblitz-0519",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-0519"
+    },
+    {
+      "name": "stackblitz-0519-2.0",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-0519-2.0"
+    },
+    {
+      "name": "stackblitz-0519-3.0",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-0519-3.0"
     },
     {
       "name": "stackblitz-starters-dhtjyxmq",

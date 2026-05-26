@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業級低音結他 & 旋律產生器</title>
+    <link rel="stylesheet" href="styles.css">
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+    <div class="app-container">
+        <h1>🎸 專業級低音結他 & 旋律產生器</h1>
+        
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="control-group">
+                <button id="record-btn" class="btn">🔴 開始錄音</button>
+                <button id="play-btn" class="btn" disabled>▶️ 播放旋律</button>
+                <button id="clear-btn" class="btn">🗑️ 清除</button>
+            </div>
+            
+            <!-- 音色選擇器 -->
+            <div class="control-group">
+                <label for="tone-select">🔊 音色選擇：</label>
+                <select id="tone-select" class="select-menu">
+                    <option value="sub-bass">🔊 深度重低音 (Sub-Bass)</option>
+                    <option value="classic">🎸 經典電低音 (Classic Bass)</option>
+                    <option value="synth">🎹 復古合成器 (Synth Bass)</option>
+                    <option value="slap">💥 敲擊低音 (Slap/Percussive)</option>
+                </select>
+            </div>
+
+            <span class="status" id="status-text">狀態: 準備就緒</span>
+        </div>
+
+        <!-- 12格長指板容器 -->
+        <div class="fretboard-wrapper">
+            <div class="fretboard">
+                <!-- 琴頭枕 -->
+                <div class="nut"></div>
+                
+                <div class="strings-container">
+                    <!-- G 弦 -->
+                    <div class="string-row" data-string="G" data-base="49.00">
+                        <div class="string-label">G</div>
+                        <!-- 生成 0 到 12 格 -->
+                        <div class="fret open" data-fret="0">0</div>
+                        <div class="fret" data-fret="1">1</div><div class="fret" data-fret="2">2</div>
+                        <div class="fret marker" data-fret="3">3</div><div class="fret" data-fret="4">4</div>
+                        <div class="fret marker" data-fret="5">5</div><div class="fret" data-fret="6">6</div>
+                        <div class="fret marker" data-fret="7">7</div><div class="fret" data-fret="8">8</div>
+                        <div class="fret marker" data-fret="9">9</div><div class="fret" data-fret="10">10</div>
+                        <div class="fret" data-fret="11">11</div><div class="fret double-marker" data-fret="12">12</div>
+                    </div>
+                    <!-- D 弦 -->
+                    <div class="string-row" data-string="D" data-base="36.71">
+                        <div class="string-label">D</div>
+                        <div class="fret open" data-fret="0">0</div>
+                        <div class="fret" data-fret="1">1</div><div class="fret" data-fret="2">2</div>
+                        <div class="fret marker" data-fret="3">3</div><div class="fret" data-fret="4">4</div>
+                        <div class="fret marker" data-fret="5">5</div><div class="fret" data-fret="6">6</div>
+                        <div class="fret marker" data-fret="7">7</div><div class="fret" data-fret="8">8</div>
+                        <div class="fret marker" data-fret="9">9</div><div class="fret" data-fret="10">10</div>
+                        <div class="fret" data-fret="11">11</div><div class="fret double-marker" data-fret="12">12</div>
+                    </div>
+                    <!-- A 弦 -->
+                    <div class="string-row" data-string="A" data-base="27.50">
+                        <div class="string-label">A</div>
+                        <div class="fret open" data-fret="0">0</div>
+                        <div class="fret" data-fret="1">1</div><div class="fret" data-fret="2">2</div>
+                        <div class="fret marker" data-fret="3">3</div><div class="fret" data-fret="4">4</div>
+                        <div class="fret marker" data-fret="5">5</div><div class="fret" data-fret="6">6</div>
+                        <div class="fret marker" data-fret="7">7</div><div class="fret" data-fret="8">8</div>
+                        <div class="fret marker" data-fret="9">9</div><div class="fret" data-fret="10">10</div>
+                        <div class="fret" data-fret="11">11</div><div class="fret double-marker" data-fret="12">12</div>
+                    </div>
+                    <!-- E 弦 -->
+                    <div class="string-row" data-string="E" data-base="20.60">
+                        <div class="string-label">E</div>
+                        <div class="fret open" data-fret="0">0</div>
+                        <div class="fret" data-fret="1">1</div><div class="fret" data-fret="2">2</div>
+                        <div class="fret marker" data-fret="3">3</div><div class="fret" data-fret="4">4</div>
+                        <div class="fret marker" data-fret="5">5</div><div class="fret" data-fret="6">6</div>
+                        <div class="fret marker" data-fret="7">7</div><div class="fret" data-fret="8">8</div>
+                        <div class="fret marker" data-fret="9">9</div><div class="fret" data-fret="10">10</div>
+                        <div class="fret" data-fret="11">11</div><div class="fret double-marker" data-fret="12">12</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <p class="instructions">提示：點擊 3, 5, 7, 9, 12 格有經典的指板記號點。建議配戴耳機或使用良好喇叭以聆聽超低音頻！</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

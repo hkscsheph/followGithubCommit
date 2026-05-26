@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ultimate Suspense Gacha</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --mythic: #ff4500; /* Orangered */
+        --mystery: #ff007f;
+        --legendary: #ff8000;
+        --epic: #a335ee;
+        --rare: #0070dd;
+        --common: #a0a0a0;
+        --bg-dark: #060709;
+        --panel-bg: #141a21;
+        --accent: #66fcf1;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        color: #ffffff;
+        font-family: 'Roboto Mono', monospace;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        perspective: 2000px;
+      }
+
+      /* The background particle canvas */
+      #particleCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      /* Main Game Card with 3D depth */
+      .game-card {
+        background: linear-gradient(135deg, #1f2833 0%, var(--panel-bg) 100%);
+        border: 4px solid #1f2833;
+        border-radius: 30px;
+        padding: 40px;
+        width: 550px;
+        text-align: center;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7),
+          0 0 30px rgba(102, 252, 241, 0.1);
+        position: relative;
+        z-index: 10;
+        transform: rotateX(5deg);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .game-card:hover {
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8),
+          0 0 50px rgba(102, 252, 241, 0.2);
+      }
+
+      h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.2rem;
+        margin-top: 0;
+        text-transform: uppercase;
+        letter-spacing: 6px;
+        background: linear-gradient(45deg, #fff 30%, var(--accent) 80%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 5px rgba(102, 252, 241, 0.5));
+      }
+
+      /* Drop Rate Legend Display */
+      .rates-display {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 15px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin-bottom: 20px;
+        border: 1px solid #1f2833;
+      }
+      .rate-tag {
+        font-weight: bold;
+      }
+      .rate-tag.common {
+        color: var(--common);
+      }
+      .rate-tag.rare {
+        color: var(--rare);
+      }
+      .rate-tag.epic {
+        color: var(--epic);
+      }
+      .rate-tag.legendary {
+        color: var(--legendary);
+        text-shadow: 0 0 5px rgba(255, 128, 0, 0.3);
+      }
+      .rate-tag.mystery {
+        color: var(--mystery);
+        text-shadow: 0 0 5px rgba(255, 0, 127, 0.4);
+      }
+      .rate-tag.mythic {
+        color: var(--mythic);
+        text-shadow: 0 0 8px rgba(255, 69, 0, 0.6);
+        animation: glitchText 2s infinite;
+      }
+
+      /* The Main Display Window (The "Wheel") */
+      .display-container {
+        background-color: #040506;
+        border: 4px solid #1f2833;
+        border-radius: 20px;
+        height: 150px;
+        margin: 20px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9);
+      }
+
+      #nameDisplay {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 3rem;
+        font-weight: 900;
+        letter-spacing: -1px;
+        text-transform: uppercase;
+        text-align: center;
+        padding: 0 15px;
+        transition: color 0.1s ease, text-shadow 0.1s ease;
+      }
+
+      #rarityLabel {
+        font-size: 1rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-top: 10px;
+        opacity: 0.8;
+      }
+
+      /* Large Spin Button */
+      .roll-btn {
+        background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+        border: none;
+        color: #060709;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        padding: 20px;
+        width: 100%;
+        border-radius: 50px;
+        margin-top: 20px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(0, 242, 254, 0.4);
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        outline: none;
+      }
+
+      .roll-btn:hover:not(:disabled) {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 15px 40px rgba(0, 242, 254, 0.6);
+      }
+
+      .roll-btn:active:not(:disabled) {
+        transform: translateY(2px) scale(0.98);
+        box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
+      }
+
+      .roll-btn:disabled {
+        background: #2c3b4e;
+        color: #4e4e50;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      /* --- Mythic Pop-up Overlay --- */
+      #mythicOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.95);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      #mythicOverlay.active {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      #mythicImage {
+        max-width: 80%;
+        max-height: 80%;
+        border: 10px solid #fff;
+        border-radius: 20px;
+        box-shadow: 0 0 100px var(--mythic);
+        transform: scale(0.8);
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      #mythicOverlay.active #mythicImage {
+        transform: scale(1);
+        animation: glitchImg 0.4s infinite;
+      }
+
+      #mythicTitle {
+        font-family: 'Montserrat', sans-serif;
+        color: var(--mythic);
+        font-size: 5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 15px;
+        margin-bottom: 30px;
+        text-shadow: 0 0 20px var(--mythic);
+        animation: glitchText 0.3s infinite;
+      }
+
+      /* --- Animations --- */
+      .pop-impact {
+        animation: popImpact 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      .shake {
+        animation: shakeScreen 0.4s ease-in-out;
+      }
+
+      @keyframes popImpact {
+        0% {
+          transform: scale(0.5);
+          filter: brightness(3) blur(5px);
+        }
+        50% {
+          transform: scale(1.2);
+          filter: brightness(1.5) blur(0px);
+        }
+        100% {
+          transform: scale(1);
+          filter: brightness(1);
+        }
+      }
+
+      @keyframes shakeScreen {
+        0%,
+        100% {
+          transform: rotateX(5deg) translate(0, 0);
+        }
+        20% {
+          transform: rotateX(5deg) translate(-10px, 7px) rotate(-1deg);
+        }
+        40% {
+          transform: rotateX(5deg) translate(10px, -7px) rotate(1deg);
+        }
+        60% {
+          transform: rotateX(5deg) translate(-7px, 3px) rotate(-0.5deg);
+        }
+        80% {
+          transform: rotateX(5deg) translate(5px, 2px) rotate(0.5deg);
+        }
+      }
+
+      @keyframes glitchText {
+        0% {
+          text-shadow: 0 0 8px var(--mythic);
+          opacity: 1;
+        }
+        50% {
+          text-shadow: -4px 0 0 #0ff, 4px 0 0 #f0f;
+          opacity: 0.8;
+        }
+        100% {
+          text-shadow: 0 0 8px var(--mythic);
+          opacity: 1;
+        }
+      }
+
+      @keyframes glitchImg {
+        0% {
+          transform: translate(0) scale(1);
+          filter: hue-rotate(0deg);
+        }
+        20% {
+          transform: translate(-5px, 5px) scale(1.02);
+          filter: hue-rotate(90deg);
+        }
+        40% {
+          transform: translate(5px, -5px) scale(0.98);
+          filter: hue-rotate(180deg);
+        }
+        60% {
+          transform: translate(-5px, -5px) scale(1.01);
+          filter: hue-rotate(270deg);
+        }
+        80% {
+          transform: translate(5px, 5px) scale(1);
+          filter: hue-rotate(360deg);
+        }
+        100% {
+          transform: translate(0) scale(1);
+          filter: hue-rotate(0deg);
+        }
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <canvas id="particleCanvas"></canvas>
+
+    <div id="mythicOverlay">
+      <div id="mythicTitle">CRITICAL HIT</div>
+      <img
+        id="mythicImage"
+        src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3AybnF6ZzVpY3IybWN0M3BwZzVpZnd5YjVpZnd5YjVpZnd5YjVpZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVyM/giphy.gif"
+        alt="MYTHIC GET"
+      />
+    </div>
+
+    <div class="game-card" id="gameCard">
+      <h1>Loot Wheel</h1>
+
+      <div class="rates-display">
+        <span class="rate-tag mythic">MYTHIC: 1%</span>
+        <span class="rate-tag mystery">???: 22%</span>
+        <span class="rate-tag legendary">Legendary: 5%</span>
+        <span class="rate-tag epic">Epic: 13%</span>
+        <span class="rate-tag rare">Rare: 19%</span>
+        <span class="rate-tag common">Common: 40%</span>
+      </div>
+
+      <div class="display-container">
+        <div id="nameDisplay">READY?</div>
+        <div id="rarityLabel"></div>
+      </div>
+
+      <button class="roll-btn" id="rollBtn" onclick="startPremiumRoll()">
+        SPIN WHEEL
+      </button>
+    </div>
+
+    <script>
+      // --- MAPPING THE LOOT POOLS ---
+      const LOOT_POOL = {
+        common: ['ESS', 'Get A Job', 'MMPA'],
+        rare: ['Music', 'ICT'],
+        epic: ['Leave Early', 'FDA'],
+        legendary: ['Free Robux', 'Your Mum', 'Go Home'],
+        mystery: ['Spin Again'],
+        mythic: ['MYTHIC!!!'], // Only used for the ticker display
+      };
+
+      const COLORS = {
+        common: '#a0a0a0',
+        rare: '#0070dd',
+        epic: '#a335ee',
+        legendary: '#ff8000',
+        mystery: '#ff007f',
+        mythic: '#ff4500',
+      };
+
+      // --- PARTICLE ENGINE ---
+      const canvas = document.getElementById('particleCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      class Particle {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          this.color = color;
+          this.size = Math.random() * 6 + 4;
+          this.speedX = (Math.random() - 0.5) * 20;
+          this.speedY = (Math.random() - 0.5) * 20 - 5;
+          this.gravity = 0.3;
+          this.alpha = 1;
+          this.decay = Math.random() * 0.015 + 0.01;
+        }
+        update() {
+          this.speedY += this.gravity;
+          this.x += this.speedX;
+          this.y += this.speedY;
+          this.alpha -= this.decay;
+        }
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = this.alpha;
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function spawnExplosion(x, y, color, intensity) {
+        const count =
+          intensity === 'legendary' ||
+          intensity === 'mystery' ||
+          intensity === 'mythic'
+            ? 150
+            : 60;
+        for (let i = 0; i < count; i++) {
+          particles.push(new Particle(x, y, color));
+        }
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles = particles.filter((p) => p.alpha > 0);
+        particles.forEach((p) => {
+          p.update();
+          p.draw();
+        });
+        requestAnimationFrame(animateParticles);
+      }
+      animateParticles();
+
+      // --- RNG ROLLING LOGIC ---
+      function startPremiumRoll() {
+        const btn = document.getElementById('rollBtn');
+        const display = document.getElementById('nameDisplay');
+        const label = document.getElementById('rarityLabel');
+        const card = document.getElementById('gameCard');
+        const overlay = document.getElementById('mythicOverlay');
+
+        btn.disabled = true;
+        display.classList.remove('pop-impact');
+        label.innerText = 'STARTING SPIN...';
+        label.style.color = '#ffffff';
+        label.style.animation = 'glitchText 0.5s infinite'; // Hype build-up
+
+        // 1. DETERMINE WINNER FIRST (MATH PHASE)
+        const rng = Math.random() * 100;
+        let finalTier = 'common';
+
+        // Rebalanced Cumulative probability mapping (Including 1% Mythic)
+        if (rng <= 1) {
+          finalTier = 'mythic'; // 1% Chance (Pop-up event)
+        } else if (rng <= 23) {
+          finalTier = 'mystery'; // 22% Chance (1 to 23)
+        } else if (rng <= 28) {
+          finalTier = 'legendary'; // 5% Chance (23 to 28)
+        } else if (rng <= 41) {
+          finalTier = 'epic'; // 13% Chance (28 to 41)
+        } else if (rng <= 60) {
+          finalTier = 'rare'; // 19% Chance (41 to 60)
+        } else {
+          finalTier = 'common'; // 40% Chance (60 to 100)
+        }
+
+        // 2. RUN SIMULATED SHUFFLE ANIMATION (The Juicy Phase)
+        let elapsedRolls = 0;
+        let totalCycles = 50; // More cycles for a longer, dramatic spin
+        const allTiers = Object.keys(LOOT_POOL);
+
+        function runShuffleLoop() {
+          // Pick random ticker items during animation
+          const randomTmpTier =
+            allTiers[Math.floor(Math.random() * allTiers.length)];
+          const randomTmpItems = LOOT_POOL[randomTmpTier];
+          const randomTmpName =
+            randomTmpItems[Math.floor(Math.random() * randomTmpItems.length)];
+
+          display.innerText = randomTmpName;
+          display.style.color = COLORS[randomTmpTier];
+
+          elapsedRolls++;
+
+          if (elapsedRolls < totalCycles) {
+            // THE SUSPENSE CURVE (Slow -> Fast -> VERY Slow)
+            let delay = 0;
+            let progress = elapsedRolls / totalCycles;
+
+            if (progress < 0.2) {
+              // Starts Very Slow
+              delay = 150 - progress * 500; // Decelerating initial stick
+            } else if (progress < 0.7) {
+              // Maximum Speed
+              delay = 30;
+            } else {
+              // Heavy Deceleration (The dramatic slowdown)
+              // We use an exponential curve so the final 3 clicks take a long time.
+              let decelerationProgress = (progress - 0.7) / 0.3; // 0 to 1 over final 30%
+              delay = 30 + Math.pow(decelerationProgress, 4) * 1200;
+            }
+
+            setTimeout(runShuffleLoop, delay);
+          } else {
+            // 3. LAND ON THE PREDETERMINED ARTIFACT
+            // Remove glitch from loading text
+            label.style.animation = 'none';
+
+            if (finalTier === 'mythic') {
+              // --- MYTHIC EVENT TRIGGER ---
+              overlay.classList.add('active');
+
+              // Shake screen and spawn initial orange particles
+              spawnExplosion(
+                window.innerWidth / 2,
+                window.innerHeight / 2,
+                COLORS.mythic,
+                'mythic'
+              );
+
+              setTimeout(() => {
+                overlay.classList.remove('active');
+                // After 5 seconds, resume the spin logic to guarantee another reward
+                label.innerText = 'MYTHIC STRIKE! SPINNING AGAIN...';
+                label.style.color = COLORS.mythic;
+                label.style.animation = 'glitchText 1s infinite';
+
+                // Small "wind-down" spin after the image
+                elapsedRolls = totalCycles - 10; // Start near the end
+                runShuffleLoop();
+              }, 5000); // 5000ms = 5 Seconds
+            } else {
+              // --- NORMAL REWARD LANDING ---
+              const tierItems = LOOT_POOL[finalTier];
+              const finalWinner =
+                tierItems[Math.floor(Math.random() * tierItems.length)];
+
+              display.innerText = finalWinner;
+              display.style.color = COLORS[finalTier];
+              // Double text glow for impact
+              display.style.textShadow = `0 0 20px ${COLORS[finalTier]}, 0 0 40px ${COLORS[finalTier]}`;
+
+              label.innerText =
+                finalTier === 'mystery' ? '??? RARITY' : finalTier;
+              label.style.color = COLORS[finalTier];
+
+              // Trigger "Juice"
+              display.classList.add('pop-impact');
+              card.classList.add('shake');
+
+              const rect = display.getBoundingClientRect();
+              spawnExplosion(
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2,
+                COLORS[finalTier],
+                finalTier
+              );
+
+              setTimeout(() => {
+                card.classList.remove('shake');
+                btn.disabled = false;
+              }, 400);
+            }
+          }
+        }
+
+        runShuffleLoop();
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,890 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cogforge — Idle Automaton Tycoon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg1: #2a1f12;
+        --bg2: #15100a;
+        --card: #2c2317;
+        --card2: #3a2e1d;
+        --fg: #f3e9d2;
+        --muted: #a8997a;
+        --border: #4a3b25;
+        --gold-a: #f4c54a;
+        --gold-b: #c97a2a;
+        --primary: #e6a84a;
+        --prestige-a: #c46bff;
+        --prestige-b: #7a4bff;
+        --event: #3ddc9a;
+        --accent: #e25a3a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+      }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        color: var(--fg);
+        background: radial-gradient(
+            ellipse at top,
+            var(--bg1) 0%,
+            var(--bg2) 60%
+          )
+          fixed;
+        min-height: 100vh;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: 'Cinzel', serif;
+        letter-spacing: 0.02em;
+        margin: 0;
+      }
+      button {
+        font-family: inherit;
+        color: inherit;
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+      button:disabled {
+        cursor: not-allowed;
+      }
+
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 16px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 12px;
+      }
+      .title {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 900;
+        background: linear-gradient(135deg, var(--gold-a), var(--gold-b));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .subtitle {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .topbtns {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .sparks {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background: linear-gradient(
+          135deg,
+          var(--prestige-a),
+          var(--prestige-b)
+        );
+        color: #fff;
+        font-weight: 600;
+      }
+      .prestige-btn {
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        border: 1px solid var(--border);
+        background: var(--card);
+        transition: transform 0.15s;
+      }
+      .prestige-btn:enabled {
+        background: linear-gradient(
+          135deg,
+          var(--prestige-a),
+          var(--prestige-b)
+        );
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 0 20px rgba(180, 107, 255, 0.5);
+      }
+      .prestige-btn:enabled:hover {
+        transform: scale(1.05);
+      }
+      .prestige-btn:disabled {
+        opacity: 0.4;
+      }
+
+      .grid {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 960px) {
+        .grid {
+          grid-template-columns: 1fr 420px;
+        }
+      }
+
+      .click-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .gears-display {
+        font-size: clamp(2.5rem, 8vw, 5rem);
+        font-weight: 900;
+        color: var(--gold-a);
+        text-shadow: 0 4px 24px rgba(201, 122, 42, 0.4);
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+      .gears-meta {
+        margin-top: 6px;
+        font-size: 0.9rem;
+        color: var(--muted);
+        text-align: center;
+      }
+      .gears-meta b {
+        color: var(--fg);
+        font-weight: 600;
+      }
+
+      .gear-wrap {
+        position: relative;
+        margin-top: 24px;
+      }
+      .gear-btn {
+        width: min(72vw, 300px);
+        height: min(72vw, 300px);
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold-a), var(--gold-b));
+        border: 4px solid #6b4520;
+        font-size: clamp(5rem, 18vw, 8rem);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 8px 32px rgba(201, 122, 42, 0.45);
+        animation: pulse 2.5s ease-in-out infinite;
+        transition: transform 0.1s;
+      }
+      .gear-btn:active {
+        transform: scale(0.95);
+      }
+      .gear-btn.press {
+        animation: press 0.15s ease-out, pulse 2.5s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 30px rgba(230, 168, 74, 0.3),
+            0 8px 32px rgba(201, 122, 42, 0.45);
+        }
+        50% {
+          box-shadow: 0 0 60px rgba(230, 168, 74, 0.6),
+            0 8px 32px rgba(201, 122, 42, 0.45);
+        }
+      }
+      @keyframes press {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(0.93);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .floater {
+        position: absolute;
+        pointer-events: none;
+        font-weight: 900;
+        color: #fff;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+        animation: floatUp 1s ease-out forwards;
+        transform: translate(-50%, 0);
+      }
+      @keyframes floatUp {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, 0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -80px) scale(1.4);
+        }
+      }
+
+      .event-banner {
+        margin-top: 24px;
+        padding: 8px 16px;
+        border: 2px solid var(--event);
+        border-radius: 12px;
+        background: rgba(61, 220, 154, 0.15);
+        font-weight: 600;
+        text-align: center;
+        animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .event-banner .time {
+        margin-left: 8px;
+        font-size: 0.8rem;
+        opacity: 0.8;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: 100%;
+        max-width: 420px;
+        margin-top: 32px;
+      }
+      .stat {
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--card);
+        text-align: center;
+      }
+      .stat .l {
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .stat .v {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        font-size: 0.95rem;
+      }
+
+      .shop h2 {
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+        margin-bottom: 12px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+      }
+      .item {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        background: var(--card);
+        text-align: left;
+        transition: transform 0.15s, border-color 0.15s;
+      }
+      .item:enabled:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary);
+      }
+      .item.can {
+        border-color: var(--primary);
+      }
+      .item:disabled {
+        opacity: 0.5;
+      }
+      .item .emoji {
+        width: 56px;
+        height: 56px;
+        border-radius: 8px;
+        background: var(--card2);
+        display: grid;
+        place-items: center;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+      }
+      .item .body {
+        flex: 1;
+        min-width: 0;
+      }
+      .item .row1 {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: baseline;
+      }
+      .item .name {
+        font-weight: 700;
+      }
+      .item .cost {
+        color: var(--gold-a);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+      }
+      .item .desc {
+        font-size: 0.75rem;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .item .meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        margin-top: 2px;
+        color: var(--muted);
+      }
+      .item .meta b {
+        color: var(--fg);
+        font-weight: 600;
+      }
+      .hint {
+        font-size: 0.75rem;
+        color: var(--muted);
+        padding: 8px 4px 0;
+      }
+
+      .toasts {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: 280px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 50;
+        pointer-events: none;
+      }
+      .toast {
+        padding: 10px 12px;
+        border: 2px solid var(--primary);
+        border-radius: 10px;
+        background: rgba(44, 35, 23, 0.92);
+        backdrop-filter: blur(8px);
+        font-size: 0.85rem;
+        font-weight: 600;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .toast.event {
+        border-color: var(--event);
+      }
+      .toast.prestige {
+        border-color: var(--prestige-a);
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(120%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <div class="title">COGFORGE</div>
+          <div class="subtitle">Idle Automaton Tycoon</div>
+        </div>
+        <div class="topbtns">
+          <div id="sparksBadge" class="sparks" hidden=""></div>
+          <button id="prestigeBtn" class="prestige-btn" disabled="">
+            Prestige
+          </button>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="click-area">
+          <div id="gears" class="gears-display">150</div>
+          <div class="gears-meta">
+            gears · <b id="rate">0.0/s</b> · click <b id="clickPower">+1.0</b>
+          </div>
+          <div class="gear-wrap">
+            <button id="gearBtn" class="gear-btn" aria-label="Forge a gear">
+              ⚙️
+            </button>
+            <div id="floaters"></div>
+          </div>
+          <div id="event"></div>
+          <div class="stats">
+            <div class="stat">
+              <div class="l">Total earned</div>
+              <div class="v" id="totalEarned">150</div>
+            </div>
+            <div class="stat">
+              <div class="l">Automatons</div>
+              <div class="v" id="totalAuto">0</div>
+            </div>
+            <div class="stat">
+              <div class="l">Spark mult</div>
+              <div class="v" id="sparkMult">1.00×</div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="shop">
+          <h2>Workshop</h2>
+          <div id="shop">
+            <button class="item can" data-id="apprentice">
+              <div class="emoji">🧑&zwj;🔧</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="name">Apprentice</span
+                  ><span class="cost">15</span>
+                </div>
+                <div class="desc">+0.2/s. Humble beginnings.</div>
+                <div class="meta">
+                  <span>owned <b>0</b></span>
+                </div>
+              </div></button
+            ><button class="item can" data-id="cog">
+              <div class="emoji">⚙️</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="name">Cog Spinner</span
+                  ><span class="cost">100</span>
+                </div>
+                <div class="desc">+1/s. Boosts Apprentices +2% each.</div>
+                <div class="meta">
+                  <span>owned <b>0</b></span>
+                </div>
+              </div></button
+            ><button class="item" data-id="forge" disabled="">
+              <div class="emoji">🔥</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="name">Steam Forge</span
+                  ><span class="cost">1.10K</span>
+                </div>
+                <div class="desc">+8/s. Boosts Cogs +3% each.</div>
+                <div class="meta">
+                  <span>owned <b>0</b></span>
+                </div>
+              </div></button
+            ><button class="item" data-id="golem" disabled="">
+              <div class="emoji">🤖</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="name">Brass Golem</span
+                  ><span class="cost">12.00K</span>
+                </div>
+                <div class="desc">+47/s. Boosts Forges +4% each.</div>
+                <div class="meta">
+                  <span>owned <b>0</b></span>
+                </div>
+              </div></button
+            ><button class="item" data-id="arcanist" disabled="">
+              <div class="emoji">🔮</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="name">Arcanist</span
+                  ><span class="cost">130.00K</span>
+                </div>
+                <div class="desc">+260/s. Boosts Golems +5% each.</div>
+                <div class="meta">
+                  <span>owned <b>0</b></span>
+                </div>
+              </div></button
+            ><button class="item" data-id="dragon" disabled="">
+              <div class="emoji">🐉</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="name">Clockwork Dragon</span
+                  ><span class="cost">1.40M</span>
+                </div>
+                <div class="desc">+1.4K/s. Boosts Arcanists +7% each.</div>
+                <div class="meta">
+                  <span>owned <b>0</b></span>
+                </div>
+              </div>
+            </button>
+          </div>
+          <p class="hint">
+            💡 Synergies: each tier amplifies the one below it. Stack them.
+          </p>
+        </aside>
+      </div>
+    </div>
+    <div id="toasts" class="toasts"></div>
+
+    <script>
+      const AUTOMATONS = [
+        {
+          id: 'apprentice',
+          name: 'Apprentice',
+          emoji: '🧑&zwj;🔧',
+          desc: '+0.2/s. Humble beginnings.',
+          baseCost: 15,
+          baseRate: 0.2,
+        },
+        {
+          id: 'cog',
+          name: 'Cog Spinner',
+          emoji: '⚙️',
+          desc: '+1/s. Boosts Apprentices +2% each.',
+          baseCost: 100,
+          baseRate: 1,
+          synergy: { boosts: 'apprentice', perOwned: 0.02 },
+        },
+        {
+          id: 'forge',
+          name: 'Steam Forge',
+          emoji: '🔥',
+          desc: '+8/s. Boosts Cogs +3% each.',
+          baseCost: 1100,
+          baseRate: 8,
+          synergy: { boosts: 'cog', perOwned: 0.03 },
+        },
+        {
+          id: 'golem',
+          name: 'Brass Golem',
+          emoji: '🤖',
+          desc: '+47/s. Boosts Forges +4% each.',
+          baseCost: 12000,
+          baseRate: 47,
+          synergy: { boosts: 'forge', perOwned: 0.04 },
+        },
+        {
+          id: 'arcanist',
+          name: 'Arcanist',
+          emoji: '🔮',
+          desc: '+260/s. Boosts Golems +5% each.',
+          baseCost: 130000,
+          baseRate: 260,
+          synergy: { boosts: 'golem', perOwned: 0.05 },
+        },
+        {
+          id: 'dragon',
+          name: 'Clockwork Dragon',
+          emoji: '🐉',
+          desc: '+1.4K/s. Boosts Arcanists +7% each.',
+          baseCost: 1400000,
+          baseRate: 1400,
+          synergy: { boosts: 'arcanist', perOwned: 0.07 },
+        },
+      ];
+      const STORAGE_KEY = 'cogforge_save_v1_html';
+
+      const state = {
+        gears: 0,
+        totalEarned: 0,
+        sparks: 0,
+        owned: Object.fromEntries(AUTOMATONS.map((a) => [a.id, 0])),
+        event: null, // {kind, until, label, emoji}
+      };
+
+      // Load
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          Object.assign(state, {
+            gears: s.gears || 0,
+            totalEarned: s.totalEarned || 0,
+            sparks: s.sparks || 0,
+          });
+          state.owned = { ...state.owned, ...(s.owned || {}) };
+        }
+      } catch {}
+
+      function fmt(n) {
+        if (!isFinite(n)) return '∞';
+        if (n < 1000) return n.toFixed(n < 10 ? 1 : 0);
+        const u = [
+          'K',
+          'M',
+          'B',
+          'T',
+          'Qa',
+          'Qi',
+          'Sx',
+          'Sp',
+          'Oc',
+          'No',
+          'Dc',
+        ];
+        let i = -1;
+        while (n >= 1000 && i < u.length - 1) {
+          n /= 1000;
+          i++;
+        }
+        return n.toFixed(2) + u[i];
+      }
+      const costOf = (def, n) => Math.ceil(def.baseCost * Math.pow(1.15, n));
+      const sparkMult = () => 1 + state.sparks * 0.1;
+      function rateOf(id) {
+        const def = AUTOMATONS.find((a) => a.id === id);
+        let r = def.baseRate * state.owned[id];
+        AUTOMATONS.forEach((o) => {
+          if (o.synergy && o.synergy.boosts === id)
+            r *= 1 + o.synergy.perOwned * state.owned[o.id];
+        });
+        return r;
+      }
+      function totalRate() {
+        let s = 0;
+        AUTOMATONS.forEach((a) => (s += rateOf(a.id)));
+        s *= sparkMult();
+        if (state.event) {
+          if (state.event.kind === 'frenzy') s *= 7;
+          if (state.event.kind === 'overdrive') s *= 3;
+        }
+        return s;
+      }
+      function clickPower() {
+        let p = 1 + state.sparks * 0.5;
+        if (state.event) {
+          if (state.event.kind === 'goldRush') p *= 10;
+          if (state.event.kind === 'overdrive') p *= 3;
+        }
+        return p;
+      }
+
+      // Render
+      const $gears = document.getElementById('gears');
+      const $rate = document.getElementById('rate');
+      const $click = document.getElementById('clickPower');
+      const $totalEarned = document.getElementById('totalEarned');
+      const $totalAuto = document.getElementById('totalAuto');
+      const $sparkMult = document.getElementById('sparkMult');
+      const $shop = document.getElementById('shop');
+      const $event = document.getElementById('event');
+      const $sparks = document.getElementById('sparksBadge');
+      const $prestige = document.getElementById('prestigeBtn');
+
+      function renderShop() {
+        $shop.innerHTML = AUTOMATONS.map((def) => {
+          const n = state.owned[def.id];
+          const cost = costOf(def, n);
+          const can = state.gears >= cost;
+          const r = rateOf(def.id) * sparkMult();
+          return `<button class="item ${can ? 'can' : ''}" data-id="${
+            def.id
+          }" ${can ? '' : 'disabled'}>
+      <div class="emoji">${def.emoji}</div>
+      <div class="body">
+        <div class="row1"><span class="name">${
+          def.name
+        }</span><span class="cost">${fmt(cost)}</span></div>
+        <div class="desc">${def.desc}</div>
+        <div class="meta"><span>owned <b>${n}</b></span>${
+            n > 0 ? `<span style="color:var(--fg)">${fmt(r)}/s</span>` : ''
+          }</div>
+      </div></button>`;
+        }).join('');
+        $shop.querySelectorAll('.item').forEach((el) => {
+          el.addEventListener('click', () => buy(el.dataset.id));
+        });
+      }
+
+      function renderTopline() {
+        $gears.textContent = fmt(state.gears);
+        $rate.textContent = fmt(totalRate()) + '/s';
+        $click.textContent = '+' + fmt(clickPower());
+        $totalEarned.textContent = fmt(state.totalEarned);
+        $totalAuto.textContent = Object.values(state.owned).reduce(
+          (a, b) => a + b,
+          0
+        );
+        $sparkMult.textContent = sparkMult().toFixed(2) + '×';
+        if (state.sparks > 0) {
+          $sparks.hidden = false;
+          $sparks.innerHTML = `🌟 ${state.sparks} <span style="opacity:.8">Sparks</span>`;
+        }
+        const gain = prestigeGain();
+        $prestige.disabled = gain < 1;
+        $prestige.textContent = gain >= 1 ? `Prestige (+${gain})` : 'Prestige';
+      }
+      function prestigeGain() {
+        return Math.floor(Math.pow(state.totalEarned / 1e6, 0.5));
+      }
+
+      function renderEvent() {
+        if (!state.event) {
+          $event.innerHTML = '';
+          return;
+        }
+        const left = Math.max(
+          0,
+          Math.ceil((state.event.until - performance.now()) / 1000)
+        );
+        $event.innerHTML = `<div class="event-banner">${state.event.emoji} ${state.event.label}<span class="time">${left}s</span></div>`;
+      }
+
+      function buy(id) {
+        const def = AUTOMATONS.find((a) => a.id === id);
+        const cost = costOf(def, state.owned[id]);
+        if (state.gears < cost) return;
+        state.gears -= cost;
+        state.owned[id]++;
+        renderShop();
+        renderTopline();
+      }
+
+      // Click handler
+      const $gearBtn = document.getElementById('gearBtn');
+      const $floaters = document.getElementById('floaters');
+      $gearBtn.addEventListener('click', (e) => {
+        const p = clickPower();
+        state.gears += p;
+        state.totalEarned += p;
+        $gearBtn.classList.remove('press');
+        void $gearBtn.offsetWidth;
+        $gearBtn.classList.add('press');
+        const rect = $gearBtn.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const f = document.createElement('span');
+        f.className = 'floater';
+        f.style.left = x + 'px';
+        f.style.top = y + 'px';
+        f.textContent = '+' + fmt(p);
+        $floaters.appendChild(f);
+        setTimeout(() => f.remove(), 1000);
+        renderTopline();
+      });
+
+      // Prestige
+      $prestige.addEventListener('click', () => {
+        const g = prestigeGain();
+        if (g < 1) return;
+        if (
+          !confirm(
+            `Prestige for ${g} Soul Sparks? You'll reset gears & automatons but each spark gives +10%/s and +0.5 click power forever.`
+          )
+        )
+          return;
+        state.sparks += g;
+        state.gears = 0;
+        state.totalEarned = 0;
+        AUTOMATONS.forEach((a) => (state.owned[a.id] = 0));
+        pushToast(`🌟 +${g} Soul Sparks!`, 'prestige');
+        renderShop();
+        renderTopline();
+      });
+
+      // Toasts
+      function pushToast(text, tone = 'good') {
+        const el = document.createElement('div');
+        el.className =
+          'toast ' +
+          (tone === 'prestige' ? 'prestige' : tone === 'event' ? 'event' : '');
+        el.textContent = text;
+        document.getElementById('toasts').appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = '0';
+          el.style.transition = 'opacity .3s';
+        }, 3500);
+        setTimeout(() => el.remove(), 3900);
+      }
+
+      // Production loop
+      let last = performance.now();
+      function loop(now) {
+        const dt = (now - last) / 1000;
+        last = now;
+        const r = totalRate();
+        if (r > 0) {
+          const add = r * dt;
+          state.gears += add;
+          state.totalEarned += add;
+        }
+        if (state.event && now > state.event.until) {
+          state.event = null;
+        }
+        renderTopline();
+        renderEvent();
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+
+      // Random events
+      setInterval(() => {
+        if (state.event) return;
+        if (Math.random() < 0.18) {
+          const kinds = [
+            {
+              kind: 'goldRush',
+              until: performance.now() + 15000,
+              label: 'Gold Rush — 10× clicks!',
+              emoji: '💰',
+            },
+            {
+              kind: 'frenzy',
+              until: performance.now() + 20000,
+              label: 'Frenzy — 7× production!',
+              emoji: '⚡',
+            },
+            {
+              kind: 'overdrive',
+              until: performance.now() + 12000,
+              label: 'Overdrive — 3× everything!',
+              emoji: '🚀',
+            },
+            {
+              kind: 'windfall',
+              until: performance.now() + 1,
+              label: 'Windfall — bonus gears!',
+              emoji: '✨',
+            },
+          ];
+          const pick = kinds[Math.floor(Math.random() * kinds.length)];
+          if (pick.kind === 'windfall') {
+            const bonus = Math.max(50, totalRate() * 60);
+            state.gears += bonus;
+            state.totalEarned += bonus;
+            pushToast(`✨ Windfall! +${fmt(bonus)} gears`, 'event');
+          } else {
+            state.event = pick;
+            pushToast(`${pick.emoji} ${pick.label}`, 'event');
+          }
+        }
+      }, 12000);
+
+      // Save
+      setInterval(() => {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            gears: state.gears,
+            totalEarned: state.totalEarned,
+            sparks: state.sparks,
+            owned: state.owned,
+          })
+        );
+      }, 3000);
+
+      // Re-render shop occasionally for affordability state
+      setInterval(renderShop, 500);
+
+      renderShop();
+      renderTopline();
+    </script>
+  </body>
+</html>

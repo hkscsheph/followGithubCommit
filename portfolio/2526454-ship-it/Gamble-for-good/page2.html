@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Premium Gacha RNG with Drop Rates</title>
+    <style>
+      :root {
+        --common: #a0a0a0;
+        --rare: #0070dd;
+        --epic: #a335ee;
+        --legendary: #ff8000;
+        --bg-dark: #0b0c10;
+        --panel-bg: #1f2833;
+        --accent: #66fcf1;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        color: #ffffff;
+        font-family: 'Montserrat', 'Segoe UI', sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        perspective: 1000px;
+      }
+
+      /* Screen Shake Effect */
+      .shake {
+        animation: shakeScreen 0.4s ease-in-out;
+      }
+
+      @keyframes shakeScreen {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        20% {
+          transform: translate(-8px, 5px) rotate(-1deg);
+        }
+        40% {
+          transform: translate(6px, -5px) rotate(1deg);
+        }
+        60% {
+          transform: translate(-5px, 2px) rotate(-0.5deg);
+        }
+        80% {
+          transform: translate(4px, 1px) rotate(0.5deg);
+        }
+      }
+
+      .game-card {
+        background: radial-gradient(circle at top, #2c3b4e, var(--panel-bg));
+        border: 3px solid #45f3ff;
+        border-radius: 24px;
+        padding: 30px;
+        width: 500px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0, 243, 255, 0.15);
+        position: relative;
+        z-index: 10;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-top: 0;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        background: linear-gradient(45deg, #fff, var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      /* Drop Rate Legend Display */
+      .rates-display {
+        display: flex;
+        justify-content: space-around;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        margin-bottom: 15px;
+        font-weight: bold;
+      }
+      .rate-tag.common {
+        color: var(--common);
+      }
+      .rate-tag.rare {
+        color: var(--rare);
+      }
+      .rate-tag.epic {
+        color: var(--epic);
+      }
+      .rate-tag.legendary {
+        color: var(--legendary);
+        text-shadow: 0 0 5px rgba(255, 128, 0, 0.4);
+      }
+
+      /* The Main Display Window */
+      .display-container {
+        background-color: #0b0c10;
+        border: 3px solid #1f2833;
+        border-radius: 16px;
+        height: 120px;
+        margin: 15px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      #nameDisplay {
+        font-size: 2.3rem;
+        font-weight: 900;
+        letter-spacing: 1px;
+        transition: transform 0.1s ease;
+        text-align: center;
+        padding: 0 10px;
+      }
+
+      #rarityLabel {
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-top: 5px;
+        opacity: 0.8;
+      }
+
+      /* Winning Impact Scale Animation */
+      .pop-impact {
+        animation: popImpact 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      @keyframes popImpact {
+        0% {
+          transform: scale(0.5);
+          filter: brightness(2);
+        }
+        50% {
+          transform: scale(1.2);
+          filter: brightness(1.3);
+        }
+        100% {
+          transform: scale(1);
+          filter: brightness(1);
+        }
+      }
+
+      .roll-btn {
+        background: linear-gradient(45deg, #00f2fe, #4facfe);
+        border: none;
+        color: #0b0c10;
+        font-size: 1.3rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        padding: 16px;
+        width: 100%;
+        border-radius: 50px;
+        margin-top: 15px;
+        cursor: pointer;
+        box-shadow: 0 6px 25px rgba(0, 242, 254, 0.4);
+        transition: all 0.15s ease;
+      }
+
+      .roll-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 242, 254, 0.6);
+      }
+
+      .roll-btn:disabled {
+        background: #4e4e50;
+        color: #a0a0a0;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="game-card" id="gameCard">
+      <h1>Loot Simulator</h1>
+
+      <div class="rates-display">
+        <span class="rate-tag common">Common: 50%</span>
+        <span class="rate-tag rare">Rare: 30%</span>
+        <span class="rate-tag epic">Epic: 15%</span>
+        <span class="rate-tag legendary">Legendary: 5%</span>
+      </div>
+
+      <div class="display-container">
+        <div id="nameDisplay">READY?</div>
+        <div id="rarityLabel"></div>
+      </div>
+
+      <button class="roll-btn" id="rollBtn" onclick="startPremiumRoll()">
+        Roll Drop
+      </button>
+    </div>
+
+    <script>
+      // --- DATABASE OF ITEMS BY CATEGORY ---
+      const LOOT_POOL = {
+        common: [
+          'Rusty Sword',
+          'Cloth Armor',
+          'Wooden Shield',
+          'Iron Ring',
+          'Apprentice Staff',
+        ],
+        rare: [
+          'Steel Broadsword',
+          'Chainmail Breastplate',
+          'Gilded Bow',
+          'Silver Amulet',
+        ],
+        epic: [
+          'Shadow Dagger',
+          'Dragonscale Vest',
+          "Sorcerer's Crest",
+          'Void Spellbook',
+        ],
+        legendary: [
+          'Excalibur',
+          'Phoenix Wings',
+          'Infinity Gauntlet',
+          'Chronos Hourglass',
+        ],
+      };
+
+      const COLORS = {
+        common: '#a0a0a0',
+        rare: '#0070dd',
+        epic: '#a335ee',
+        legendary: '#ff8000',
+      };
+
+      // --- PARTICLE ENGINE ---
+      const canvas = document.getElementById('particleCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      class Particle {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          this.color = color;
+          this.size = Math.random() * 5 + 3;
+          this.speedX = (Math.random() - 0.5) * 16;
+          this.speedY = (Math.random() - 0.5) * 16 - 3;
+          this.gravity = 0.25;
+          this.alpha = 1;
+          this.decay = Math.random() * 0.02 + 0.01;
+        }
+        update() {
+          this.speedY += this.gravity;
+          this.x += this.speedX;
+          this.y += this.speedY;
+          this.alpha -= this.decay;
+        }
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = this.alpha;
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function spawnExplosion(x, y, color, intensity) {
+        // Legendary triggers way more particles for a larger "hype" explosion
+        const count = intensity === 'legendary' ? 120 : 50;
+        for (let i = 0; i < count; i++) {
+          particles.push(new Particle(x, y, color));
+        }
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles = particles.filter((p) => p.alpha > 0);
+        particles.forEach((p) => {
+          p.update();
+          p.draw();
+        });
+        requestAnimationFrame(animateParticles);
+      }
+      animateParticles();
+
+      // --- RNG ROLLING LOGIC ---
+      function startPremiumRoll() {
+        const btn = document.getElementById('rollBtn');
+        const display = document.getElementById('nameDisplay');
+        const label = document.getElementById('rarityLabel');
+        const card = document.getElementById('gameCard');
+
+        btn.disabled = true;
+        display.classList.remove('pop-impact');
+        label.innerText = 'Rolling...';
+        label.style.color = '#ffffff';
+
+        // 1. DETERMINE WINNER VIA MATH SYSTEM FIRST
+        const rng = Math.random() * 100; // Roll from 0.00 to 100.00
+        let finalTier = 'common';
+
+        // Cumulative probability check
+        if (rng <= 5) {
+          finalTier = 'legendary'; // 5% chance (0 to 5)
+        } else if (rng <= 20) {
+          finalTier = 'epic'; // 15% chance (5 to 20)
+        } else if (rng <= 50) {
+          finalTier = 'rare'; // 30% chance (20 to 50)
+        } else {
+          finalTier = 'common'; // 50% chance (50 to 100)
+        }
+
+        const tierItems = LOOT_POOL[finalTier];
+        const finalWinner =
+          tierItems[Math.floor(Math.random() * tierItems.length)];
+
+        // 2. RUN SIMULATED SHUFFLE ANIMATION (For suspense)
+        let elapsedRolls = 0;
+        let totalCycles = 22;
+        let baseDelay = 40;
+        const allTiers = Object.keys(LOOT_POOL);
+
+        function runShuffleLoop() {
+          // Rapidly cycle random assets on screen during the animation phase
+          const randomTmpTier =
+            allTiers[Math.floor(Math.random() * allTiers.length)];
+          const randomTmpItems = LOOT_POOL[randomTmpTier];
+          const randomTmpName =
+            randomTmpItems[Math.floor(Math.random() * randomTmpItems.length)];
+
+          display.innerText = randomTmpName;
+          display.style.color = COLORS[randomTmpTier];
+
+          elapsedRolls++;
+
+          if (elapsedRolls < totalCycles) {
+            // Exponential easing curve to create suspense deceleration
+            let nextDelay = baseDelay + Math.pow(elapsedRolls / 3.5, 3);
+            setTimeout(runShuffleLoop, nextDelay);
+          } else {
+            // 3. LAND ON THE PREDETERMINED WINNER
+            display.innerText = finalWinner;
+            display.style.color = COLORS[finalTier];
+            display.style.textShadow = `0 0 15px ${COLORS[finalTier]}`;
+
+            label.innerText = finalTier;
+            label.style.color = COLORS[finalTier];
+
+            // Trigger Impact juices
+            display.classList.add('pop-impact');
+            card.classList.add('shake');
+
+            const rect = display.getBoundingClientRect();
+            spawnExplosion(
+              rect.left + rect.width / 2,
+              rect.top + rect.height / 2,
+              COLORS[finalTier],
+              finalTier
+            );
+
+            setTimeout(() => {
+              card.classList.remove('shake');
+              btn.disabled = false;
+            }, 400);
+          }
+        }
+
+        runShuffleLoop();
+      }
+    </script>
+  </body>
+</html>

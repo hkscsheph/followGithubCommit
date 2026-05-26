@@ -1,0 +1,232 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #121212;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.app-container {
+  width: 95%;
+  max-width: 1100px;
+  background: #1e1e1e;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.7);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #00ffcc;
+  text-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+}
+
+/* 控制面板 */
+.control-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 30px;
+  background: #2a2a2a;
+  padding: 15px 25px;
+  border-radius: 10px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  background: #3a3a3a;
+  color: white;
+  border: 1px solid #555;
+  padding: 10px 18px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+  background: #4a4a4a;
+  border-color: #00ffcc;
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#record-btn.recording {
+  background: #ff3333;
+  animation: pulse 1.5s infinite;
+}
+
+/* 下拉選單樣式 */
+.select-menu {
+  background: #333;
+  color: #00ffcc;
+  border: 1px solid #555;
+  padding: 10px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.status {
+  margin-left: auto;
+  font-weight: bold;
+  color: #00ffcc;
+  background: rgba(0, 255, 204, 0.1);
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+/* 延長指板的外包裝 - 支援橫向滾動 */
+.fretboard-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: #2d1e18;
+  border-radius: 8px;
+  border: 4px solid #111;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+}
+
+/* 縮減滾動條樣式 */
+.fretboard-wrapper::-webkit-scrollbar { height: 8px; }
+.fretboard-wrapper::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+
+.fretboard {
+  position: relative;
+  display: flex;
+  padding-left: 20px;
+  width: max-content; /* 確保不被壓縮 */
+  min-width: 100%;
+}
+
+.nut {
+  position: absolute;
+  left: 45px;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: #d4af37;
+  z-index: 3;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+}
+
+.strings-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 15px 0;
+}
+
+.string-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 60px;
+}
+
+/* 增粗低音結他弦線 */
+.string-row[data-string="G"]::after { height: 3px; }
+.string-row[data-string="D"]::after { height: 4.5px; }
+.string-row[data-string="A"]::after { height: 6px; }
+.string-row[data-string="E"]::after { height: 8px; }
+
+.string-row::after {
+  content: '';
+  position: absolute;
+  left: 40px;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(to bottom, #ccc, #777, #fff);
+  box-shadow: 0 3px 5px rgba(0,0,0,0.6);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.string-label {
+  width: 40px;
+  font-weight: bold;
+  color: #00ffcc;
+  font-size: 20px;
+  z-index: 2;
+  text-shadow: 0 0 5px rgba(0,255,204,0.5);
+}
+
+/* 琴格 */
+.fret {
+  width: 90px; /* 固定寬度，確保 12 格拉長 */
+  height: 85%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 3px solid #777; /* 琴格金屬 */
+  cursor: pointer;
+  user-select: none;
+  z-index: 2;
+  transition: background 0.1s;
+  font-size: 13px;
+  color: #666;
+  position: relative;
+}
+
+.fret:hover {
+  background: rgba(0, 255, 204, 0.15);
+  color: #fff;
+}
+
+/* 琴格記號點 (3, 5, 7, 9) */
+.fret.marker::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #aaa;
+  border-radius: 50%;
+  bottom: -8px; /* 放於弦與弦中間（此處簡化為格底） */
+  opacity: 0.4;
+}
+
+/* 12格雙雙記號點 */
+.fret.double-marker::before {
+  content: '● ●';
+  position: absolute;
+  color: #aaa;
+  font-size: 10px;
+  bottom: -10px;
+  opacity: 0.6;
+}
+
+.fret.open {
+  border-right: 4px double #d4af37;
+  background: rgba(255, 255, 255, 0.06);
+  width: 50px;
+  margin-right: 10px;
+}
+
+.instructions {
+  text-align: center;
+  color: #777;
+  margin-top: 25px;
+  font-size: 14px;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}

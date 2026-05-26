@@ -1,3 +1,4 @@
+git submodule add https://github.com/2223179/superbass.git portfolio/2223179/superbass
 git submodule add https://github.com/2223179/leopard-print-underwear.git portfolio/2223179/leopard-print-underwear
 git submodule add https://github.com/2223179/funny-gamee.git portfolio/2223179/funny-gamee
 git submodule add https://github.com/2223179/funny-game.git portfolio/2223179/funny-game
@@ -52,6 +53,10 @@ git submodule add https://github.com/BARON1118/hksc-water.git portfolio/BARON111
 git submodule add https://github.com/BARON1118/stackblitz-hksc-daily.git portfolio/BARON1118/stackblitz-hksc-daily
 git submodule add https://github.com/BARON1118/liftCounter.git portfolio/BARON1118/liftCounter
 git submodule add https://github.com/BARON1118/cotd.git portfolio/BARON1118/cotd
+git submodule add https://github.com/v1ann/0522.git portfolio/v1ann/0522
+git submodule add https://github.com/v1ann/stackblitz-0519-3.0.git portfolio/v1ann/stackblitz-0519-3.0
+git submodule add https://github.com/v1ann/stackblitz-0519-2.0.git portfolio/v1ann/stackblitz-0519-2.0
+git submodule add https://github.com/v1ann/stackblitz-0519.git portfolio/v1ann/stackblitz-0519
 git submodule add https://github.com/v1ann/1505jump.git portfolio/v1ann/1505jump
 git submodule add https://github.com/v1ann/speed.git portfolio/v1ann/speed
 git submodule add https://github.com/v1ann/3.0waterfisheatshit.git portfolio/v1ann/3.0waterfisheatshit
@@ -96,11 +101,14 @@ git submodule add https://github.com/2526453/i-need-ur-locations.git portfolio/2
 git submodule add https://github.com/2526453/chatroom-but-GREEEEEEEEEEEN.git portfolio/2526453/chatroom-but-GREEEEEEEEEEEN
 git submodule add https://github.com/2526453/weeeeeeeeeeee.git portfolio/2526453/weeeeeeeeeeee
 git submodule add https://github.com/2526453/meow.git portfolio/2526453/meow
+git submodule add https://github.com/2526454-ship-it/stackblitz-starters-nbdwaf6f.git portfolio/2526454-ship-it/stackblitz-starters-nbdwaf6f
+git submodule add https://github.com/2526454-ship-it/Gamble-for-good.git portfolio/2526454-ship-it/Gamble-for-good
 git submodule add https://github.com/2526454-ship-it/NPCTGT.git portfolio/2526454-ship-it/NPCTGT
 git submodule add https://github.com/2526454-ship-it/CW-chcicken-Warfare.git portfolio/2526454-ship-it/CW-chcicken-Warfare
 git submodule add https://github.com/2526454-ship-it/my-eng-persent.git portfolio/2526454-ship-it/my-eng-persent
 git submodule add https://github.com/2526454-ship-it/GT.git portfolio/2526454-ship-it/GT
 git submodule add https://github.com/2526454-ship-it/ni.git portfolio/2526454-ship-it/ni
+git submodule add https://github.com/hayden626/black-sound.git portfolio/hayden626/black-sound
 git submodule add https://github.com/hayden626/drew.git portfolio/hayden626/drew
 git submodule add https://github.com/hayden626/NEURAL_MEMO.git portfolio/hayden626/NEURAL_MEMO
 git submodule add https://github.com/hayden626/NASA.git portfolio/hayden626/NASA
@@ -145,6 +153,7 @@ git submodule add https://github.com/2526470-collab/hk-public-holiday.git portfo
 git submodule add https://github.com/2526470-collab/-messages.git portfolio/2526470-collab/-messages
 git submodule add https://github.com/2526470-collab/hksc-woman-toilet.git portfolio/2526470-collab/hksc-woman-toilet
 git submodule add https://github.com/2526470-collab/Krystal.git portfolio/2526470-collab/Krystal
+git submodule add https://github.com/crazyjayhm/Adrian-7.git portfolio/crazyjayhm/Adrian-7
 git submodule add https://github.com/crazyjayhm/Adrian-6.git portfolio/crazyjayhm/Adrian-6
 git submodule add https://github.com/crazyjayhm/game-3.git portfolio/crazyjayhm/game-3
 git submodule add https://github.com/crazyjayhm/Sports-field-circle-keyboard-race.git portfolio/crazyjayhm/Sports-field-circle-keyboard-race

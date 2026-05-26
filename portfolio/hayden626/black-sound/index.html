@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <title>NASA_GARGANTUA_PRO_v5</title>
+    <link rel="stylesheet" href="styles.css">
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+    <div id="boot-overlay">
+        <div class="boot-content">
+            <h1 class="white-txt glow">GARGANTUA_LAB_v5</h1>
+            <p class="guide-txt">
+                【極致還原：NASA數據與彩色水星觀測站】<br>
+                1. 畫面已修正前後空間層次，黑洞完美坐鎮於吸積盤核心深處。<br>
+                2. 黑洞邊緣加入了 3 層 NASA 引力邊界環，左亮右暗（多普勒效應）。<br>
+                3. 米勒星球已着色（深藍海洋 + 面向黑洞嘅橙色動態反光）。<br>
+                4. **終極動作**：點擊左側紅色按鈕，可觸發奇點引爆與重組！
+            </p>
+            <button id="start-btn">進入同步觀測</button>
+        </div>
+    </div>
+
+    <div id="space-shell">
+        <canvas id="bhCanvas"></canvas>
+        
+        <aside class="hud-panel-left glass">
+            <div class="panel-tag">TERMINAL_COMMAND // 終極指令</div>
+            <button id="btn-detonate" class="action-btn-red">⚠️ 引爆黑洞奇點 (DETONATE)</button>
+            
+            <hr class="split-line">
+            <div class="panel-tag">ORBIT_CONTROL // 軌道調整</div>
+            <label class="ctrl-label">米勒星球公轉半徑</label>
+            <input type="range" id="planet-radius" min="150" max="400" value="270">
+            
+            <label class="ctrl-label">吸積盤旋轉速度</label>
+            <input type="range" id="disk-speed" min="5" max="25" value="12">
+        </aside>
+
+        <aside class="hud-panel-right glass">
+            <div class="panel-tag">QUANTUM_TELEMETRY // 數據終端</div>
+            <div class="hacker-log" contenteditable="true">> 系統已就緒。NASA 物理深度矩陣已載入。</div>
+            <hr class="split-line">
+            <div class="panel-tag">CORE_STATUS // 核心狀態</div>
+            <div id="status-display" class="mass-display white-txt">STATUS: STABLE</div>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

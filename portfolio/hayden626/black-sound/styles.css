@@ -1,0 +1,54 @@
+:root {
+  --orange-glow: #ffaa44;
+  --red-alert: #ff3333;
+  --bg-void: #000002;
+  --text-white: #ffffff;
+}
+
+body, html {
+  margin: 0; background: var(--bg-void); color: var(--text-white);
+  font-family: 'Consolas', 'Courier New', monospace; overflow: hidden;
+}
+
+#boot-overlay {
+  position: fixed; inset: 0; background: #000; z-index: 1000;
+  display: flex; justify-content: center; align-items: center; text-align: center;
+}
+#boot-overlay.hide { opacity: 0; pointer-events: none; transition: 1s cubic-bezier(0.7, 0, 0.3, 1); }
+
+.white-txt { color: var(--text-white); }
+.glow { text-shadow: 0 0 25px var(--orange-glow); }
+.guide-txt { color: #555; font-size: 13px; line-height: 1.8; margin: 25px 0; max-width: 600px; }
+
+#start-btn {
+  background: transparent; border: 1px solid #fff; color: #fff;
+  padding: 15px 45px; font-size: 15px; cursor: pointer; letter-spacing: 3px; transition: 0.3s;
+}
+#start-btn:hover { background: #fff; color: #000; box-shadow: 0 0 40px #fff; }
+
+#bhCanvas { position: absolute; inset: 0; z-index: 0; }
+
+.glass {
+  background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(40px); box-shadow: 0 0 60px rgba(0,0,0,1); z-index: 30; box-sizing: border-box;
+}
+.hud-panel-left { position: absolute; top: 40px; left: 40px; width: 280px; padding: 25px; }
+.hud-panel-right { position: absolute; top: 40px; right: 40px; width: 320px; padding: 25px; }
+
+.panel-tag { color: var(--orange-glow); font-size: 11px; font-weight: bold; letter-spacing: 2px; margin-bottom: 15px; border-bottom: 1px solid #1a1a1a; padding-bottom: 5px; }
+
+.ctrl-label { display: block; font-size: 11px; color: #777; margin: 10px 0 5px 0; }
+input[type="range"] { width: 100%; background: #222; -webkit-appearance: none; height: 3px; outline: none; margin-bottom: 15px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: #fff; cursor: pointer; border-radius: 50%; }
+
+/* 紅色終極引爆按鈕 */
+.action-btn-red {
+  width: 100%; background: transparent; border: 1px solid var(--red-alert); color: var(--red-alert);
+  padding: 12px; margin-bottom: 10px; font-family: monospace; font-size: 12px; font-weight: bold;
+  cursor: pointer; text-align: center; transition: 0.2s; box-shadow: 0 0 10px rgba(255,51,51,0.1);
+}
+.action-btn-red:hover { background: var(--red-alert); color: #000; box-shadow: 0 0 30px var(--red-alert); }
+
+.hacker-log { min-height: 240px; max-height: 340px; overflow-y: auto; color: #666; font-size: 12px; line-height: 1.8; }
+.mass-display { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+.split-line { border: 0; border-top: 1px solid #1a1a1a; margin: 15px 0; }

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird Game - 輕鬆休閒版</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0f141d;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        #gameCanvas {
+            background: linear-gradient(to bottom, #1a2639, #0b1017);
+            border: 4px solid #4f5d75;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            max-width: 100%;
+        }
+        .instructions {
+            margin-top: 15px;
+            font-size: 15px;
+            color: #a0aec0;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .key-hint {
+            background: #2d3748;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+    <div class="instructions">
+        操作提示：<strong style="color: #10b981;">休閒難度，輕鬆暢玩！</strong><br>
+        點擊 <span class="key-hint">上方向鍵 ↑</span> 往上飄 | 按住 <span class="key-hint">下方向鍵 ↓</span> 往下沉
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// 遊戲狀態
+let gameState = 'START'; 
+let score = 0;
+let bestScore = localStorage.getItem('birdEasyBestScore') ? parseInt(localStorage.getItem('birdEasyBestScore')) : 0;
+
+// 【核心難度調整】基礎速度與物理配置
+const BASE_GAME_SPEED = 4.0;   // 初始速度調慢 (原本是5)
+const MAX_GAME_SPEED = 7.0;    // 限制最高速度，絕對不逼死人
+const GRAVITY = 0.22;          // 重力大幅調輕 (原本是0.35)
+const FLAP_STRENGTH = -4.2;    // 往上的衝力變溫和 (原本是-5.5)
+
+// 玩家屬性
+const player = {
+    x: 120,
+    y: 225,
+    width: 34,
+    height: 26,
+    velocity: 0,            
+    color: '#38bdf8' 
+};
+
+// 按鍵狀態管理
+const keys = { ArrowDown: false };
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+    }
+    
+    if (gameState === 'PLAYING') {
+        if (e.key === 'ArrowUp') {
+            player.velocity = FLAP_STRENGTH; // 輕快往上跳一下
+        }
+        if (e.key === 'ArrowDown') {
+            keys.ArrowDown = true;
+        }
+    } else if (gameState === 'START' || gameState === 'GAMEOVER') {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+            resetGame();
+        }
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowDown') {
+        keys.ArrowDown = false;
+    }
+});
+
+// 手機與滑鼠控制
+canvas.addEventListener('mousedown', handleTouchStart);
+canvas.addEventListener('touchstart', handleTouchStart);
+canvas.addEventListener('mouseup', () => keys.ArrowDown = false);
+canvas.addEventListener('touchend', () => keys.ArrowDown = false);
+
+function handleTouchStart(e) {
+    e.preventDefault();
+    if (gameState !== 'PLAYING') {
+        resetGame();
+        return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const relativeY = clientY - rect.top;
+    
+    if (relativeY < rect.height / 2) {
+        player.velocity = FLAP_STRENGTH; 
+    } else {
+        keys.ArrowDown = true; 
+    }
+}
+
+// 障礙物管理
+let obstacles = [];
+let spawnTimer = 0;
+let gameSpeed = BASE_GAME_SPEED;
+
+function spawnObstacle() {
+    // 縮小柱子的最大高度，留出更多中間空隙
+    const minHeight = 40;
+    const maxHeight = 200; 
+    const height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+    const isTop = Math.random() > 0.5;
+    const y = isTop ? 0 : canvas.height - height;
+
+    obstacles.push({
+        x: canvas.width,
+        y: y,
+        width: 45,
+        height: height,
+        color: '#f43f5e', 
+        passed: false
+    });
+}
+
+function resetGame() {
+    player.y = canvas.height / 2 - player.height / 2;
+    player.velocity = 0;
+    obstacles = [];
+    score = 0;
+    gameSpeed = BASE_GAME_SPEED;
+    spawnTimer = 0;
+    keys.ArrowDown = false;
+    gameState = 'PLAYING';
+}
+
+function checkCollision(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+// 遊戲主循環
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (gameState === 'PLAYING') {
+        // 緩慢加速，且不超過最高速度限制
+        if (gameSpeed < MAX_GAME_SPEED) {
+            gameSpeed += 0.0008; // 加速感極其微弱，平滑舒適
+        }
+
+        // 物理更新
+        player.velocity += GRAVITY;
+        if (keys.ArrowDown) {
+            player.velocity += 0.3; // 下降也變溫和
+        }
+        player.y += player.velocity;
+
+        // 邊界淘汰
+        if (player.y < 0 || player.y + player.height > canvas.height) {
+            endGame();
+        }
+
+        // 障礙物生成間隔拉長 (更少障礙物，更多反應時間)
+        spawnTimer += gameSpeed * 0.08; 
+        if (spawnTimer > 15) { 
+            spawnObstacle();
+            spawnTimer = 0;
+        }
+
+        // 障礙物移動與碰撞
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let obs = obstacles[i];
+            obs.x -= gameSpeed;
+
+            // 通過計分
+            if (!obs.passed && obs.x + obs.width < player.x) {
+                score++;
+                obs.passed = true;
+                
+                if (gameSpeed < MAX_GAME_SPEED) {
+                    gameSpeed += 0.05; // 每次得分稍微加一點點速度
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem('birdEasyBestScore', bestScore);
+                }
+            }
+
+            if (checkCollision(player, obs)) {
+                endGame();
+            }
+
+            if (obs.x + obs.width < 0) {
+                obstacles.splice(i, 1);
+            }
+        }
+    }
+
+    // 繪製玩家
+    ctx.fillStyle = player.color;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.shadowBlur = 0; 
+
+    // 繪製障礙物
+    obstacles.forEach(obs => {
+        ctx.fillStyle = obs.color;
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    });
+
+    // 繪製 UI
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 20px Arial';
+    ctx.fillText(`SCORE: ${score}`, 25, 45);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillText(`BEST: ${bestScore}`, 25, 75);
+    
+    ctx.fillStyle = '#10b981';
+    ctx.font = '14px Arial';
+    ctx.fillText(`SPEED: ${(gameSpeed / BASE_GAME_SPEED).toFixed(1)}x`, 25, 105);
+
+    if (gameState === 'START') {
+        drawOverlay('點擊 [上鍵 ↑] 開始輕鬆體驗吧', 'CHILL BORD');
+    } else if (gameState === 'GAMEOVER') {
+        drawOverlay(`得分: ${score} | 再接再厲！`, 'GAME OVER');
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+    gameState = 'GAMEOVER';
+}
+
+function drawOverlay(subText, mainText) {
+    ctx.fillStyle = 'rgba(10, 15, 24, 0.8)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#10b981'; // 改為綠色，更溫和
+    ctx.font = 'bold 42px Arial';
+    ctx.fillText(mainText, canvas.width / 2, canvas.height / 2 - 20);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '18px Arial';
+    ctx.fillText(subText, canvas.width / 2, canvas.height / 2 + 30);
+    ctx.textAlign = 'left'; 
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>

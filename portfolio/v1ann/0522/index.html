@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Clone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #282c34;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        #gameContainer {
+            text-align: center;
+        }
+        canvas {
+            background: #70c5ce;
+            display: block;
+            border: 4px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+        .instructions {
+            color: #fff;
+            margin-top: 15px;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas" width="360" height="500"></canvas>
+    <div class="instructions">Press SPACE or CLICK to Flap</div>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Game variables
+    let score = 0;
+    let gameOver = false;
+
+    // Bird configuration
+    const bird = {
+        x: 50,
+        y: 150,
+        width: 34,
+        height: 24,
+        gravity: 0.25,
+        velocity: 0,
+        jump: 4.6,
+        draw() {
+            ctx.fillStyle = "#ffde17"; // Yellow bird
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            // Eye
+            ctx.fillStyle = "#000";
+            ctx.fillRect(this.x + 24, this.y + 4, 4, 4);
+            // Beak
+            ctx.fillStyle = "#f15a24";
+            ctx.fillRect(this.x + 30, this.y + 10, 6, 6);
+        },
+        update() {
+            this.velocity += this.gravity;
+            this.y += this.velocity;
+
+            // Bottom collision
+            if (this.y + this.height > canvas.height) {
+                this.y = canvas.height - this.height;
+                gameOver = true;
+            }
+            // Top ceiling collision
+            if (this.y < 0) {
+                this.y = 0;
+                this.velocity = 0;
+            }
+        },
+        flap() {
+            this.velocity = -this.jump;
+        }
+    };
+
+    // Pipes configuration
+    const pipes = [];
+    const pipeWidth = 52;
+    const pipeGap = 120;
+    const pipeSpeed = 2;
+    let spawnTimer = 0;
+
+    function spawnPipe() {
+        // Randomly calculate the top pipe height
+        const minHeight = 50;
+        const maxHeight = canvas.height - pipeGap - minHeight;
+        const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+
+        pipes.push({
+            x: canvas.width,
+            topHeight: topHeight,
+            bottomY: topHeight + pipeGap,
+            passed: false
+        });
+    }
+
+    function drawPipes() {
+        pipes.forEach(pipe => {
+            ctx.fillStyle = "#73bf2e"; // Green pipe
+            
+            // Top pipe
+            ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+            ctx.strokeStyle = "#558022";
+            ctx.strokeRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+
+            // Bottom pipe
+            ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
+            ctx.strokeRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
+        });
+    }
+
+    function updatePipes() {
+        for (let i = pipes.length - 1; i >= 0; i--) {
+            pipes[i].x -= pipeSpeed;
+
+            // Check for scoring
+            if (!pipes[i].passed && pipes[i].x + pipeWidth < bird.x) {
+                score++;
+                pipes[i].passed = true;
+            }
+
+            // Collision check
+            if (
+                bird.x < pipes[i].x + pipeWidth &&
+                bird.x + bird.width > pipes[i].x &&
+                (bird.y < pipes[i].topHeight || bird.y + bird.height > pipes[i].bottomY)
+            ) {
+                gameOver = true;
+            }
+
+            // Remove off-screen pipes
+            if (pipes[i].x + pipeWidth < 0) {
+                pipes.splice(i, 1);
+            }
+        }
+    }
+
+    function drawScore() {
+        ctx.fillStyle = "#fff";
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.font = "bold 35px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(score, canvas.width / 2, 50);
+        ctx.strokeText(score, canvas.width / 2, 50);
+    }
+
+    function resetGame() {
+        bird.y = 150;
+        bird.velocity = 0;
+        pipes.length = 0;
+        score = 0;
+        spawnTimer = 0;
+        gameOver = false;
+    }
+
+    // Input handlers
+    function handleAction() {
+        if (gameOver) {
+            resetGame();
+        } else {
+            bird.flap();
+        }
+    }
+
+    window.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+            handleAction();
+            e.preventDefault(); // Prevents spacebar from scrolling down the screen
+        }
+    });
+    canvas.addEventListener("click", handleAction);
+
+    // Game loop
+    function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!gameOver) {
+            bird.update();
+            
+            spawnTimer++;
+            if (spawnTimer % 100 === 0) {
+                spawnPipe();
+            }
+            updatePipes();
+        }
+
+        drawPipes();
+        bird.draw();
+        drawScore();
+
+        if (gameOver) {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+            
+            ctx.font = "16px sans-serif";
+            ctx.fillText("Click or Press Space to Restart", canvas.width / 2, canvas.height / 2 + 25);
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    // Start
+    spawnPipe();
+    loop();
+</script>
+
+</body>
+</html>
