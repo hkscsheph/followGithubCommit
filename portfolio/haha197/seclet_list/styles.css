@@ -1,0 +1,304 @@
+body {
+  margin: 0;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-image: url(https://t3.ftcdn.net/jpg/08/01/41/48/360_F_801414893_7IzcRSIQV7UcCwPmL9ZYkbsqib4o2WlL.jpg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+* {
+  font-family: "New Rocker", system-ui;
+}
+
+h1 {
+  margin-top: 4rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-size: 4.5vw;
+}
+
+h2 {
+  margin-top: 4rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-size: 3vw;
+}
+
+p {
+/*   font-family: "Chalkduster"; */
+  margin-top: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-size: 1.5vw;
+  width: 90vw;
+}
+
+.qwerty {
+  font-weight: 900;
+  color: rgb(0, 0, 170)
+}
+
+.asdfg{
+  font-weight: 900;
+  text-decoration: underline;
+}
+
+.line {
+  font-size: 2.7vw;
+  border: 1vw solid black;
+  width: 80vw;
+  margin: 2vw auto;
+  padding: 0 7px;
+}
+
+.name {
+  border: none;
+  border-bottom: 0.4vw solid #000;
+  outline: none;
+  font-size: 3vw;
+  width: 75%;
+  background: transparent;
+  line-height: 1;
+/*   font-family: "Chalkduster",cursive,arial; */
+}
+
+label[id="name-label"] {
+  margin: 0 0 0 3vw;
+}
+
+.number {
+  border: none;
+  outline: none;
+  font-size: 3.6vw;
+  width: 9vw;
+  background: transparent;
+  line-height: 1;
+/*   font-family: "Chalkduster",cursive,arial; */
+}
+
+.add {
+  width: 75vw;
+  display: flex;
+  flex-direction: column;
+}
+
+#address, #family_address {
+  width: 60vw;
+}
+
+.Gender {
+  display: inline-flex;
+  overflow: hidden;
+  border-radius; 2vw;
+}
+
+input[type="radio"]:checked + label {
+  text-decoration: none;
+}
+
+input[type="radio"] + label {
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+}
+
+.bottom {
+  display: none;
+}
+
+.air {
+  margin: 10vw 0;
+}
+
+
+/* body {
+  overflow-y: hidden; 
+} */
+
+.fl {
+  display: flex;
+  justify-content:  space-around;
+  margin: 5vw 0 0 0;
+}
+
+.Sec {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 4.7vw;
+}
+
+.image-container img {
+  max-width: 100%;
+  height: auto;
+}
+
+#sel,#sel2,#ll,.sele {
+  font-size: 16px;
+  border: none;
+  outline: none;
+  font-size: 2.5vw;
+  width: 20vw;
+  background: transparent;
+}
+
+::-webkit-outer-spin-button {
+  appearance: none;
+}
+
+::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+.flse {
+  width: 35vw;
+}
+
+.flse, #sel, .add, #sel2 {
+  margin: 4vw 0 0 0;
+}
+
+textarea {
+  background-color: rgba( 255, 255, 255, 50%);
+  max-width: 60vw;
+  width: 60vw;
+  height: 20vw;
+  margin: 4vw 0;
+}
+
+img {
+  margin: 0;
+  width: 20vw;
+  height: 20vw;
+}
+
+.bac {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  background-image: url(https://postimage.me/images/2026/01/08/-removebg-preview.png);
+  background-size: cover;
+  background-repeat: no-repeat;
+  width: 40vw;
+  height: 40vw;
+  align-items: center;
+  
+}
+
+.sele {
+  font-size: 16px;
+  border: none;
+  outline: none;
+  font-size: 2.5vw;
+  width: 20vw;
+  background: transparent;
+  border-bottom: 0.4vw solid #000;
+}
+
+#email-label, #pl-label, #tl-label, #sel3, .la, nameb-label{
+  font-size: 3vw;
+  display: flex;
+  justify-content: center;
+  margin: 5vw 0 0 0 ;
+}
+
+.email {
+  border: none;
+  border-bottom: 0.4vw solid #000;
+  outline: none;
+  font-size: 3.6vw;
+  width: 40vw;
+  background: transparent;
+  line-height: 1;
+/*   font-family: "Chalkduster",cursive,arial; */
+  margin: 0 0 4vw 0;
+}
+
+.pl, .tl {
+  border: none;
+  border-bottom: 0.4vw solid #000;
+  outline: none;
+  font-size: 2vw;
+  width: 40%;
+  background: transparent;
+  line-height: 1;
+/*   font-family: "Chalkduster",cursive,arial; */
+}
+
+.tl{
+  width: 27.5%;
+}
+
+#ll{
+  width: 35vw;
+  font-size: 3vw;
+  border-bottom: 0.4vw solid #000;
+}
+
+.la,.last{
+  font-size: 3vw;
+}
+
+.last {
+  margin: 200px  0 0 5vw;
+}
+
+input[type="checkbox"] {
+  margin: 0 0 0 30px;
+}
+
+.image-container {
+  height: 40vw;
+  margin: 0 10vw;
+}
+
+.bac{
+  margin: 40px 100px;
+}
+
+.nameb {
+  border: none;
+  border-bottom: 0.4vw solid #000;
+  outline: none;
+  font-size: 3vw;
+  width: 40%;
+  background: transparent;
+  line-height: 1;
+/*   font-family: "Chalkduster",cursive,arial; */
+  margin: 0 0 0 57vw;
+}
+
+#nameb-label {
+  width:50vw;
+  margin: 0 0 0 57vw;
+}
+
+.bbbb {
+  display: flex;
+  justify-content: center;
+  margin:7vw;
+}
+
+button[id="submit"]{
+  border: none;
+  width: 30vw;
+  height: 10vw;
+  font-size: 5vw;
+  background: transparent;
+}
+
+button:hover {
+  color: rgb(255 0 0);
+  background-color: rgba(100 0 0 55%)
+}
+
+.air {
+  width:20vw;
+  height:10vw;
+  margin:10vw;
+}

@@ -1,0 +1,245 @@
+:root {
+  --bg-black: #050507;
+  --panel-bg: rgba(13, 13, 17, 0.95);
+  --border-glow: #2c161b;
+  --raptors-red: #ce1141;
+  --raptors-gold: #b4975a;
+  --text-white: #f8fafc;
+  --text-gray: #94a3b8;
+  --tech-cyan: #38bdf8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-black);
+  color: var(--text-white);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.center-logo-backdrop {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70vmin;
+  height: 70vmin;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.app-header {
+  height: 60px;
+  background: #09090c;
+  border-bottom: 2px solid var(--raptors-red);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.logo-zone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-zone h1 {
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  font-family: monospace;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--raptors-red);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--raptors-red);
+}
+
+.system-status {
+  font-size: 0.8rem;
+  color: var(--raptors-gold);
+  font-family: monospace;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  position: relative;
+  z-index: 5;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-glow);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 0 0 20px rgba(206, 17, 65, 0.03);
+  min-height: 400px;
+}
+
+@media (min-width: 1200px) {
+  .center-panel {
+    grid-column: span 2;
+  }
+}
+
+.panel-header {
+  background: rgba(206, 17, 65, 0.08);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-glow);
+}
+
+.panel-header h2 {
+  font-size: 0.85rem;
+  color: var(--raptors-gold);
+  letter-spacing: 1px;
+  font-family: monospace;
+}
+
+.panel-content {
+  padding: 16px;
+  flex: 1;
+}
+
+.info-card-dark {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.info-card-dark h3 {
+  font-size: 0.95rem;
+  color: var(--raptors-red);
+  margin-bottom: 10px;
+}
+
+.info-card-dark p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-gray);
+}
+
+.sub-section {
+  margin-top: 15px;
+}
+
+.sub-section h3 {
+  font-size: 0.8rem;
+  color: var(--raptors-gold);
+  margin-bottom: 12px;
+  font-family: monospace;
+  border-left: 2px solid var(--raptors-red);
+  padding-left: 8px;
+}
+
+.staff-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.staff-node {
+  background: #121218;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 3px solid var(--raptors-gold);
+}
+
+.staff-node .title {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-gray);
+}
+
+.staff-node .value {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+  min-width: 650px;
+}
+
+.roster-table th {
+  background: #111116;
+  color: var(--raptors-gold);
+  font-family: monospace;
+  font-size: 0.75rem;
+  padding: 12px 8px;
+  border-bottom: 2px solid var(--border-glow);
+}
+
+.roster-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.roster-table tbody tr:hover {
+  background: rgba(206, 17, 65, 0.06);
+}
+
+.roster-table tr td:first-child {
+  font-family: monospace;
+  font-weight: bold;
+  color: var(--raptors-red);
+}
+
+.timeline-item {
+  background: rgba(255, 255, 255, 0.01);
+  border-left: 2px solid var(--raptors-gold);
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+}
+
+.timeline-date {
+  color: var(--tech-cyan);
+  font-family: monospace;
+  font-weight: bold;
+  display: block;
+}
+
+.news-box {
+  background: #101015;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.news-box h4 {
+  font-size: 0.88rem;
+  margin-bottom: 6px;
+}
+
+.news-box p {
+  font-size: 0.8rem;
+  color: var(--text-gray);
+  line-height: 1.5;
+}

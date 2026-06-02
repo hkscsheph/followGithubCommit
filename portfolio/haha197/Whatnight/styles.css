@@ -1,0 +1,110 @@
+/* 全域基礎樣式優化 */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+/* 導覽列（選單）- 寬度設定為全螢幕的 1/4 (25vw) */
+#navbar {
+  display: block;
+  unicode-bidi: isolate;
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 25vw; /* 關鍵：佔螢幕寬度的 25% */
+  height: 100%;
+  border-right: 1px solid rgba(0, 22, 22, 0.2);
+  background-color: #f8f9fa;
+  box-sizing: border-box;
+}
+
+/* 導覽列頂部標題樣式 */
+#navbar header {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 20px;
+  border-bottom: 1px solid rgba(0, 22, 22, 0.1);
+  text-align: center;
+}
+
+/* 導覽選單列表 */
+#navbar ul {
+  display: block;
+  list-style-type: none; /* 移除預設的小圓點 */
+  margin: 0;
+  padding: 0;
+  height: calc(100% - 70px); /* 扣除 header 高度 */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 導覽連結項目 */
+#navbar li {
+  border-bottom: 1px solid rgba(0, 22, 22, 0.05);
+}
+
+.nav-link {
+  display: block;
+  padding: 15px 20px;
+  color: #4a5568;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: #e2e8f0;
+  color: #1a202c;
+}
+
+/* 主內容區 - 根據選單寬度（25vw）進行自適應調整 */
+#main-doc {
+  position: absolute;
+  margin-left: 27vw; /* 留下一點空隙 (25vw + 2vw 留白) */
+  padding: 40px;
+  margin-bottom: 110px;
+  width: calc(73vw - 80px); /* 計算剩餘寬度並扣除 padding */
+  box-sizing: border-box;
+}
+
+/* 段落區塊樣式優化 */
+.main-section {
+  margin-bottom: 40px;
+}
+
+.St-par {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #2d3748;
+}
+
+p {
+  margin-bottom: 20px;
+  text-align: justify;
+}
+
+/* RWD 響應式網頁設計：當螢幕寬度小於 815px（如手機或平板）時，選單自動移到上方 */
+@media only screen and (max-width: 815px) {
+  #navbar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 2px solid rgba(0, 22, 22, 0.1);
+  }
+
+  #navbar ul {
+    height: auto;
+    max-height: 200px;
+  }
+
+  #main-doc {
+    position: relative;
+    margin-left: 0;
+    width: 100%;
+    padding: 20px;
+  }
+}

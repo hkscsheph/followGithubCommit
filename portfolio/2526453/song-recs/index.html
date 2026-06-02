@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Song Recs</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+  <header id="title-bar">
+    <h1>Song Recs</h1>
+  </header>
+
+  <div class="container">
+    <nav class="sidebar">
+      <button class="genre-btn" onclick="showGenre('alt-rock')"><span class="text">Alt Rock</span></button>
+      <button class="genre-btn" onclick="showGenre('classical')"><span class="text">Classical</span></button>
+      <button class="genre-btn" onclick="showGenre('edm')"><span class="text">EDM</span></button>
+      <button class="genre-btn" onclick="showGenre('goth-rock')"><span class="text">Goth Rock</span></button>
+      <button class="genre-btn" onclick="showGenre('j-pop')"><span class="text">J-Pop</span></button>
+      <button class="genre-btn" onclick="showGenre('j-rock')"><span class="text">J-Rock</span></button>
+      <button class="genre-btn" onclick="showGenre('metal')"><span class="text">Metal</span></button>
+      <button class="genre-btn" onclick="showGenre('nu-metal')"><span class="text">Nu Metal</span></button>
+      <button class="genre-btn" onclick="showGenre('punk-rock')"><span class="text">Punk Rock</span></button>
+      <button class="genre-btn" onclick="showGenre('rap')"><span class="text">Rap</span></button>
+      <button class="genre-btn" onclick="showGenre('rnb')"><span class="text">Rhythm & Blues</span></button>
+    </nav>
+
+    <main class="content-display">
+      <div id="welcome-message">
+        <h2>Select a genre from the left to view recommendations!</h2>
+      </div>
+
+      <div id="songs-container" class="songs-slider">
+        </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Dash - Rhythm Runner</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #050508;
+            color: #fff;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 255, 150, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #0c0c1e 0%, #05050d 100%);
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+        #screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 10, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+        h1 {
+            color: #00ff99;
+            font-size: 42px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 15px rgba(0, 255, 140, 0.4);
+        }
+        button {
+            background: transparent;
+            border: 2px solid #00ff99;
+            color: #00ff99;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #00ff99;
+            color: #05050d;
+            box-shadow: 0 0 20px #00ff99;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="gameContainer">
+    <div id="ui">DISTANCE: <span id="score">0</span>m</div>
+    <div id="screen">
+        <h1 id="screenTitle">CYBER DASH</h1>
+        <p style="color: #aaa; margin-bottom: 25px;">Avoid spikes. Mind the portals!</p>
+        <button id="actionBtn">START RUN</button>
+    </div>
+    <canvas id="canvas" width="800" height="400"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const uiScore = document.getElementById('score');
+const screen = document.getElementById('screen');
+const screenTitle = document.getElementById('screenTitle');
+const actionBtn = document.getElementById('actionBtn');
+
+// Core Game Objects
+let player = {
+    x: 100,
+    y: 300,
+    w: 30,
+    h: 30,
+    vy: 0,
+    gravity: 0.6,
+    jumpForce: -11,
+    jumpsLeft: 2,
+    isUpsideDown: false,
+    rotation: 0
+};
+
+let gameSpeed = 6;
+let score = 0;
+let isDead = false;
+let isPlaying = false;
+let obstacles = [];
+let particles = [];
+let spawnTimer = 0;
+
+const floorY = 350;
+const ceilingY = 50;
+
+// Inputs
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') handleJump();
+});
+canvas.addEventListener('mousedown', handleJump);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleJump(); });
+actionBtn.addEventListener('click', initGame);
+
+function handleJump() {
+    if (!isPlaying || isDead) return;
+    
+    if (player.jumpsLeft > 0) {
+        // Adjust jump direction based on current gravity flip
+        const force = player.isUpsideDown ? -player.jumpForce : player.jumpForce;
+        player.vy = force;
+        player.jumpsLeft--;
+        createParticles(player.x, player.y + player.h/2, '#00ffff', 8);
+    }
+}
+
+function spawnObstacle() {
+    const rand = Math.random();
+    
+    if (rand < 0.45) {
+        // Spike on Ground
+        obstacles.push({ type: 'spike', x: canvas.width, y: floorY, w: 30, h: 35, pos: 'floor' });
+    } else if (rand < 0.75) {
+        // Spike on Ceiling
+        obstacles.push({ type: 'spike', x: canvas.width, y: ceilingY, w: 30, h: 35, pos: 'ceiling' });
+    } else {
+        // Gravity Portal
+        obstacles.push({ type: 'portal', x: canvas.width, y: 150, w: 25, h: 100 });
+    }
+}
+
+function createParticles(x, y, color, count) {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 4 - 2,
+            vy: (Math.random() - 0.5) * 4,
+            size: Math.random() * 4 + 2,
+            color: color,
+            alpha: 1
+        });
+    }
+}
+
+function initGame() {
+    player.y = 300;
+    player.vy = 0;
+    player.jumpsLeft = 2;
+    player.isUpsideDown = false;
+    player.rotation = 0;
+    
+    obstacles = [];
+    particles = [];
+    score = 0;
+    gameSpeed = 6;
+    spawnTimer = 0;
+    isDead = false;
+    isPlaying = true;
+    
+    screen.style.display = 'none';
+    requestAnimationFrame(update);
+}
+
+function gameOver() {
+    isDead = true;
+    isPlaying = false;
+    screenTitle.innerText = "CRASHED!";
+    screenTitle.style.color = "#ff3366";
+    actionBtn.innerText = "RESTART";
+    screen.style.display = 'flex';
+}
+
+function update() {
+    if (!isPlaying) return;
+
+    score++;
+    uiScore.innerText = Math.floor(score / 5);
+    
+    // Gradual speed acceleration
+    if (score % 500 === 0) gameSpeed += 0.5;
+
+    // Apply Dynamic Gravity
+    const currentGrav = player.isUpsideDown ? -player.gravity : player.gravity;
+    player.vy += currentGrav;
+    player.y += player.vy;
+
+    // Floor and Ceiling Collision Limits
+    if (!player.isUpsideDown) {
+        if (player.y + player.h >= floorY) {
+            player.y = floorY - player.h;
+            player.vy = 0;
+            player.jumpsLeft = 2;
+        }
+    } else {
+        if (player.y <= ceilingY) {
+            player.y = ceilingY;
+            player.vy = 0;
+            player.jumpsLeft = 2;
+        }
+    }
+
+    // Keep rotation spin moving when airborne
+    if ((!player.isUpsideDown && player.y + player.h < floorY) || (player.isUpsideDown && player.y > ceilingY)) {
+        player.rotation += player.isUpsideDown ? -0.08 : 0.08;
+    } else {
+        // Snap back cleanly to flat angles on ground landing
+        player.rotation = Math.round(player.rotation / (Math.PI/2)) * (Math.PI/2);
+    }
+
+    // Spawn Obstacle Timers
+    spawnTimer++;
+    if (spawnTimer > Math.max(40, 80 - gameSpeed * 3)) {
+        spawnObstacle();
+        spawnTimer = 0;
+    }
+
+    // Process Trail Particles
+    if (score % 3 === 0) {
+        particles.push({
+            x: player.x, y: player.y + player.h/2,
+            vx: -gameSpeed * 0.5, vy: 0,
+            size: player.w * 0.4, color: 'rgba(0, 255, 150, 0.3)', alpha: 0.6
+        });
+    }
+
+    // Update Particles
+    for(let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.alpha -= 0.03;
+        if(p.alpha <= 0) particles.splice(i, 1);
+    }
+
+    // Update Obstacles & Check Collisions
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.x -= gameSpeed;
+
+        if (obs.x + obs.w < 0) {
+            obstacles.splice(i, 1);
+            continue;
+        }
+
+        // AABB Box Hitbox check
+        if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
+            player.y < obs.y + obs.h && player.y + player.h > obs.y) {
+            
+            if (obs.type === 'spike') {
+                createParticles(player.x + 15, player.y + 15, '#ff3366', 25);
+                gameOver();
+                return;
+            } else if (obs.type === 'portal') {
+                // Flip gravity parameters safely
+                player.isUpsideDown = !player.isUpsideDown;
+                createParticles(obs.x + obs.w/2, player.y + 15, '#00ff66', 10);
+                obstacles.splice(i, 1); // Delete portal instantly on usage
+            }
+        }
+    }
+
+    render();
+    requestAnimationFrame(update);
+}
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Boundaries (Floor & Ceiling plates)
+    ctx.fillStyle = '#111126';
+    ctx.fillRect(0, 0, canvas.width, ceilingY);
+    ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
+
+    ctx.strokeStyle = '#00ff99';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, ceilingY); ctx.lineTo(canvas.width, ceilingY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(canvas.width, floorY); ctx.stroke();
+
+    // Draw Particles
+    particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+        ctx.restore();
+    });
+
+    // Draw Obstacles
+    obstacles.forEach(obs => {
+        if (obs.type === 'spike') {
+            ctx.fillStyle = '#ff3366';
+            ctx.beginPath();
+            if (obs.pos === 'floor') {
+                ctx.moveTo(obs.x, obs.y);
+                ctx.lineTo(obs.x + obs.w / 2, obs.y - obs.h);
+                ctx.lineTo(obs.x + obs.w, obs.y);
+            } else { // Ceiling spike
+                ctx.moveTo(obs.x, obs.y);
+                ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
+                ctx.lineTo(obs.x + obs.w, obs.y);
+            }
+            ctx.fill();
+        } else if (obs.type === 'portal') {
+            // Render glowing neon energy portal rings
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#00ff66';
+            ctx.fillStyle = '#00ff66';
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            ctx.shadowBlur = 0;
+        }
+    });
+
+    // Draw Player Box with accurate Rotation Transforms
+    ctx.save();
+    ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+    ctx.rotate(player.rotation);
+    ctx.fillStyle = '#00ffff';
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#00ffff';
+    ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
+    // Draw small inner square decoration accent
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-player.w / 4, -player.h / 4, player.w / 2, player.h / 2);
+    ctx.restore();
+    ctx.shadowBlur = 0;
+}
+
+// Show start screen overlay initially
+screen.style.display = 'flex';
+</script>
+
+</body>
+</html>

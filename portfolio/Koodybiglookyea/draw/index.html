@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多人即時畫板 - Supabase 版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f9; margin: 0; padding: 20px; }
+        .header { margin-bottom: 15px; text-align: center; }
+        .controls { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        canvas { background: white; border: 2px solid #ddd; border-radius: 8px; cursor: crosshair; touch-action: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        #status { font-size: 14px; margin-left: 10px; }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div class="header">
+        <h2>🎨 多人即時畫板</h2>
+        <span id="status" style="color: gray;">連線中...</span>
+    </div>
+
+    <div class="controls">
+        顏色：<input type="color" id="colorPicker" value="#ff0000">
+        粗細：<input type="range" id="sizePicker" min="1" max="15" value="3">
+        <button onclick="clearLocalCanvas()">清除我的畫面</button>
+    </div>
+
+    <canvas id="paintCanvas" width="800" height="500"></canvas>
+
+    <script>
+        // --- 1. 設定 Supabase ---
+        const SB_URL = 'https://egbrqnbjagunzuvessgh.supabase.co'; 
+        const SB_KEY = 'sb_publishable_gXh5g3EHdTd3hPM3LwxtEQ_DvPEpSZL';
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        const canvas = document.getElementById('paintCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusText = document.getElementById('status');
+        
+        let painting = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // --- 2. 建立 Realtime 頻道 (Broadcast) ---
+        const channel = supabaseClient.channel('drawing_room', {
+            config: { broadcast: { self: false } } // 不接收自己發出的廣播
+        });
+
+        channel
+            .on('broadcast', { event: 'draw' }, ({ payload }) => {
+                // 收到別人的繪圖路徑
+                remoteDraw(payload);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    statusText.innerText = '🟢 已連線 - 開始畫畫吧！';
+                    statusText.style.color = 'green';
+                }
+            });
+
+        // --- 3. 繪圖邏輯 ---
+        function startPosition(e) {
+            painting = true;
+            [lastX, lastY] = getMousePos(e);
+        }
+
+        function endPosition() {
+            painting = false;
+            ctx.beginPath(); // 重置路徑，避免線條連接
+        }
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // 支援滑鼠與觸控
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return [clientX - rect.left, clientY - rect.top];
+        }
+
+        function draw(e) {
+            if (!painting) return;
+
+            const [x, y] = getMousePos(e);
+            const color = document.getElementById('colorPicker').value;
+            const width = document.getElementById('sizePicker').value;
+
+            // 繪製本地畫面
+            drawPath(lastX, lastY, x, y, color, width);
+
+            // 廣播給其他人
+            channel.send({
+                type: 'broadcast',
+                event: 'draw',
+                payload: { x1: lastX, y1: lastY, x2: x, y2: y, color, width }
+            });
+
+            [lastX, lastY] = [x, y];
+        }
+
+        function drawPath(x1, y1, x2, y2, color, width) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        function remoteDraw(data) {
+            drawPath(data.x1, data.y1, data.x2, data.y2, data.color, data.width);
+        }
+
+        function clearLocalCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- 4. 監聽事件 ---
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', endPosition);
+
+        // 手機觸控支援
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPosition(e); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+        canvas.addEventListener('touchend', endPosition);
+
+    </script>
+</body>
+</html>

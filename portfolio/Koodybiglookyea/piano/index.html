@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS Audio Piano</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #222;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .piano {
+            display: flex;
+            position: relative;
+            background: #111;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+        }
+
+        .key {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .white-key {
+            width: 60px;
+            height: 250px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 0 0 5px 5px;
+            z-index: 1;
+            box-shadow: inset 0 0 5px #ccc;
+        }
+
+        .white-key:active, .white-key.active {
+            background: #e0e0e0;
+            box-shadow: inset 0 0 10px #999;
+        }
+
+        .black-key {
+            width: 40px;
+            height: 150px;
+            background: #111;
+            border-radius: 0 0 3px 3px;
+            margin-left: -20px;
+            margin-right: -20px;
+            z-index: 2;
+            box-shadow: inset 0 0 4px #555;
+        }
+
+        .black-key:active, .black-key.active {
+            background: #333;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div class="piano">
+        <div class="key white-key" data-note="261.63"></div> <div class="key black-key" data-note="277.18"></div> <div class="key white-key" data-note="293.66"></div> <div class="key black-key" data-note="311.13"></div> <div class="key white-key" data-note="329.63"></div> <div class="key white-key" data-note="349.23"></div> <div class="key black-key" data-note="369.99"></div> <div class="key white-key" data-note="392.00"></div> <div class="key black-key" data-note="415.30"></div> <div class="key white-key" data-note="440.00"></div> <div class="key black-key" data-note="466.16"></div> <div class="key white-key" data-note="493.88"></div> <div class="key white-key" data-note="523.25"></div> </div>
+
+    <script>
+        // Initialize the Audio Context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        // Function to play a note based on frequency
+        function playNote(frequency) {
+            // Create oscillator and gain (volume) node
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'triangle'; // 'triangle' sounds softer and more piano-like than 'sine' or 'square'
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+
+            // Smoothly fade out the sound so it doesn't click sharply when stopping
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 1.5);
+        }
+
+        // Add click event listeners to all keys
+        document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('mousedown', () => {
+                // Resume audio context if suspended (browser security policy)
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const frequency = parseFloat(key.getAttribute('data-note'));
+                playNote(frequency);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -58,6 +58,11 @@
       "repoUrl": "https://github.com/2526453/rage-quit"
     },
     {
+      "name": "song-recs",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526453/song-recs"
+    },
+    {
       "name": "weeeeeeeeeeee",
       "type": "directory",
       "repoUrl": "https://github.com/2526453/weeeeeeeeeeee"
@@ -78,6 +83,16 @@
       "name": "2223107_ICT_AI_W10_Cami",
       "type": "directory",
       "repoUrl": "https://github.com/2223107-cami/2223107_ICT_AI_W10_Cami"
+    },
+    {
+      "name": "2223107_ICT_AI_W12_Cami",
+      "type": "directory",
+      "repoUrl": "https://github.com/2223107-cami/2223107_ICT_AI_W12_Cami"
+    },
+    {
+      "name": "2223107_ICT_AI_W13_Cami",
+      "type": "directory",
+      "repoUrl": "https://github.com/2223107-cami/2223107_ICT_AI_W13_Cami"
     },
     {
       "name": "2223107_ICT_AI_W7_Cami",
@@ -259,6 +274,11 @@
       "name": "GT",
       "type": "directory",
       "repoUrl": "https://github.com/2526454-ship-it/GT"
+    },
+    {
+      "name": "math-quiz",
+      "type": "directory",
+      "repoUrl": "https://github.com/2526454-ship-it/math-quiz"
     },
     {
       "name": "my-eng-persent",
@@ -637,6 +657,11 @@
       "repoUrl": "https://github.com/haha197/openday_gm"
     },
     {
+      "name": "seclet_list",
+      "type": "directory",
+      "repoUrl": "https://github.com/haha197/seclet_list"
+    },
+    {
       "name": "stackblitz-starters-nwue149t",
       "type": "directory",
       "repoUrl": "https://github.com/haha197/stackblitz-starters-nwue149t"
@@ -645,6 +670,11 @@
       "name": "STAND",
       "type": "directory",
       "repoUrl": "https://github.com/haha197/STAND"
+    },
+    {
+      "name": "Whatnight",
+      "type": "directory",
+      "repoUrl": "https://github.com/haha197/Whatnight"
     }
   ],
   "hayden626": [
@@ -714,12 +744,22 @@
       "repoUrl": "https://github.com/hayden626/stackblitz-starters-lvgcssag"
     },
     {
+      "name": "Toronto-Raptors",
+      "type": "directory",
+      "repoUrl": "https://github.com/hayden626/Toronto-Raptors"
+    },
+    {
       "name": "universe",
       "type": "directory",
       "repoUrl": "https://github.com/hayden626/universe"
     }
   ],
   "Koodybiglookyea": [
+    {
+      "name": "8-ball-pool",
+      "type": "directory",
+      "repoUrl": "https://github.com/Koodybiglookyea/8-ball-pool"
+    },
     {
       "name": "aparmentselling",
       "type": "directory",
@@ -741,6 +781,11 @@
       "repoUrl": "https://github.com/Koodybiglookyea/car"
     },
     {
+      "name": "draw",
+      "type": "directory",
+      "repoUrl": "https://github.com/Koodybiglookyea/draw"
+    },
+    {
       "name": "game2.0",
       "type": "directory",
       "repoUrl": "https://github.com/Koodybiglookyea/game2.0"
@@ -754,6 +799,16 @@
       "name": "KOODY5",
       "type": "directory",
       "repoUrl": "https://github.com/Koodybiglookyea/KOODY5"
+    },
+    {
+      "name": "music-game",
+      "type": "directory",
+      "repoUrl": "https://github.com/Koodybiglookyea/music-game"
+    },
+    {
+      "name": "piano",
+      "type": "directory",
+      "repoUrl": "https://github.com/Koodybiglookyea/piano"
     },
     {
       "name": "stackblitz-starters-dvua41te",
@@ -812,9 +867,19 @@
       "repoUrl": "https://github.com/v1ann/1505jump"
     },
     {
+      "name": "2048",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/2048"
+    },
+    {
       "name": "3.0waterfisheatshit",
       "type": "directory",
       "repoUrl": "https://github.com/v1ann/3.0waterfisheatshit"
+    },
+    {
+      "name": "block-blast",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/block-blast"
     },
     {
       "name": "chatroom",
@@ -842,9 +907,34 @@
       "repoUrl": "https://github.com/v1ann/stackblitz-0519-3.0"
     },
     {
+      "name": "stackblitz-0526",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-0526"
+    },
+    {
       "name": "stackblitz-starters-dhtjyxmq",
       "type": "directory",
       "repoUrl": "https://github.com/v1ann/stackblitz-starters-dhtjyxmq"
+    },
+    {
+      "name": "stackblitz-starters-e2li0529",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-starters-e2li0529"
+    },
+    {
+      "name": "stackblitz-starters-e2li6724",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-starters-e2li6724"
+    },
+    {
+      "name": "stackblitz-starters-gsypszfb",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-starters-gsypszfb"
+    },
+    {
+      "name": "stackblitz-starters-rd7a4qhx",
+      "type": "directory",
+      "repoUrl": "https://github.com/v1ann/stackblitz-starters-rd7a4qhx"
     }
   ]
 }

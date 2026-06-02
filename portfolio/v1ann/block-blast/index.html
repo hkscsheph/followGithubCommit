@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Blast HTML Edition</title>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --grid-bg: #1e1e24;
+            --cell-empty: #2a2a35;
+            --text-color: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #ui-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #score-board {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        #game-container {
+            position: relative;
+            background-color: var(--grid-bg);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(8, 45px);
+            grid-template-rows: repeat(8, 45px);
+            gap: 4px;
+        }
+
+        .cell {
+            background-color: var(--cell-empty);
+            border-radius: 4px;
+            transition: background-color 0.15s ease;
+        }
+
+        /* Block Colors */
+        .color-1 { background-color: #ff3366; } /* Red */
+        .color-2 { background-color: #33ccff; } /* Cyan */
+        .color-3 { background-color: #33ff66; } /* Green */
+        .color-4 { background-color: #ffcc33; } /* Yellow */
+        .color-5 { background-color: #b833ff; } /* Purple */
+        .color-6 { background-color: #ff6633; } /* Orange */
+
+        #pieces-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 380px;
+            height: 120px;
+            margin-top: 30px;
+            background-color: var(--grid-bg);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .draggable-piece {
+            display: grid;
+            gap: 2px;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            transition: transform 0.1s ease;
+        }
+
+        .draggable-piece:active {
+            cursor: grabbing;
+        }
+
+        .piece-cell {
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
+        }
+
+        .piece-cell.empty {
+            background-color: transparent !important;
+        }
+
+        /* Floating clone style during drag */
+        .drag-clone {
+            position: fixed;
+            display: grid;
+            gap: 4px;
+            pointer-events: none;
+            z-index: 1000;
+            transform: scale(1.3) translateY(-40px); /* Scales up slightly and sits above finger/cursor */
+            opacity: 0.9;
+        }
+        
+        .drag-clone .piece-cell {
+            width: 45px; /* Matches grid cell size */
+            height: 45px;
+            border-radius: 4px;
+        }
+
+        .hidden {
+            visibility: hidden;
+            pointer-events: none;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="ui-container">
+        <h1>Block Blast</h1>
+        <div id="score-board">Score: <span id="score">0</span></div>
+    </div>
+
+    <div id="game-container">
+        <div id="grid"></div>
+    </div>
+
+    <div id="pieces-container"></div>
+
+    <script>
+        const GRID_SIZE = 8;
+        let score = 0;
+        let gridMatrix = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
+        
+        // Define shape matrices (1 = filled, 0 = empty)
+        const SHAPES = [
+            { matrix: [[1]], color: 1 }, // 1x1
+            { matrix: [[1, 1]], color: 2 }, // 1x2
+            { matrix: [[1], [1]], color: 2 }, // 2x1
+            { matrix: [[1, 1, 1]], color: 3 }, // 1x3
+            { matrix: [[1], [1], [1]], color: 3 }, // 3x1
+            { matrix: [[1, 1], [1, 1]], color: 4 }, // 2x2 Square
+            { matrix: [[1, 1, 1], [0, 1, 0]], color: 5 }, // T Shape
+            { matrix: [[1, 0], [1, 0], [1, 1]], color: 6 }, // L Shape
+            { matrix: [[1, 1], [0, 1], [0, 1]], color: 6 }  // Inverted L
+        ];
+
+        const gridElement = document.getElementById('grid');
+        const piecesContainer = document.getElementById('pieces-container');
+        const scoreElement = document.getElementById('score');
+
+        // Initialize the board grid
+        function createGrid() {
+            gridElement.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        // Draw current state of the matrix onto the grid UI
+        function updateGridUI() {
+            const cells = gridElement.children;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const index = r * GRID_SIZE + c;
+                    const value = gridMatrix[r][c];
+                    cells[index].className = 'cell'; // reset classes
+                    if (value > 0) {
+                        cells[index].classList.add(`color-${value}`);
+                    }
+                }
+            }
+        }
+
+        // Generate 3 random upcoming pieces
+        function generateNewPieces() {
+            piecesContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const randomShape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+                createPieceUI(randomShape, i);
+            }
+        }
+
+        function createPieceUI(shape, index) {
+            const pieceElement = document.createElement('div');
+            pieceElement.classList.add('draggable-piece');
+            pieceElement.dataset.index = index;
+            pieceElement.dataset.shape = JSON.stringify(shape);
+            
+            const rows = shape.matrix.length;
+            const cols = shape.matrix[0].length;
+            
+            pieceElement.style.gridTemplateRows = `repeat(${rows}, 22px)`;
+            pieceElement.style.gridTemplateColumns = `repeat(${cols}, 22px)`;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('piece-cell');
+                    if (shape.matrix[r][c] === 1) {
+                        cell.classList.add(`color-${shape.color}`);
+                    } else {
+                        cell.classList.add('empty');
+                    }
+                    pieceElement.appendChild(cell);
+                }
+            }
+
+            // Attach Custom Drag Controls (Universal Mouse + Touch Handler)
+            setupDragAndDrop(pieceElement);
+            piecesContainer.appendChild(pieceElement);
+        }
+
+        // Drag and Drop implementation
+        function setupDragAndDrop(piece) {
+            let clone = null;
+            const shapeData = JSON.parse(piece.dataset.shape);
+
+            const onStart = (e) => {
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                // Create a clone that expands to board cell sizes
+                clone = piece.cloneNode(true);
+                clone.classList.add('drag-clone');
+                
+                const rows = shapeData.matrix.length;
+                const cols = shapeData.matrix[0].length;
+                clone.style.gridTemplateRows = `repeat(${rows}, 45px)`;
+                clone.style.gridTemplateColumns = `repeat(${cols}, 45px)`;
+
+                document.body.appendChild(clone);
+                piece.classList.add('hidden');
+
+                moveClone(clientX, clientY);
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchend', onEnd);
+            };
+
+            const onMove = (e) => {
+                if(e.cancelable) e.preventDefault(); // Stop mobile scrolling
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                moveClone(clientX, clientY);
+            };
+
+            const moveClone = (x, y) => {
+                if (!clone) return;
+                // Offset clone to center horizontally and lift above finger vertically
+                clone.style.left = `${x - (shapeData.matrix[0].length * 45) / 2}px`;
+                clone.style.top = `${y - (shapeData.matrix.length * 45) / 2}px`;
+            };
+
+            const onEnd = (e) => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('mouseup', onEnd);
+                document.removeEventListener('touchend', onEnd);
+
+                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+                // Target grid detection based on the top-left section of clone positioning
+                const gridRect = gridElement.getBoundingClientRect();
+                
+                // Read exact layout math offsets used during moveClone
+                const cloneLeft = clientX - (shapeData.matrix[0].length * 45) / 2;
+                const cloneTop = clientY - (shapeData.matrix.length * 45) / 2;
+
+                // Calculate which row/col index the clone aligns with
+                const targetCol = Math.round((cloneLeft - gridRect.left) / 49); 
+                const targetRow = Math.round((cloneTop - gridRect.top) / 49);
+
+                if (canPlaceShape(shapeData.matrix, targetRow, targetCol)) {
+                    placeShape(shapeData.matrix, targetRow, targetCol, shapeData.color);
+                    piece.remove(); // Delete source piece permanently
+                    checkLineClears();
+                    updateGridUI();
+
+                    // Check if round of 3 pieces finished
+                    if (piecesContainer.children.length === 0) {
+                        generateNewPieces();
+                    }
+                    
+                    checkGameOver();
+                } else {
+                    // Snap back if invalid
+                    piece.classList.remove('hidden');
+                }
+
+                if (clone) {
+                    clone.remove();
+                    clone = null;
+                }
+            };
+
+            piece.addEventListener('mousedown', onStart);
+            piece.addEventListener('touchstart', onStart);
+        }
+
+        // Grid Collision Checks
+        function canPlaceShape(matrix, startRow, startCol) {
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (matrix[r][c] === 1) {
+                        const targetRow = startRow + r;
+                        const targetCol = startCol + c;
+
+                        // Out of bounds check
+                        if (targetRow < 0 || targetRow >= GRID_SIZE || targetCol < 0 || targetCol >= GRID_SIZE) {
+                            return false;
+                        }
+                        // Overlap check
+                        if (gridMatrix[targetRow][targetCol] !== 0) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Commit piece coordinates to actual grid tracking
+        function placeShape(matrix, startRow, startCol, colorValue) {
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[0].length; c++) {
+                    if (matrix[r][c] === 1) {
+                        gridMatrix[startRow + r][startCol + c] = colorValue;
+                        score += 10;
+                    }
+                }
+            }
+            scoreElement.innerText = score;
+        }
+
+        // Clear completed full rows and columns simultaneously
+        function checkLineClears() {
+            let rowsToClear = [];
+            let colsToClear = [];
+
+            // Check Rows
+            for (let r = 0; r < GRID_SIZE; r++) {
+                if (gridMatrix[r].every(val => val > 0)) {
+                    rowsToClear.push(r);
+                }
+            }
+
+            // Check Columns
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let colFull = true;
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    if (gridMatrix[r][c] === 0) {
+                        colFull = false;
+                        break;
+                    }
+                }
+                if (colFull) colsToClear.push(c);
+            }
+
+            // Clear them out
+            rowsToClear.forEach(r => {
+                gridMatrix[r] = Array(GRID_SIZE).fill(0);
+            });
+
+            colsToClear.forEach(c => {
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    gridMatrix[r][c] = 0;
+                }
+            });
+
+            // Scoring multipliers for combo blasts
+            const totalCleared = rowsToClear.length + colsToClear.length;
+            if (totalCleared > 0) {
+                score += totalCleared * totalCleared * 100;
+                scoreElement.innerText = score;
+            }
+        }
+
+        // Loop available options to see if any spot remains
+        function checkGameOver() {
+            const availablePieces = piecesContainer.children;
+            for (let piece of availablePieces) {
+                const shapeData = JSON.parse(piece.dataset.shape);
+                
+                // Test if this piece fits *anywhere* on the current matrix board
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        if (canPlaceShape(shapeData.matrix, r, c)) {
+                            return; // A valid move still exists
+                        }
+                    }
+                }
+            }
+
+            // If loops finish with no matches
+            alert(`Game Over! Final Score: ${score}`);
+            resetGame();
+        }
+
+        function resetGame() {
+            gridMatrix = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
+            score = 0;
+            scoreElement.innerText = score;
+            createGrid();
+            updateGridUI();
+            generateNewPieces();
+        }
+
+        // Initialization runtime Trigger
+        createGrid();
+        generateNewPieces();
+    </script>
+</body>
+</html>

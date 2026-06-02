@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAPTORS TERMINAL // 暴龍核心中央數據庫</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+  <div class="center-logo-backdrop">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#ce1141" stroke-width="2" opacity="0.15"/>
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#b4975a" stroke-width="0.5" opacity="0.12"/>
+      <path d="M30 25 C35 15, 65 15, 70 25 C75 35, 65 55, 50 75 C35 55, 25 35, 30 25 Z" fill="#ce1141" opacity="0.06"/>
+      <path d="M42 35 L35 45 M50 32 L50 48 M58 35 L65 45" stroke="#ce1141" stroke-width="3" stroke-linecap="round" opacity="0.12"/>
+    </svg>
+  </div>
+
+  <header class="app-header">
+    <div class="logo-zone">
+      <div class="pulse-dot"></div>
+      <h1>RAPTORS_CENTRAL_DATA_TERMINAL</h1>
+    </div>
+    <div class="system-status">
+      [ SYSTEM: ACTIVE ] // [ DATA_SOURCE: OFFICIAL_ARCHIVE ]
+    </div>
+  </header>
+
+  <main class="dashboard-grid">
+    
+    <section class="panel">
+      <div class="panel-header">
+        <h2>[01] TEAM PROFILE & STAFF // 球隊檔案與執教層</h2>
+      </div>
+      <div class="panel-content">
+        <div class="info-card-dark">
+          <h3>TORONTO RAPTORS // 多倫多暴龍</h3>
+          <p><strong>主場球館:</strong> Scotiabank Arena (航線中心體育館)</p>
+          <p><strong>分區排名:</strong> 東區 Atlantic 賽區 (常規賽第5名)</p>
+          <p><strong>最新戰況:</strong> 2025-26賽季常規賽斬獲46勝36負，成功重返季後賽行列。</p>
+        </div>
+
+        <div class="sub-section">
+          <h3>COACHING & MANAGEMENT // 治理層</h3>
+          <div class="staff-grid">
+            <div class="staff-node">
+              <span class="title">總教練 (Head Coach)</span>
+              <span class="value">Darko Rajaković (達爾科·拉亞科維奇)</span>
+            </div>
+            <div class="staff-node">
+              <span class="title">總經理 (General Manager)</span>
+              <span class="value">Bobby Webster (波比·韋士打)</span>
+            </div>
+            <div class="staff-node">
+              <span class="title">球隊總裁 (President)</span>
+              <span class="value">Masai Ujiri (馬賽·烏傑里)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel center-panel">
+      <div class="panel-header">
+        <h2>[02] OFFICIAL ROSTER & REAL STATS // 現役核心球員數據矩陣</h2>
+      </div>
+      <div class="panel-content">
+        <div class="table-wrapper">
+          <table class="roster-table">
+            <thead>
+              <tr>
+                <th>號碼</th>
+                <th>球員姓名 (Player)</th>
+                <th>位置</th>
+                <th>年齡</th>
+                <th>身高/體重</th>
+                <th>場均得分 (PTS)</th>
+                <th>籃板 (REB)</th>
+                <th>助攻 (AST)</th>
+                <th>畢業大學/出身</th>
+              </tr>
+            </thead>
+            <tbody id="real-roster-data">
+              </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>[03] RECENT TRANSACTIONS & NEWS // 交易日誌與重大新聞</h2>
+      </div>
+      <div class="panel-content">
+        
+        <div class="sub-section">
+          <h3>TRANSACTION CHRONOLOGY // 核心交易與陣容流向</h3>
+          <div class="timeline" id="trade-timeline">
+            </div>
+        </div>
+
+        <div class="sub-section">
+          <h3>OFFICIAL PRESS RELEASES // 賽季重大新聞摘要</h3>
+          <div class="news-list" id="news-archive">
+            </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

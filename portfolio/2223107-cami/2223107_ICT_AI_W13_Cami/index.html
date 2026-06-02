@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>夜空星象儀：創造你的專屬星座</title>
+    <style>
+        /* 基礎樣式與神祕感星空背景 */
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        h1 {
+            margin: 20px 0 10px 0;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        p {
+            margin: 0 0 20px 0;
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        /* 遊戲畫布區域 */
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            background: transparent;
+            border-radius: 8px;
+        }
+
+        /* 控制面板 */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 25px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        input[type="text"] {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #4a5568;
+            padding: 8px 15px;
+            color: #fff;
+            border-radius: 20px;
+            outline: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #63b3ed;
+            box-shadow: 0 0 10px rgba(99, 179, 237, 0.5);
+        }
+
+        button {
+            background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 153, 225, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.clear-btn {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+        }
+
+        button.clear-btn:hover {
+            box-shadow: 0 5px 15px rgba(245, 101, 101, 0.4);
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <h1>星座創造觀星儀</h1>
+    <p>✨ 點擊夜空放置星星，星星之間會自動連線。為你的星座命名並發布吧！ ✨</p>
+
+    <div id="canvas-container">
+        <canvas id="skyCanvas" width="800" height="500"></canvas>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="constellationName" placeholder="輸入你的星座名稱..." maxlength="15">
+        <button id="saveBtn">🌟 發布星座</button>
+        <button id="clearBtn" class="clear-btn">☄️ 清空夜空</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('skyCanvas');
+        const ctx = canvas.getContext('2d');
+        const nameInput = document.getElementById('constellationName');
+        const saveBtn = document.getElementById('saveBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // 儲存玩家點擊的星星座標
+        let stars = [];
+        // 背景隨機裝飾用的背景微星
+        let bgStars = [];
+
+        // 初始化背景微星（讓夜空看起來更逼真）
+        function initBgStars() {
+            bgStars = [];
+            for (let i = 0; i < 100; i++) {
+                bgStars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 1.5,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    speed: Math.random() * 0.02 + 0.005
+                });
+            }
+        }
+
+        // 繪製與更新畫面
+        function draw() {
+            // 清空畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. 繪製背景微星（帶有輕微閃爍效果）
+            bgStars.forEach(bgStar => {
+                bgStar.alpha += bgStar.speed;
+                if (bgStar.alpha > 1 || bgStar.alpha < 0.2) {
+                    bgStar.speed = -bgStar.speed; // 閃爍反轉
+                }
+                ctx.fillStyle = `rgba(255, 255, 255, ${bgStar.alpha})`;
+                ctx.beginPath();
+                ctx.arc(bgStar.x, bgStar.y, bgStar.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. 繪製星座的連線 (依序將點連起來)
+            if (stars.length > 1) {
+                ctx.strokeStyle = 'rgba(147, 197, 253, 0.4)'; // 淡淡的藍光連線
+                ctx.lineWidth = 1.5;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#63b3ed';
+                
+                ctx.beginPath();
+                ctx.moveTo(stars[0].x, stars[0].y);
+                for (let i = 1; i < stars.length; i++) {
+                    ctx.lineTo(stars[i].x, stars[i].y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0; // 重置陰影，避免影響其他繪製
+            }
+
+            // 3. 繪製玩家創造的星星
+            stars.forEach((star, index) => {
+                // 星星本體光暈
+                let gradient = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, star.size * 3);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(0.2, 'rgba(163, 210, 255, 0.8)');
+                gradient.addColorStop(1, 'rgba(163, 210, 255, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 星星核心點
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 如果是第一顆星，加個特別的標記
+                if (index === 0) {
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size * 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+
+            // 循環動畫
+            requestAnimationFrame(draw);
+        }
+
+        // 監聽畫布點擊事件：創造星星
+        canvas.addEventListener('click', (e) => {
+            // 取得點擊相對於畫布的座標
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 隨機賦予星星大小（讓畫面更自然）
+            const size = Math.random() * 2 + 3; // 3 到 5 之間
+
+            // 加入星星陣列
+            stars.push({ x, y, size });
+        });
+
+        // 按鈕功能：清空
+        clearBtn.addEventListener('click', () => {
+            stars = [];
+            nameInput.value = '';
+        });
+
+        // 按鈕功能：發布/儲存星座
+        saveBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            
+            if (stars.length === 0) {
+                alert('🌌 你的夜空中還沒有星星喔！請先點擊畫布創造星星。');
+                return;
+            }
+            if (!name) {
+                alert('✍️ 請為你的美麗星座取個名字吧！');
+                return;
+            }
+
+            // 在畫布上暫時繪製文字，以便一起輸出成圖片
+            // 這裡停止動畫一瞬間來補捉畫面
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 24px "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(name + ' 座', canvas.width / 2, canvas.height - 40);
+
+            // 將畫布轉為圖片下載
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `${name}座_我的專屬星座.png`;
+            link.href = dataURL;
+            link.click();
+
+            alert(`✨ 恭喜！「${name}座」已成功登記在宇宙星譜中，圖片已為您下載！`);
+        });
+
+        // 啟動遊戲
+        initBgStars();
+        draw();
+    </script>
+</body>
+</html>

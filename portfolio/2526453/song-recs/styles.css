@@ -1,0 +1,203 @@
+/* General Minimalist Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f1f8f5; /* Very soft light green */
+  color: #2e4a3f; /* Deep forest green for text */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Title Bar */
+#title-bar {
+  background-color: #d8ebd9; /* Sage light green */
+  padding: 15px 30px;
+  border-bottom: 2px solid #c2dec4;
+}
+
+#title-bar h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* Layout Container */
+.container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar Styling */
+.sidebar {
+  width: 90px;
+  background-color: #e5f2e6;
+  border-right: 2px solid #c2dec4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px 15px;
+  gap: 15px;
+  z-index: 10;
+}
+
+/* Morphing Genre Buttons */
+.genre-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%; /* Start as a circle */
+  border: none;
+  background-color: #a3d1a7;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 14px;
+  transition: width 0.4s ease, border-radius 0.3s ease, background-color 0.3s, transform 0.2s;
+}
+
+/* Button Text: Hidden when circular */
+.genre-btn .text {
+  opacity: 0;
+  color: #1e332a;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: opacity 0.2s ease;
+  margin-left: 10px;
+}
+
+/* Hover State: Morph into pill/rectangle, grow, and show text */
+.genre-btn:hover {
+  width: 170px; /* Expands horizontally */
+  border-radius: 20px; /* Turns into a rounded edge rectangle */
+  background-color: #82be87;
+  transform: scale(1.05); /* Grows slightly bigger */
+}
+
+.genre-btn:hover .text {
+  opacity: 1;
+}
+
+/* Main Content Display Area */
+.content-display {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#welcome-message {
+  text-align: center;
+  color: #709485;
+}
+
+/* Horizontal Scroll Container */
+.songs-slider {
+  display: flex;
+  gap: 60px;
+  overflow-x: auto;
+  padding: 20px 0;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar clean styling */
+.songs-slider::-webkit-scrollbar {
+  height: 8px;
+}
+.songs-slider::-webkit-scrollbar-thumb {
+  background: #c2dec4;
+  border-radius: 4px;
+}
+
+/* Individual Song Card */
+.song-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+/* Grow card on hover */
+.song-card:hover {
+  transform: scale(1.04);
+}
+
+/* Disc & Cover Art Interactive Container */
+.media-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin-bottom: 15px;
+}
+
+/* Album Cover Image */
+.album-cover {
+  width: 150px;
+  height: 150px;
+  border-radius: 6px;
+  object-fit: cover;
+  position: absolute;
+  z-index: 2;
+  background-color: #ddd; /* fallback box */
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.15);
+}
+
+/* Vinyl Record Design */
+.vinyl-disk {
+  width: 146px;
+  height: 146px;
+  background: radial-gradient(circle, #333 4%, #111 4%, #111 30%, #333 31%, #111 40%, #222 50%, #111 60%, #444 70%, #111 100%);
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 10px; /* sits tucked right behind it */
+  z-index: 1;
+  transition: transform 0.4s ease;
+}
+
+/* Slide vinyl out to the right when hovering over the media elements */
+.song-card:hover .vinyl-disk {
+  transform: translateX(65px) rotate(180deg);
+}
+
+/* Song Details Styling */
+.song-info h3 {
+  margin-bottom: 4px;
+  font-size: 1.2rem;
+}
+.song-info .artist {
+  font-weight: bold;
+  color: #557a6b;
+  margin-bottom: 8px;
+}
+.song-info .runtime {
+  font-size: 0.85rem;
+  color: #8fa89e;
+  margin-bottom: 10px;
+}
+.song-info .lyrics {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #4a665a;
+  background: #f7fbf9;
+  padding: 8px;
+  border-left: 3px solid #a3d1a7;
+  border-radius: 4px;
+  max-height: 80px;
+  overflow-y: auto;
+}

@@ -1,0 +1,121 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Survery Form</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=New+Rocker&display=swap" rel="stylesheet">
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <h1 id="title">Application for Judgment</h1>
+    <p id="description">Please fill in the judgment application form <span class="asdfg">carefully</span>, and carefully <span class="asdfg">check that the information filled in is true;</span>
+      <span class="qwerty">Section B of Article 11 of the St. Susej's Law</span>: Filling in false information and unverified information may result in a <span class="qwerty">fine of up to SS$3,500</span> and <span class="qwerty"> six months' imprisonment.</span></p>
+    <div class="air"></div>
+    <h2>Prisoner's information</h2>
+    <form id="survey-form">
+      <div class="line">
+        <div class="fl">
+          <label id="name-label" for="name" class="name-label">Name :
+            <input id="name" placeholder="Full Name" class="name" required>
+          </label>
+          <label id="number-label" for="number" >Age :
+            <input id="number" type="number" min="18" max="95" placeholder="　" class="number" required>
+          </label>
+        </div>
+        <div class="Sec">
+          <div class="flse">
+            Gender:
+            <div class="Gender">
+              <input id="choice1" type="radio" value="1" name="bottom" class="bottom" checked>
+              <label for="choice1" class="bottomL">Male</label>
+            /<input id="choice2" type="radio" value="2" name="bottom" class="bottom" >
+              <label for="choice2" class="bottomL"> Female</label>
+            </div>
+          </div>
+          <div>
+            Mental condition:
+            <select id="sel2" required>
+              <option value="1">Stable</option>
+              <option value="2">Unsable</option>
+              <option value="3">insane</option>
+            </select>
+           </div>
+          <div>
+            Family Status:
+            <select id="sel" required checked>
+              <option value="1">No relatives</option>
+              <option value="2">Marriage</option>
+              <option value="3">Have relative</option>
+              <option value="4">There are distant relatives</option>
+            </select>
+          </div>
+           <label for="address" class="add Secin">
+            Place of Relatives: :
+              <input id="address" class="name">
+           </label>
+          <label for="family_address" class="add Secin">
+            Residence of Relatives: :<input id="family_address" class="name" >
+          </label>
+          <div class="flse">physical features:</div>
+          <textarea></textarea>
+        </div>
+        </div>
+      <label id="email-label">
+Case number：<input id="email" type="email"  placeholder="20XX@0101.17.30" class="email" required>
+      </label>
+      <label id="pl-label" for="pl" class="name-label">Place of Execution : <input id="pl" placeholder="City center execution ground" class="pl" required>
+      </label>
+      <label id="tl-label" for="tl" class="name-label">Scheduled Execution Time : <input id="tl" placeholder="20XX/XX/XX xx:xx" class="tl" required>
+      </label>
+      <div id="sel3">
+        Types of executions:
+        <select id="ll" required>
+          <option value="1">Drug injection</option>
+          <option value="2">Shooting</option>
+          <option value="3">Hanging</option>
+          <option value="4">Beheading</option>
+          <option value="5">Electric chair</option>
+          <option value="6">Gas chamber</option>
+          <option value="7">Inert gas asphyxiation</option>
+          <option value="8">stoning</option>
+          <option value="9">Burning</option>
+          <option value="10">Car-breaking</option>
+          <option value="11">Burial alive</option>
+          <option value="12">Torture</option>
+          <option value="13">Starvation</option>
+          <option value="14">Cross</option>
+          <option value="15">Crushing</option>
+        </select>
+       </div>
+      <div class="la">
+        <label for="checkbox" ><input type="checkbox" value="1" id="checkbox">publicize death</label>
+        <label for="checkbox-2" ><input type="checkbox" value="2" id="checkbox-2">Cremation support allowance</label>
+      </div>
+      <div class="last">
+        OFFENCE：
+        <select id="imageSelector" class="sele">
+          <option value="https://postimage.me/images/2026/01/08/4-removebg-preview.png"  data-preview="thumb2.jpg">Superbia</option>
+          <option value="https://postimage.me/images/2026/01/08/2-removebg-preview.png"  data-preview="thumb3.jpg">Invidia</option>
+          <option value="https://postimage.me/images/2026/01/08/5-removebg-preview.png"  data-preview="thumb5.jpg">Ira</option>
+          <option value="https://postimage.me/images/2026/01/08/6-removebg-preview.png"  data-preview="thumb6.jpg">Acedia</option>
+          <option value="https://postimage.me/images/2026/01/08/7-removebg-preview.png"  data-preview="thumb7.jpg">Avaritia</option>
+          <option value="https://postimage.me/images/2026/01/08/3-removebg-preview.png"  data-preview="thumb4.jpg">Gluttony</option>
+          <option value="https://postimage.me/images/2026/01/08/1-removebg-preview.png"  data-preview="thumb1.jpg">Luxuria</option>
+        </select>
+      </div>
+      <div class="image-container">
+        <div class="bac">
+          <img id="displayedImage" src="https://postimage.me/images/2026/01/08/1-removebg-preview.png" alt="Selected Image">
+        </div>
+      </div>
+      <label id="nameb-label" for="nameb" class="name-label">
+        Judge's Name :<input id="nameb" placeholder="Full Name" class="nameb" required></label>
+      <div class="bbbb">
+        <button id="submit"type="submit">Apply</button>
+      </div>
+    </form>
+    <div class="air"></div>
+  </body>
+</html>

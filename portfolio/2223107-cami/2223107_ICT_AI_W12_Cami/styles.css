@@ -1,0 +1,217 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: #020617; /* 深海黑藍色 */
+  color: #f8fafc;
+  min-height: 100vh;
+  overflow: hidden; /* 鎖死外層捲軸，完全依靠控制台互動 */
+}
+
+/* 🛰 整個雷達大容器 */
+.radar-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 🖥 頂部 HUD 面板 */
+.radar-hud-header {
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), transparent);
+  padding: 25px;
+  text-align: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.radar-hud-header h1 {
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: #0ea5e9;
+  text-shadow: 0 0 15px rgba(14, 165, 233, 0.6);
+}
+
+.radar-hud-header p {
+  font-size: 0.75rem;
+  color: #64748b;
+  letter-spacing: 2px;
+  margin-top: 5px;
+}
+
+/* 🗺 地圖外包裝（支援手機端左右滑動查看） */
+.map-wrapper {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: auto; /* 允許在大圖情況下拖動或滑動 */
+  background: radial-gradient(circle at center, #0b1528 0%, #020617 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🗺 科幻風高科技底圖（使用高品質極簡線條世界地圖作為背景） */
+.world-map {
+  width: 1200px; /* 固定寬度確保打點位置精確 */
+  height: 675px;
+  position: relative;
+  background-image: url('https://pub-c5e31b5cdafb419a86a69d5d341eceaa.r2.dev/world-map-dark.svg'); /* 💡 使用乾淨的全球線條底圖 */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: 1px solid rgba(14, 165, 233, 0.1);
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+/* 地圖上的科技感經緯度網格線 */
+.map-grid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-image: 
+      linear-gradient(rgba(14, 165, 233, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14, 165, 233, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* 📍 核心特效：雷達擴散光圈定位點 */
+.radar-pin {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background-color: #0ea5e9;
+  border-radius: 50%;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  box-shadow: 0 0 10px #0ea5e9, 0 0 20px #0ea5e9;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+/* 定位點雷達波紋動畫 */
+.radar-pin::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: -18px;
+  width: 50px;
+  height: 50px;
+  border: 1px solid #0ea5e9;
+  border-radius: 50%;
+  animation: radarRipple 2s infinite linear;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+@keyframes radarRipple {
+  0% { transform: scale(0.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* 滑鼠移到點上的高亮回饋 */
+.radar-pin:hover, .radar-pin.active {
+  background-color: #22c55e; /* 鎖定時變成綠色 */
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e;
+}
+
+.radar-pin:hover::before, .radar-pin.active::before {
+  border-color: #22c55e;
+}
+
+/* 🗂 特效 3：Cyberpunk 懸浮 HUD 數據圖鑑卡片 */
+.hud-card {
+  position: fixed; /* 固定在右下角，像真控制台螢幕一樣 */
+  bottom: 30px;
+  right: 30px;
+  width: 340px;
+  background: rgba(11, 19, 43, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none; /* 防止擋住地圖 */
+}
+
+/* 當啟用時顯示 */
+.hud-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 卡片內排版 */
+.hud-photo {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.hud-title-sci {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0ea5e9;
+  margin-bottom: 2px;
+}
+
+.hud-title-com {
+  font-size: 1rem;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.hud-status {
+  display: inline-block;
+  background: rgba(220, 38, 38, 0.2);
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+/* 如果是滅絕或彩蛋調整標籤顏色 */
+.hud-status.extinct { background: rgba(100, 116, 139, 0.2); color: #94a3b8; border-color: #64748b; }
+.hud-status.safe { background: rgba(34, 197, 94, 0.2); color: #4ade80; border-color: #22c55e; }
+
+.hud-desc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+/* 📱 手機板完美適應 */
+@media (max-width: 768px) {
+  .hud-card {
+      bottom: 15px;
+      left: 15px;
+      right: 15px;
+      width: calc(100% - 30px);
+  }
+  .radar-hud-header h1 { font-size: 1.3rem; }
+}

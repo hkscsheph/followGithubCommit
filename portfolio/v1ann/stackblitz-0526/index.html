@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Dodge - Hard Arcade Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #080810;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background: radial-gradient(circle, #101026 0%, #050510 100%);
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 20px;
+            pointer-events: none;
+            text-shadow: 0 0 5px #000;
+        }
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 15, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+        h1 {
+            color: #ff3366;
+            margin-bottom: 10px;
+            font-size: 40px;
+            text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+        }
+        button {
+            background: transparent;
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+            padding: 10px 20px;
+            font-size: 18px;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+        }
+        button:hover {
+            background: #00ffcc;
+            color: #050510;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.6);
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+<div id="gameContainer">
+    <div id="ui">Score: <span id="scoreVal">0</span> | High: <span id="highVal">0</span></div>
+    <div id="gameOverScreen">
+        <h1 id="overTitle">GAME OVER</h1>
+        <p style="margin-bottom: 20px; color: #aaa;">Your Score: <span id="finalScore">0</span></p>
+        <button id="restartBtn">TRY AGAIN</button>
+    </div>
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreVal = document.getElementById('scoreVal');
+const highVal = document.getElementById('highVal');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const finalScore = document.getElementById('finalScore');
+const restartBtn = document.getElementById('restartBtn');
+
+// Game State
+let score = 0;
+let highScore = localStorage.getItem('orbit_high') || 0;
+highVal.innerText = highScore;
+let isGameOver = false;
+let gameTicks = 0;
+
+// Center/Gravity Well
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+
+// Player Properties
+const player = {
+    angle: 0,
+    baseRadius: 80,
+    maxRadius: 220,
+    currentRadius: 80,
+    speed: 0.05, // Fast angular speed
+    size: 8,
+    color: '#00ffcc',
+    isExpanding: false
+};
+
+// Obstacles and Collectibles
+let obstacles = [];
+let collectibles = [];
+let difficultyMultiplier = 1;
+
+// Input Handlers
+window.addEventListener('keydown', (e) => { if(e.code === 'Space') player.isExpanding = true; });
+window.addEventListener('keyup', (e) => { if(e.code === 'Space') player.isExpanding = false; });
+canvas.addEventListener('mousedown', () => player.isExpanding = true);
+canvas.addEventListener('mouseup', () => player.isExpanding = false);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); player.isExpanding = true; });
+canvas.addEventListener('touchend', () => player.isExpanding = false);
+
+restartBtn.addEventListener('click', resetGame);
+
+function spawnObstacle() {
+    // Spawns threats from the outside moving inward, or inside moving outward
+    const side = Math.random() > 0.5;
+    let x, y, vx, vy;
+    const speed = (Math.random() * 2 + 2) * difficultyMultiplier;
+
+    if (side) {
+        // Spawn from edges walking through center
+        const angle = Math.random() * Math.PI * 2;
+        x = centerX + Math.cos(angle) * 400;
+        y = centerY + Math.sin(angle) * 400;
+        const targetAngle = angle + Math.PI + (Math.random() * 0.5 - 0.25);
+        vx = Math.cos(targetAngle) * speed;
+        vy = Math.sin(targetAngle) * speed;
+    } else {
+        // Spawn from center bursting out
+        x = centerX;
+        y = centerY;
+        const angle = Math.random() * Math.PI * 2;
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+    }
+
+    obstacles.push({ x, y, vx, vy, size: Math.random() * 6 + 6, color: '#ff3366' });
+}
+
+function spawnCollectible() {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = player.baseRadius + Math.random() * (player.maxRadius - player.baseRadius);
+    collectibles.push({
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius,
+        size: 6,
+        color: '#ffcc00'
+    });
+}
+
+function checkCollision(x1, y1, r1, x2, y2, r2) {
+    const dist = Math.hypot(x1 - x2, y1 - y2);
+    return dist < r1 + r2;
+}
+
+function resetGame() {
+    score = 0;
+    difficultyMultiplier = 1;
+    obstacles = [];
+    collectibles = [];
+    gameTicks = 0;
+    player.currentRadius = player.baseRadius;
+    player.angle = 0;
+    isGameOver = false;
+    scoreVal.innerText = score;
+    gameOverScreen.style.display = 'none';
+    animate();
+}
+
+function update() {
+    if (isGameOver) return;
+
+    gameTicks++;
+    // Ramp up difficulty gradually
+    difficultyMultiplier = 1 + (gameTicks / 1000);
+
+    // Orbit Mechanics
+    if (player.isExpanding) {
+        player.currentRadius += 7; // Quick expansion
+        if (player.currentRadius > player.maxRadius) player.currentRadius = player.maxRadius;
+    } else {
+        player.currentRadius -= 5; // Passive contraction
+        if (player.currentRadius < player.baseRadius) player.currentRadius = player.baseRadius;
+    }
+
+    player.angle += player.speed * (1 + (difficultyMultiplier * 0.05));
+    
+    // Player Position
+    player.x = centerX + Math.cos(player.angle) * player.currentRadius;
+    player.y = centerY + Math.sin(player.angle) * player.currentRadius;
+
+    // Spawn Logic
+    if (gameTicks % Math.max(10, Math.floor(25 - difficultyMultiplier * 2)) === 0) {
+        spawnObstacle();
+    }
+    if (gameTicks % 80 === 0 && collectibles.length < 3) {
+        spawnCollectible();
+    }
+
+    // Update Obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const o = obstacles[i];
+        o.x += o.vx;
+        o.y += o.vy;
+
+        // Collision with player
+        if (checkCollision(player.x, player.y, player.size, o.x, o.y, o.size)) {
+            endGame();
+        }
+
+        // Clean up out of bounds
+        if (Math.hypot(o.x - centerX, o.y - centerY) > 500) {
+            obstacles.splice(i, 1);
+        }
+    }
+
+    // Update Collectibles
+    for (let i = collectibles.length - 1; i >= 0; i--) {
+        const c = collectibles[i];
+        if (checkCollision(player.x, player.y, player.size, c.x, c.y, c.size)) {
+            score += 10;
+            scoreVal.innerText = score;
+            collectibles.splice(i, 1);
+        }
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Orbit Zones
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(centerX, centerY, player.baseRadius, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(centerX, centerY, player.maxRadius, 0, Math.PI * 2); ctx.stroke();
+
+    // Central Singularity
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#0077ff';
+    ctx.fillStyle = '#002244';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0; // Reset bloom
+
+    // Draw Collectibles
+    collectibles.forEach(c => {
+        ctx.fillStyle = c.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = c.color;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+
+    // Draw Obstacles
+    obstacles.forEach(o => {
+        ctx.fillStyle = o.color;
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, o.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // Draw Player
+    ctx.fillStyle = player.color;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = player.color;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function endGame() {
+    isGameOver = true;
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('orbit_high', highScore);
+        highVal.innerText = highScore;
+    }
+    finalScore.innerText = score;
+    gameOverScreen.style.display = 'flex';
+}
+
+function animate() {
+    update();
+    draw();
+    if (!isGameOver) {
+        requestAnimationFrame(animate);
+    }
+}
+
+// Start Game
+animate();
+</script>
+
+</body>
+</html>

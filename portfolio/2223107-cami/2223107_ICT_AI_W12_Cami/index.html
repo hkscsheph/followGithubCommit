@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球深海雷達航線圖 - AI 自創版</title>
+    <link rel="stylesheet" href="styles.css">
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div class="radar-container">
+        <header class="radar-hud-header">
+            <h1>GLOBAL ABYSSAL RADAR</h1>
+            <p>全球魔鬼魚生態生態定位動態系統 // ACTIVE TRACKING</p>
+        </header>
+
+        <div class="map-wrapper">
+            <div class="world-map">
+                <div class="map-grid"></div>
+
+                <div class="radar-pin" style="top: 55%; left: 15%;" data-target="Mobula_birostris"></div>
+                <div class="radar-pin" style="top: 62%; left: 28%;" data-target="Mobula_alfredi"></div>
+                <div class="radar-pin" style="top: 45%; left: 35%;" data-target="Mobula_yarae"></div>
+                <div class="radar-pin" style="top: 35%; left: 78%;" data-target="Mobula_japanica"></div>
+                <div class="radar-pin" style="top: 72%; left: 82%;" data-target="Rhinoptera_neglecta"></div>
+                <div class="radar-pin" style="top: 58%; left: 65%;" data-target="Mobula_kuhlii"></div>
+                <div class="radar-pin" style="top: 52%; left: 50%;" data-target="Mobula_thurstoni"></div>
+                <div class="radar-pin" style="top: 38%; left: 48%;" data-target="Mobula_mobular"></div>
+                <div class="radar-pin" style="top: 68%; left: 22%;" data-target="Mobula_tarapacana"></div>
+                <div class="radar-pin" style="top: 48%; left: 72%;" data-target="Mobula_eregoodootenkee"></div>
+                <div class="radar-pin" style="top: 60%; left: 80%;" data-target="Taeniura_lymma"></div>
+                <div class="radar-pin" style="top: 40%; left: 46%;" data-target="Dasyatis_pastinaca"></div>
+                <div class="radar-pin" style="top: 52%; left: 76%;" data-target="Urogymnus_polylepis"></div>
+                <div class="radar-pin" style="top: 42%; left: 44%;" data-target="Aetomylaeus_bovinus"></div>
+                <div class="radar-pin" style="top: 50%; left: 74%;" data-target="Aetomylaeus_nichofii"></div>
+                <div class="radar-pin" style="top: 36%; left: 82%;" data-target="Myliobatis_tobijei"></div>
+                <div class="radar-pin" style="top: 40%; left: 18%;" data-target="Myliobatis_californica"></div>
+                <div class="radar-pin" style="top: 42%; left: 30%;" data-target="Rhinoptera_bonasus"></div>
+                <div class="radar-pin" style="top: 35%; left: 24%;" data-target="Astero_trygon"></div>
+                <div class="radar-pin" style="top: 85%; left: 5%;" data-target="Rick_roll"></div>
+            </div>
+        </div>
+
+        <div id="hud-card" class="hud-card">
+            </div>
+    </div>
+
+    <div id="biological-database" style="display: none;">
+        <div id="Mobula_birostris">
+            <span class="sci-name">Mobula birostris</span>
+            <span class="com-name">雙吻前口蝠鱝</span>
+            <span class="img-url">https://storage.googleapis.com/stateless-34-84-11-249/2020/05/874396ae-1024px-giant_manta_manta_birostris_6129781991.jpg</span>
+            <span class="status">瀕臨絕種</span>
+            <span class="desc">全球體型最大的魟魚，翼展可達 7–9 公尺。背部呈深黑色肩部具有明顯「T」字型白色斑塊，屬於大洋性物種常出現在遠洋或深海。以浮游生物與磷蝦為主食。</span>
+        </div>
+        <div id="Mobula_alfredi">
+            <span class="sci-name">Mobula alfredi</span>
+            <span class="com-name">阿氏前口蝠鱝</span>
+            <span class="img-url">https://pic4.zhimg.com/v2-52618cc54fb762efd00d47a524125383_1440w.jpg</span>
+            <span class="status">瀕臨絕種</span>
+            <span class="desc">體型較小，翼展約 4–5 公尺。肩部白斑呈「Y」形或雙角三角形，主要棲息於沿海與珊瑚礁區。對固定棲地具有高度忠誠度，常進行清潔共生行為。</span>
+        </div>
+        <div id="Mobula_yarae">
+            <span class="sci-name">Mobula yarae 💙</span>
+            <span class="com-name">大西洋蝠鱝</span>
+            <span class="img-url">https://cdn.divessi.com/cached/wildlife_atlantic_manta_Shutterstock-Lewis_Burnett.jpg/1200.jpg</span>
+            <span class="status">未評估/暫時瀕危</span>
+            <span class="desc">是科學界於2025年夏季正式確認並命名的新種魔鬼魚！背部肩帶為「V」字型斑塊，分布於大西洋熱帶與亞熱帶海域。口鼻部顏色較淺。</span>
+        </div>
+        <div id="Mobula_japanica">
+            <span class="sci-name">Mobula japanica 🩵</span>
+            <span class="com-name">日本蝠鱝</span>
+            <span class="img-url">https://churaumi.okinawa/userfiles/fish_images/itomaki.JPG</span>
+            <span class="status">瀕危</span>
+            <span class="desc">屬於「魔鬼鰩」類體型較小。背部呈暗褐色或黑色，常見於臺灣東部及亞洲近海。尾部具有帶毒刺！會躍出水面並進行長距離洄游。</span>
+        </div>
+        <div id="Rhinoptera_neglecta">
+            <span class="sci-name">Rhinoptera neglecta</span>
+            <span class="com-name">澳洲牛鼻鱝</span>
+            <span class="img-url">https://media.oceanpark.com.hk/files/s3fs-public/Cownose%20Ray_1.jpg</span>
+            <span class="status">數據缺乏</span>
+            <span class="desc">頭部突出呈牛鼻狀。體盤較小尾巴細長，多棲息於近海與河口水域。喜歡群體活動，主要以貝類與甲殼類為食。</span>
+        </div>
+        <div id="Mobula_kuhlii">
+            <span class="sci-name">Mobula kuhlii</span>
+            <span class="com-name">短吻前口蝠鱝</span>
+            <span class="img-url">https://cdn.divessi.com/cached/wildlife_shortfin_devil_ray_Shutterstock-Charlie_squier.jpg/1200.jpg</span>
+            <span class="status">瀕危</span>
+            <span class="desc">體型中小型外觀較為細長。頭鰭較短吻部不明顯突出，廣泛分布於印度洋與西太平洋。常成群活動，以浮游生物為主要食物。</span>
+        </div>
+        <div id="Mobula_thurstoni">
+            <span class="sci-name">Mobula thurstoni</span>
+            <span class="com-name">細尾前口蝠鱝</span>
+            <span class="img-url">https://upload.wikimedia.org/wikipedia/commons/3/30/Mobula_thurstoni01.png</span>
+            <span class="status">瀕危</span>
+            <span class="desc">體型較小尾巴細長。背部呈深色腹部較淺，常見於熱帶與亞熱帶海域。喜歡在開放海域活動，具跳躍出水的行為。</span>
+        </div>
+        <div id="Mobula_mobular">
+            <span class="sci-name">Mobula mobular</span>
+            <span class="com-name">長角魔鬼鰩</span>
+            <span class="img-url">https://whalesanddolphins.tethys.org/wp-content/uploads/2020/05/Mobula-mobular-M.Bottaro-Tethys-2.jpg</span>
+            <span class="status">極度瀕危</span>
+            <span class="desc">頭鰭角狀鰭較長且明顯。體型較大外形類似蝠鱝，主要分布於地中海與東大西洋。以浮游生物與小魚為食，目前生態極度瀕危。</span>
+        </div>
+        <div id="Mobula_tarapacana">
+            <span class="sci-name">Mobula tarapacana</span>
+            <span class="com-name">智利魔鬼鰩</span>
+            <span class="img-url">https://ik.imagekit.io/diving/uploadfile/2017/1105/20171105030523858.jpg</span>
+            <span class="status">極危</span>
+            <span class="desc">體型中等胸鰭寬大。具有特殊的頭部結構，分布於全球熱帶與溫帶海域。能進行深海潛水（可達數百公尺），洄游範圍極廣。</span>
+        </div>
+        <div id="Mobula_eregoodootenkee">
+            <span class="sci-name">Mobula eregoodootenkee</span>
+            <span class="com-name">小型魔鬼鰩</span>
+            <span class="img-url">https://inaturalist-open-data.s3.amazonaws.com/photos/92891243/medium.jpg</span>
+            <span class="status">瀕危</span>
+            <span class="desc">體型較小常見於沿岸水域。外觀與其他魔鬼鰩相似但較精緻，分布於印度洋與西太平洋。常群游活動，主要攝食浮游動物。</span>
+        </div>
+        <div id="Taeniura_lymma">
+            <span class="sci-name">Taeniura lymma</span>
+            <span class="com-name">藍點魟</span>
+            <span class="img-url">https://picturefishai.com/wiki-image/1080/152497409501429761.jpeg</span>
+            <span class="status">近危</span>
+            <span class="desc">身上有明顯亮藍色斑點。常見於珊瑚礁附近，體型屬於中小型。尾部具有強烈毒刺，夜間活動與覓食行為較多。</span>
+        </div>
+        <div id="Dasyatis_pastinaca">
+            <span class="sci-name">Dasyatis pastinaca</span>
+            <span class="com-name">藍紋魟</span>
+            <span class="img-url">https://www.shutterstock.com/image-photo/common-stingray-dasyatis-pastinaca-cyprus-600nw-2716793807.jpg</span>
+            <span class="status">易危</span>
+            <span class="desc">身體主要呈黃褐色。分布於歐洲沿岸，體盤非常扁平。具有毒尾刺，多潛伏棲息於沙底或泥質海底。</span>
+        </div>
+        <div id="Urogymnus_polylepis">
+            <span class="sci-name">Urogymnus polylepis</span>
+            <span class="com-name">查菲窄尾魟</span>
+            <span class="img-url">https://st2.depositphotos.com/1249761/7658/i/450/depositphotos_76585901-stock-photo-stingray-swimming.jpg</span>
+            <span class="status">瀕危</span>
+            <span class="desc">目前已知體型最大的有毒淡水魚類！主要分布於東南亞大河流域。體型非常巨大，可重達數百公斤，以底棲無脊椎動物為食。</span>
+        </div>
+        <div id="Aetomylaeus_bovinus">
+            <span class="sci-name">Aetomylaeus bovinus</span>
+            <span class="com-name">圓翅無刺鱝</span>
+            <span class="img-url">https://www.biolib.cz/IMG/GAL/BIG/324561.jpg</span>
+            <span class="status">瀕危</span>
+            <span class="desc">體盤寬圓，外型流暢。主要分布於東大西洋與地中海，身體顏色偏向褐色。喜歡在近海底層活動，主要以貝類和甲殼類為食。</span>
+        </div>
+        <div id="Aetomylaeus_nichofii">
+            <span class="sci-name">Aetomylaeus nichofii</span>
+            <span class="com-name">聶氏無刺鱝</span>
+            <span class="img-url">https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Dorsal_view_of_banded_eagle_ray._Taken_by_Hamid_Badar_Osmany._Retrieved_from_Fish_Base.png/250px-Dorsal_view_of_banded_eagle_ray._Taken_by_Hamid_Badar_Osmany._Retrieved_from_Fish_Base.png</span>
+            <span class="status">易危</span>
+            <span class="desc">體型較為大型。主要分布於亞洲近海海域，背部具有深色的條紋與花紋。常在沿岸淺水活動，會進行季節性的長距離移動。</span>
+        </div>
+        <div id="Myliobatis_tobijei">
+            <span class="sci-name">Myliobatis tobijei</span>
+            <span class="com-name">鳶鱝</span>
+            <span class="img-url">https://www.sharksandrays.com/wp-content/uploads/2024/05/Japanese-Eagle-Ray-006.jpg</span>
+            <span class="status">易危</span>
+            <span class="desc">體型中等，外形呈現非常標準的扁平菱形。廣泛分布於西太平洋。常在近海及沙泥底質海域覓食，以強大的齒板咬碎貝類。</span>
+        </div>
+        <div id="Myliobatis_californica">
+            <span class="sci-name">Myliobatis californica</span>
+            <span class="com-name">雲斑鱝</span>
+            <span class="img-url">https://www.biolib.cz/IMG/GAL/BIG/490264.jpg</span>
+            <span class="status">無危</span>
+            <span class="desc">體表常帶有斑駁的雲狀花紋。主要分布於東太平洋，體盤寬大。常在沿岸海域及海草床出現，能以強壯牙板輕易咬碎貝殼與螃蟹。</span>
+        </div>
+        <div id="Rhinoptera_bonasus">
+            <span class="sci-name">Rhinoptera bonasus</span>
+            <span class="com-name">小齒牛鼻鱝</span>
+            <span class="img-url">https://thumbs.dreamstime.com/b/rhinoptera-bonasus-131578619.jpg</span>
+            <span class="status">易危</span>
+            <span class="desc">主要分布於大西洋兩岸。體型中等，頭部前緣凹陷酷似牛鼻。具有高度社會性，會成百上千隻成群進行長距離的集體遷移。</span>
+        </div>
+        <div id="Astero_trygon">
+            <span class="sci-name">Asterotrygon</span>
+            <span class="com-name">星魟屬</span>
+            <span class="img-url">https://upload.wikimedia.org/wikipedia/commons/d/d2/Asterotrygon_maloneyi.jpg</span>
+            <span class="status">已滅絕</span>
+            <span class="desc">已滅絕的古代鱝類！屬於燕魟目，其珍貴的完整化石主要出土於北美洲的始新世地層。是研究現代魟魚演化史的重要古生物代表。</span>
+        </div>
+        <div id="Rick_roll">
+            <span class="sci-name">Rickroll</span>
+            <span class="com-name">神秘深海彩蛋</span>
+            <span class="img-url">https://i.pinimg.com/originals/03/13/9b/03139b21f03f65b9efd259db21276600.gif</span>
+            <span class="status">永不放棄</span>
+            <span class="desc">Never gonna give you up, Never gonna let you down. 你成功解鎖了深海最深處的終極迷因魔鬼魚！</span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced HTML5 Rhythm Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 162, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        canvas {
+            background-color: #111116;
+            display: block;
+            cursor: crosshair;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+        .hud-text {
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        #score-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 32px;
+            font-family: monospace;
+        }
+        #combo-display {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 48px;
+            font-style: italic;
+            color: #ffcc00;
+        }
+        #health-bar-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            height: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        #health-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff4081, #00e5ff);
+            transition: width 0.1s linear;
+            border-radius: 6px;
+        }
+        #start-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            text-align: center;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+    </style>
+  <script src="/portfolio-auth-check.js"></script>
+  </head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="960" height="640"></canvas>
+        <div id="ui-layer">
+            <div id="health-bar-container">
+                <div id="health-bar"></div>
+            </div>
+            <div id="score-display" class="hud-text">00000000</div>
+            <div id="combo-display" class="hud-text">0x</div>
+            <div id="start-prompt">Click Anywhere to Start<br><span style="font-size:14px; color:#aaa;">Use Mouse to Aim. Click or press Z / X to hit!</span></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI Elements
+        const scoreDisplay = document.getElementById('score-display');
+        const comboDisplay = document.getElementById('combo-display');
+        const healthBar = document.getElementById('health-bar');
+        const startPrompt = document.getElementById('start-prompt');
+
+        // Game State Variables
+        let score = 0;
+        let combo = 0;
+        let health = 100;
+        let targets = [];
+        let hitEffects = [];
+        let lastSpawn = 0;
+        let gameActive = false;
+        
+        // Configuration Constants
+        const spawnInterval = 800; 
+        const circleRadius = 35;
+        const baseApproachScale = 3.5;
+        const shrinkSpeed = 0.035;
+        const maxHealth = 100;
+        const passiveDrain = 0.08; // Passive health drain per frame
+
+        // Mouse Position Tracker
+        const mouse = { x: 0, y: 0 };
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+
+        // Web Audio API Setup (Synthesizes hitsounds dynamically)
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playHitSound(pitch = 600, type = 'sine', duration = 0.08) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // Hit Text Effects Class (300, 100, 50, Miss)
+        class HitEffect {
+            constructor(x, y, text, color) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.color = color;
+                this.alpha = 1.0;
+                this.scale = 0.8;
+            }
+            update() {
+                this.alpha -= 0.03;
+                this.scale += 0.02;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.font = `bold ${24 * this.scale}px Arial`;
+                ctx.fillStyle = this.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = 'black';
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.restore();
+            }
+        }
+
+        // Hit Circle Logic
+        class HitCircle {
+            constructor(x, y, number) {
+                this.x = x;
+                this.y = y;
+                this.number = number;
+                this.approachScale = baseApproachScale;
+                this.isDead = false;
+            }
+
+            update() {
+                this.approachScale -= shrinkSpeed;
+                if (this.approachScale <= 1.0) {
+                    this.isDead = true;
+                    handleMiss(this.x, this.y);
+                }
+            }
+
+            draw() {
+                const alpha = Math.min(1, (baseApproachScale - this.approachScale) * 2);
+                ctx.save();
+                ctx.globalAlpha = alpha;
+
+                // 1. Approach Circle
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, circleRadius * this.approachScale, 0, Math.PI * 2);
+                ctx.strokeStyle = '#00e5ff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // 2. Main Hit Circle Outer Border
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, circleRadius, 0, Math.PI * 2);
+                ctx.fillStyle = '#1e1e24';
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // 3. Inner Colored Core
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, circleRadius - 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff4081';
+                ctx.fill();
+
+                // 4. Combo Number inside Circle
+                ctx.font = 'bold 20px Arial';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.number, this.x, this.y);
+
+                ctx.restore();
+            }
+
+            checkHit() {
+                const dist = Math.hypot(mouse.x - this.x, mouse.y - this.y);
+                if (dist <= circleRadius) {
+                    this.isDead = true;
+                    const accuracy = Math.abs(this.approachScale - 1.0);
+                    
+                    if (accuracy < 0.15) {
+                        processHit(300, '#00ffcc', this.x, this.y);
+                    } else if (accuracy < 0.4) {
+                        processHit(100, '#33ccff', this.x, this.y);
+                    } else {
+                        processHit(50, '#ffcc00', this.x, this.y);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        function spawnCircle() {
+            const padding = circleRadius * 2;
+            const x = Math.random() * (canvas.width - padding * 2) + padding;
+            const y = Math.random() * (canvas.height - padding * 2) + padding;
+            const targetNumber = (combo % 4) + 1; // Loops numbers 1-4
+            targets.push(new HitCircle(x, y, targetNumber));
+        }
+
+        function processHit(points, color, x, y) {
+            combo++;
+            score += points * combo;
+            health = Math.min(maxHealth, health + (points / 30));
+            hitEffects.push(new HitEffect(x, y, points, color));
+            playHitSound(600 + (points), 'sine', 0.05);
+            updateUI();
+        }
+
+        function handleMiss(x, y) {
+            combo = 0;
+            health -= 15;
+            hitEffects.push(new HitEffect(x, y, 'MISS', '#ff0033'));
+            playHitSound(150, 'sawtooth', 0.15); // Harsh buzz sound for miss
+            updateUI();
+        }
+
+        function updateUI() {
+            scoreDisplay.innerText = String(score).padStart(8, '0');
+            comboDisplay.innerText = combo + 'x';
+        }
+
+        // Action Trigger (Handles Mouse and Keyboard Input)
+        function triggerAction() {
+            if (!gameActive) return;
+            // Check oldest target first (FIFO)
+            for (let i = 0; i < targets.length; i++) {
+                if (targets[i].checkHit()) {
+                    break; 
+                }
+            }
+        }
+
+        // Listeners for Inputs
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'z' || e.key.toLowerCase() === 'x') {
+                triggerAction();
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!gameActive) {
+                initAudio();
+                gameActive = true;
+                startPrompt.style.display = 'none';
+                health = 100;
+                score = 0;
+                combo = 0;
+                targets = [];
+                hitEffects = [];
+                updateUI();
+            } else {
+                triggerAction();
+            }
+        });
+
+        // Core Engine Game Loop
+        function gameLoop(timestamp) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameActive) {
+                // 1. Passive Health Drain
+                health -= passiveDrain;
+                healthBar.style.width = Math.max(0, health) + '%';
+                
+                if (health <= 0) {
+                    gameActive = false;
+                    startPrompt.style.display = 'block';
+                    startPrompt.innerHTML = `Game Over!<br>Score: ${score}<br><span style="font-size:14px; color:#aaa;">Click to restart</span>`;
+                }
+
+                // 2. Spawn Handler
+                if (timestamp - lastSpawn > spawnInterval) {
+                    spawnCircle();
+                    lastSpawn = timestamp;
+                }
+            }
+
+            // 3. Update & Draw hit circles
+            for (let i = targets.length - 1; i >= 0; i--) {
+                if (gameActive) targets[i].update();
+                
+                if (targets[i].isDead) {
+                    targets.splice(i, 1);
+                } else {
+                    targets[i].draw();
+                }
+            }
+
+            // 4. Update & Draw Floating Hit Scores
+            for (let i = hitEffects.length - 1; i >= 0; i--) {
+                hitEffects[i].update();
+                hitEffects[i].draw();
+                if (hitEffects[i].alpha <= 0) {
+                    hitEffects.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Run Engine
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

@@ -4,6 +4,8 @@ git submodule add https://github.com/2223179/funny-gamee.git portfolio/2223179/f
 git submodule add https://github.com/2223179/funny-game.git portfolio/2223179/funny-game
 git submodule add https://github.com/2223179/photo2pdf.git portfolio/2223179/photo2pdf
 git submodule add https://github.com/2223179/chatroom.git portfolio/2223179/chatroom
+git submodule add https://github.com/2223107-cami/2223107_ICT_AI_W13_Cami.git portfolio/2223107-cami/2223107_ICT_AI_W13_Cami
+git submodule add https://github.com/2223107-cami/2223107_ICT_AI_W12_Cami.git portfolio/2223107-cami/2223107_ICT_AI_W12_Cami
 git submodule add https://github.com/2223107-cami/2223107_ICT_AI_W10_Cami.git portfolio/2223107-cami/2223107_ICT_AI_W10_Cami
 git submodule add https://github.com/2223107-cami/2223107_ICT_AI_W8_2.0_Cami.git portfolio/2223107-cami/2223107_ICT_AI_W8_2.0_Cami
 git submodule add https://github.com/2223107-cami/2223107_ICT_AI_W9_Cami.git portfolio/2223107-cami/2223107_ICT_AI_W9_Cami
@@ -16,6 +18,10 @@ git submodule add https://github.com/2223107-cami/ICT_AI2.0_Cami.git portfolio/2
 git submodule add https://github.com/2223107-cami/ICT_AI_W3_Cami.git portfolio/2223107-cami/ICT_AI_W3_Cami
 git submodule add https://github.com/2223107-cami/ICT_AI_W2_Cami.git portfolio/2223107-cami/ICT_AI_W2_Cami
 git submodule add https://github.com/2223107-cami/ICT_AI_W1_Cami.git portfolio/2223107-cami/ICT_AI_W1_Cami
+git submodule add https://github.com/Koodybiglookyea/draw.git portfolio/Koodybiglookyea/draw
+git submodule add https://github.com/Koodybiglookyea/piano.git portfolio/Koodybiglookyea/piano
+git submodule add https://github.com/Koodybiglookyea/music-game.git portfolio/Koodybiglookyea/music-game
+git submodule add https://github.com/Koodybiglookyea/8-ball-pool.git portfolio/Koodybiglookyea/8-ball-pool
 git submodule add https://github.com/Koodybiglookyea/car.git portfolio/Koodybiglookyea/car
 git submodule add https://github.com/Koodybiglookyea/UFCfightersalary.git portfolio/Koodybiglookyea/UFCfightersalary
 git submodule add https://github.com/Koodybiglookyea/aparmentselling.git portfolio/Koodybiglookyea/aparmentselling
@@ -26,10 +32,12 @@ git submodule add https://github.com/Koodybiglookyea/koody1.git portfolio/Koodyb
 git submodule add https://github.com/Koodybiglookyea/word-game.git portfolio/Koodybiglookyea/word-game
 git submodule add https://github.com/Koodybiglookyea/game2.0.git portfolio/Koodybiglookyea/game2.0
 git submodule add https://github.com/Koodybiglookyea/stackblitz-starters-dvua41te.git portfolio/Koodybiglookyea/stackblitz-starters-dvua41te
+git submodule add https://github.com/haha197/opendaygame_last.git portfolio/haha197/opendaygame_last
+git submodule add https://github.com/haha197/Whatnight.git portfolio/haha197/Whatnight
+git submodule add https://github.com/haha197/seclet_list.git portfolio/haha197/seclet_list
 git submodule add https://github.com/haha197/hahahah.git portfolio/haha197/hahahah
 git submodule add https://github.com/haha197/draw.git portfolio/haha197/draw
 git submodule add https://github.com/haha197/openDayFishTwoPeople.git portfolio/haha197/openDayFishTwoPeople
-git submodule add https://github.com/haha197/opendaygame_last.git portfolio/haha197/opendaygame_last
 git submodule add https://github.com/haha197/opendaygame_2.git portfolio/haha197/opendaygame_2
 git submodule add https://github.com/haha197/openday_game.git portfolio/haha197/openday_game
 git submodule add https://github.com/haha197/openday_gm.git portfolio/haha197/openday_gm
@@ -53,6 +61,13 @@ git submodule add https://github.com/BARON1118/hksc-water.git portfolio/BARON111
 git submodule add https://github.com/BARON1118/stackblitz-hksc-daily.git portfolio/BARON1118/stackblitz-hksc-daily
 git submodule add https://github.com/BARON1118/liftCounter.git portfolio/BARON1118/liftCounter
 git submodule add https://github.com/BARON1118/cotd.git portfolio/BARON1118/cotd
+git submodule add https://github.com/v1ann/block-blast.git portfolio/v1ann/block-blast
+git submodule add https://github.com/v1ann/stackblitz-starters-e2li6724.git portfolio/v1ann/stackblitz-starters-e2li6724
+git submodule add https://github.com/v1ann/2048.git portfolio/v1ann/2048
+git submodule add https://github.com/v1ann/stackblitz-starters-e2li0529.git portfolio/v1ann/stackblitz-starters-e2li0529
+git submodule add https://github.com/v1ann/stackblitz-starters-rd7a4qhx.git portfolio/v1ann/stackblitz-starters-rd7a4qhx
+git submodule add https://github.com/v1ann/stackblitz-starters-gsypszfb.git portfolio/v1ann/stackblitz-starters-gsypszfb
+git submodule add https://github.com/v1ann/stackblitz-0526.git portfolio/v1ann/stackblitz-0526
 git submodule add https://github.com/v1ann/0522.git portfolio/v1ann/0522
 git submodule add https://github.com/v1ann/stackblitz-0519-3.0.git portfolio/v1ann/stackblitz-0519-3.0
 git submodule add https://github.com/v1ann/stackblitz-0519-2.0.git portfolio/v1ann/stackblitz-0519-2.0
@@ -93,6 +108,7 @@ git submodule add https://github.com/2526452-cmd/6-2-2026.git portfolio/2526452-
 git submodule add https://github.com/2526452-cmd/-.git portfolio/2526452-cmd/-
 git submodule add https://github.com/2526452-cmd/q3-hk-.git portfolio/2526452-cmd/q3-hk-
 git submodule add https://github.com/2526452-cmd/Q4-HKSC-FRIEND.git portfolio/2526452-cmd/Q4-HKSC-FRIEND
+git submodule add https://github.com/2526453/song-recs.git portfolio/2526453/song-recs
 git submodule add https://github.com/2526453/wiggly-paint.git portfolio/2526453/wiggly-paint
 git submodule add https://github.com/2526453/green-aim.git portfolio/2526453/green-aim
 git submodule add https://github.com/2526453/rage-quit.git portfolio/2526453/rage-quit
@@ -101,6 +117,7 @@ git submodule add https://github.com/2526453/i-need-ur-locations.git portfolio/2
 git submodule add https://github.com/2526453/chatroom-but-GREEEEEEEEEEEN.git portfolio/2526453/chatroom-but-GREEEEEEEEEEEN
 git submodule add https://github.com/2526453/weeeeeeeeeeee.git portfolio/2526453/weeeeeeeeeeee
 git submodule add https://github.com/2526453/meow.git portfolio/2526453/meow
+git submodule add https://github.com/2526454-ship-it/math-quiz.git portfolio/2526454-ship-it/math-quiz
 git submodule add https://github.com/2526454-ship-it/stackblitz-starters-nbdwaf6f.git portfolio/2526454-ship-it/stackblitz-starters-nbdwaf6f
 git submodule add https://github.com/2526454-ship-it/Gamble-for-good.git portfolio/2526454-ship-it/Gamble-for-good
 git submodule add https://github.com/2526454-ship-it/NPCTGT.git portfolio/2526454-ship-it/NPCTGT
@@ -108,6 +125,7 @@ git submodule add https://github.com/2526454-ship-it/CW-chcicken-Warfare.git por
 git submodule add https://github.com/2526454-ship-it/my-eng-persent.git portfolio/2526454-ship-it/my-eng-persent
 git submodule add https://github.com/2526454-ship-it/GT.git portfolio/2526454-ship-it/GT
 git submodule add https://github.com/2526454-ship-it/ni.git portfolio/2526454-ship-it/ni
+git submodule add https://github.com/hayden626/Toronto-Raptors.git portfolio/hayden626/Toronto-Raptors
 git submodule add https://github.com/hayden626/black-sound.git portfolio/hayden626/black-sound
 git submodule add https://github.com/hayden626/drew.git portfolio/hayden626/drew
 git submodule add https://github.com/hayden626/NEURAL_MEMO.git portfolio/hayden626/NEURAL_MEMO

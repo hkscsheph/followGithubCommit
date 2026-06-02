@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>THE INFINITE TRIBUNAL: ASCENSION</title>
+    <style>
+      :root {
+        --primary: #39ff14;
+        --secondary: #ff007f;
+        --bg: #0c0f1d;
+        --overlay: rgba(10, 3, 20, 0.98);
+        --horror-layer: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZjAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMGg0MHY0MEgwVjB6bTIwIDIwaDIwdjIwSDIWMjB6TTAgMjBoMjB2MjBIMFYyMHoyMCAwaDIwdjIwSDIwVjB6Ii8+PC9nPjwvZz48L3N2Zz4=');
+      }
+
+      body {
+        background-color: var(--bg);
+        color: var(--primary);
+        font-family: 'Courier New', Courier, monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        transition: background-color 1s ease;
+      }
+
+      /* The Horror Background Layers */
+      #horror-bg-1,
+      #horror-bg-2 {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        z-index: -2;
+        transition: opacity 2s ease;
+      }
+
+      #horror-bg-1 {
+        background-image: var(--horror-layer);
+        filter: blur(2px);
+      }
+
+      /* The Eye */
+      #eye-container {
+        width: 140px;
+        height: 140px;
+        border-radius: 50% 0%;
+        transform: rotate(45deg);
+        border: 4px solid var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 25px;
+        background: #110022;
+        box-shadow: 0 0 20px var(--primary);
+        transition: all 0.5s ease;
+        position: relative;
+      }
+
+      #pupil {
+        width: 45px;
+        height: 45px;
+        background-color: var(--secondary);
+        border-radius: 50%;
+        transition: transform 0.05s linear, background-color 0.3s ease;
+      }
+
+      /* Core Game UI */
+      #game-box {
+        text-align: center;
+        width: 90%;
+        max-width: 550px;
+        padding: 30px;
+        border: 2px solid var(--secondary);
+        background: rgba(5, 5, 10, 0.95);
+        box-shadow: 0 0 25px rgba(255, 0, 127, 0.2);
+        position: relative;
+        transition: filter 0.5s ease, transform 0.5s ease;
+      }
+
+      #ticket-title {
+        color: var(--secondary);
+        font-size: 1rem;
+        letter-spacing: 3px;
+        margin-bottom: 15px;
+        font-weight: bold;
+        transition: color 1s ease;
+      }
+
+      #question {
+        font-size: 1.25rem;
+        margin-bottom: 25px;
+        line-height: 1.6;
+        min-height: 90px;
+        transition: font-family 1s ease, color 1s ease;
+      }
+
+      .options-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+
+      .btn {
+        background: #111;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+        padding: 15px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn:hover {
+        background: var(--primary);
+        color: #0c0f1d;
+        box-shadow: 0 0 15px var(--primary);
+      }
+
+      #ui-bar {
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.95rem;
+        border-top: 1px dashed var(--secondary);
+        padding-top: 15px;
+      }
+
+      /* Popup Layer (Explanation/Teachable Moment) */
+      #explanation-screen {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--overlay);
+        color: #fff;
+        box-sizing: border-box;
+        padding: 25px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid #ff0000;
+        z-index: 10;
+      }
+
+      #explanation-text {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        margin-bottom: 20px;
+        text-align: left;
+        width: 100%;
+      }
+      .highlight-math {
+        color: var(--primary);
+        font-weight: bold;
+      }
+
+      /* Reality Shifting Popups */
+      #shift-popup {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        background: #000;
+        border: 1px solid red;
+        color: red;
+        font-size: 1.5rem;
+        text-align: center;
+        z-index: 100;
+        font-family: serif;
+      }
+
+      /* Horror Animations */
+      @keyframes subtleVibrate {
+        0% {
+          transform: rotate(45deg) translate(0, 0);
+        }
+        50% {
+          transform: rotate(46deg) translate(1px, 1px);
+        }
+        100% {
+          transform: rotate(45deg) translate(0, 0);
+        }
+      }
+
+      @keyframes creepUp {
+        from {
+          text-shadow: 0 0 0 red;
+          color: inherit;
+        }
+        to {
+          text-shadow: 0 0 15px red, 2px 2px 2px #000;
+          color: #a00;
+        }
+      }
+
+      @keyframes staticFade {
+        0% {
+          opacity: 0;
+        }
+        10% {
+          opacity: 0.2;
+        }
+        15% {
+          opacity: 0.05;
+        }
+        100% {
+          opacity: 0.3;
+        }
+      }
+    </style>
+    <script src="/portfolio-auth-check.js"></script>
+  </head>
+  <body>
+    <div id="horror-bg-1"></div>
+    <div id="horror-bg-2"></div>
+
+    <div id="eye-container">
+      <div id="pupil"></div>
+    </div>
+
+    <div id="game-box">
+      <div id="ticket-title">// EVALUATION MATRIX (ZEN MODE) //</div>
+      <div id="question">The Eye is adjusting its focus...</div>
+      <div class="options-grid" id="answers"></div>
+
+      <div id="ui-bar">
+        <span id="score-display">Correct Submissions: 0</span>
+      </div>
+
+      <div id="explanation-screen">
+        <div
+          style="
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+          "
+        >
+          !! ANALYSIS INCORRECT !!
+        </div>
+        <div id="explanation-text"></div>
+        <button
+          class="btn"
+          style="border-color: #ff0000; color: #ff0000"
+          onclick="closeExplanation()"
+        >
+          Re-align Logarithmic Core
+        </button>
+      </div>
+    </div>
+
+    <div id="shift-popup"></div>
+
+    <script>
+      const questionEl = document.getElementById('question');
+      const answersEl = document.getElementById('answers');
+      const scoreEl = document.getElementById('score-display');
+      const pupil = document.getElementById('pupil');
+      const eyeContainer = document.getElementById('eye-container');
+      const gameBox = document.getElementById('game-box');
+      const explanationScreen = document.getElementById('explanation-screen');
+      const explanationText = document.getElementById('explanation-text');
+      const shiftPopup = document.getElementById('shift-popup');
+      const hBg1 = document.getElementById('horror-bg-1');
+      const hBg2 = document.getElementById('horror-bg-2');
+
+      let score = 0;
+      let correctAnswer = 0;
+      let lastTemplateIndex = -1;
+      let currentLevel = 0; // Horror progression stage
+
+      // Eye tracking logic
+      document.addEventListener('mousemove', (e) => {
+        if (currentLevel >= 5) return; // Stop tracking mouse if reality has collapsed
+        const rect = pupil.getBoundingClientRect();
+        const eyeX = rect.left + rect.width / 2;
+        const eyeY = rect.top + rect.height / 2;
+        const angle = Math.atan2(e.clientY - eyeY, e.clientX - eyeX);
+        const distance = Math.min(
+          15,
+          Math.hypot(e.clientX - eyeX, e.clientY - eyeY) / 25
+        );
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
+        pupil.style.transform = `translate(${x}px, ${y}px)`;
+      });
+
+      // The horror progression loop based on score thresholds
+      function checkHorrorAscension() {
+        if (score > 0 && score % 5 === 0) {
+          currentLevel++;
+          applyRealityShift(currentLevel);
+        }
+      }
+
+      // Apply visual degradation and horror effects
+      function applyRealityShift(level) {
+        answersEl.style.visibility = 'hidden'; // Hide input during shift
+        let msg = '';
+
+        switch (level) {
+          case 1: // Score 5: Subtle shift
+            msg = 'Reality Anchor: Drifting';
+            eyeContainer.style.animation = 'subtleVibrate 0.1s infinite';
+            pupil.style.backgroundColor = '#400';
+            gameBox.style.transform = 'skewY(1deg)';
+            break;
+          case 2: // Score 10: Colors decay, backgrounds appear
+            msg = 'The Interface bleeds.';
+            document.documentElement.style.setProperty('--primary', '#900');
+            document.documentElement.style.setProperty('--secondary', '#300');
+            hBg1.style.opacity = '0.1'; // SVG pattern becomes slightly visible
+            questionEl.style.fontFamily = 'serif';
+            break;
+          case 3: // Score 15: Structural breakdown, entity appears
+            msg = 'IT IS WATCHING';
+            hBg1.style.animation = 'staticFade 5s infinite alternate';
+            gameBox.style.filter = 'contrast(200%) blur(0.5px)';
+            hBg2.style.backgroundImage =
+              "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PGVsbGlwc2UgY3g9IjUwIiBjeT0iNTAiIHJ4PSI0MCIgcnk9IjEwIiBmaWxsPSIjNTAwIi8+PGVsbGlwc2UgY3g9IjU1IiBjeT0iNTAiIHJ4PSIxMCIgcnk9IjUwIiBmaWxsPSIjMzAwIi8+PGVsbGlwc2UgY3g9IjU1IiBjeT0iNTAiIHJ4PSIzIiByeT0iMjUiIGZpbGw9IiMwMDAiLz48L3N2Zz4=')"; // A crude alien eye
+            hBg2.style.opacity = '0.01'; // Very subtle hint of the entity
+            break;
+          case 4: // Score 20: Panic state, text decay
+            msg = 'ASCENSION IMMINENT. SURRENDER.';
+            questionEl.style.animation = 'creepUp 1s forwards';
+            eyeContainer.style.transform = 'rotate(45deg) scale(1.5)';
+            hBg2.style.opacity = '0.3'; // Entity is clearer
+            break;
+          case 5: // Score 25+: Final collapse
+            msg = 'REALITY COLLAPSED';
+            document.body.style.backgroundColor = '#000';
+            gameBox.style.opacity = '0.05'; // Interface almost gone
+            hBg2.style.filter = 'contrast(500%)';
+            hBg2.style.opacity = '0.9'; // Entity fully revealed
+            hBg2.style.backgroundSize = 'cover';
+            eyeContainer.style.opacity = '0';
+            break;
+        }
+
+        // Show the "weird popup"
+        shiftPopup.innerText = msg;
+        shiftPopup.style.display = 'block';
+
+        // Hide the popup and resume game after 2 seconds
+        setTimeout(() => {
+          shiftPopup.style.display = 'none';
+          answersEl.style.visibility = 'visible';
+          if (level < 5) generateUniqueQuestion();
+        }, 2000);
+      }
+
+      /* --- Standard Game Logic (from previous version) --- */
+
+      const cosmicSubjects = [
+        { name: 'sentient algorithms', single: 'sentient algorithm' },
+        { name: '4D hyper-cubes', single: '4D hyper-cube' },
+        { name: 'pocket dimensions', single: 'pocket dimension' },
+        { name: 'void leviathans', single: 'void leviathan' },
+        { name: 'crying calculators', single: 'crying calculator' },
+      ];
+
+      const cosmicActions = [
+        'collapsing into a singularity event',
+        'evading tax parameters set by Zeus',
+        'harvesting residual dark matter',
+        'leaking structural matrix data into the void',
+      ];
+
+      function generateUniqueQuestion() {
+        if (shiftPopup.style.display === 'block' || currentLevel >= 5) return; // Pause during ascension or after collapse
+
+        const subject =
+          cosmicSubjects[Math.floor(Math.random() * cosmicSubjects.length)];
+        const action =
+          cosmicActions[Math.floor(Math.random() * cosmicActions.length)];
+        const valA = Math.floor(Math.random() * 8) + 3; // 3 to 10
+        const valB = Math.floor(Math.random() * 6) + 2; // 2 to 7
+
+        let templateIndex = Math.floor(Math.random() * 3);
+        while (templateIndex === lastTemplateIndex) {
+          templateIndex = Math.floor(Math.random() * 3);
+        }
+        lastTemplateIndex = templateIndex;
+
+        let questionText = '';
+        let breakdownHTML = '';
+
+        if (templateIndex === 0) {
+          correctAnswer = valA * valB;
+          questionText = `A cluster of ${valA} separate ${subject.name} decided to initiate a cycle. If every single unit spawns exactly ${valB} spatial ripples while ${action}, what is the total count of ripples generated?`;
+          breakdownHTML = `• Population count: <span class="highlight-math">${valA} ${subject.name}</span>.<br>• Output rate per entity: <span class="highlight-math">${valB} ripples</span>.<br>• Mathematical path: Multiplicative scaling dictates that <span class="highlight-math">${valA} × ${valB} = ${correctAnswer}</span>.`;
+        } else if (templateIndex === 1) {
+          const baseValue = valA * 10;
+          correctAnswer = baseValue - valB * 4;
+          questionText = `An archive contains a storage batch of ${baseValue} stable ${subject.name}. If ${valB} anomalies manifest—with each anomaly permanently destroying exactly 4 of those items while ${action}—how many stable items remain?`;
+          breakdownHTML = `• Baseline storage total: <span class="highlight-math">${baseValue}</span>.<br>• Destruction rate: <span class="highlight-math">${valB} anomalies × 4 items = ${
+            valB * 4
+          } total lost</span>.<br>• Mathematical path: Order of operations requires solving the decay rate first, then subtracting: <span class="highlight-math">${baseValue} - (${valB} × 4) = ${correctAnswer}</span>.`;
+        } else {
+          correctAnswer = valA + 15;
+          questionText = `The Eye observes ${valA} distinct ${subject.name} actively ${action}. Suddenly, a temporal distortion wave brings exactly 15 more into the local container. What is the sum configuration total?`;
+          breakdownHTML = `• Initial observations: <span class="highlight-math">${valA} items</span>.<br>• Displacement additions: <span class="highlight-math">+15 items</span>.<br>• Mathematical path: Simple linear summation requires processing <span class="highlight-math">${valA} + 15 = ${correctAnswer}</span>.`;
+        }
+
+        questionEl.innerText = questionText;
+        questionEl.dataset.currentBreakdown = breakdownHTML;
+
+        let choices = new Set([correctAnswer]);
+        while (choices.size < 4) {
+          let variance =
+            (Math.floor(Math.random() * 6) + 1) *
+            (Math.random() > 0.5 ? 1 : -1);
+          let wrongAns = correctAnswer + variance;
+          if (wrongAns >= 0 && wrongAns !== correctAnswer)
+            choices.add(wrongAns);
+        }
+
+        answersEl.innerHTML = '';
+        Array.from(choices)
+          .sort(() => Math.random() - 0.5)
+          .forEach((choice) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = choice;
+            btn.onclick = () => submitAnswer(choice);
+            answersEl.appendChild(btn);
+          });
+      }
+
+      function submitAnswer(chosen) {
+        if (chosen === correctAnswer) {
+          score++;
+          if (currentLevel < 2)
+            pupil.style.backgroundColor =
+              '#39ff14'; // Green feedback if still early
+          else pupil.style.backgroundColor = '#900'; // Red feedback later
+
+          updateUI();
+          checkHorrorAscension(); // Trigger horror progression check
+
+          // If we didn't just trigger an ascension shift, generate next question
+          if (shiftPopup.style.display !== 'block') generateUniqueQuestion();
+        } else {
+          // Wrong feedback color changes based on horror level
+          pupil.style.backgroundColor = currentLevel < 2 ? '#ff0000' : '#000';
+          updateUI();
+          showExplanation(chosen);
+        }
+      }
+
+      function showExplanation(userAnswer) {
+        explanationText.innerHTML = `Your calculation system provided: <span class="highlight-math" style="color:#ff0000">${userAnswer}</span>.<br>The absolute logical requirement is: <span class="highlight-math">${correctAnswer}</span>.<br><br><strong>Step-by-Step Resolution Architecture:</strong><br>${questionEl.dataset.currentBreakdown}`;
+        explanationScreen.style.display = 'flex';
+      }
+
+      function closeExplanation() {
+        explanationScreen.style.display = 'none';
+        // Return pupil to its stage-appropriate background color
+        pupil.style.backgroundColor = currentLevel < 1 ? '#ff007f' : '#400';
+        generateUniqueQuestion();
+      }
+
+      function updateUI() {
+        scoreEl.innerText = `Correct Submissions: ${score}`;
+      }
+
+      // Init
+      generateUniqueQuestion();
+    </script>
+  </body>
+</html>
