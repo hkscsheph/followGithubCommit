@@ -83,10 +83,7 @@
       .repo-title {
         text-decoration: none;
         color: inherit;
-      }
-
-      .repo-title:hover {
-        text-decoration: underline;
+        cursor: default;
       }
 
       .repo-name {
@@ -470,9 +467,9 @@
             // For directories, try to load index.html as iframe
             if (item.type === 'directory') {
               card.innerHTML = `
-                <a href="${item.repoUrl}" target="_blank" class="repo-title" onclick="event.stopPropagation();">
-                  <div class="repo-name">📁 ${item.name}</div>
-                </a>
+                <div class="repo-title">
+                  <div class="repo-name">📁 Project ${item.name}</div>
+                </div>
                 <div class="repo-description">點擊卡片在新視窗開啟</div>
                 <iframe src="portfolio/${githubUsername}/${item.name}/index.html" class="repo-iframe" title="${item.name}"></iframe>
               `;
@@ -490,9 +487,9 @@
               };
             } else {
               card.innerHTML = `
-                <a href="${item.repoUrl}" target="_blank" class="repo-title" onclick="event.stopPropagation();">
-                  <div class="repo-name">📄 ${item.name}</div>
-                </a>
+                <div class="repo-title">
+                  <div class="repo-name">📄 File ${item.name}</div>
+                </div>
                 <div class="repo-description">檔案</div>
               `;
               

@@ -144,10 +144,7 @@
         font-weight: bold;
         color: var(--accent);
         text-decoration: none;
-      }
-
-      .username:hover {
-        text-decoration: underline;
+        cursor: default;
       }
 
       .last-active {
@@ -494,9 +491,8 @@
             const commitsHtml = res.commits.map((commit, idx) => {
               const msg = commit.message.split('\n')[0].substring(0, 40); // 只取第一行，最多40字
               const time = timeAgo(commit.date);
-              const repoShort = commit.repo.split('/')[1];
               return `<div style="font-size: 0.8rem; margin-bottom: 5px; display: flex; gap: 8px; align-items: center;">
-                <a href="https://github.com/${commit.repo}" target="_blank" style="color: var(--accent); text-decoration: none; min-width: 50px; cursor: pointer;">${repoShort}</a>
+                <span style="color: var(--accent); min-width: 50px; cursor: default;">Repository ${idx + 1}</span>
                 <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📝 ${msg}</span>
                 <span style="color: var(--text-secondary); min-width: 60px; text-align: right;">${time}</span>
               </div>`;
@@ -513,7 +509,7 @@
                 <div class="user-header">
                     <img src="${avatarUrl}" class="avatar" alt="${displayName}">
                     <div>
-                        <a href="https://github.com/${res.user}" class="username">${displayName}</a>
+                        <span class="username">${displayName}</span>
                         ${statusBadge}
                     </div>
                 </div>
