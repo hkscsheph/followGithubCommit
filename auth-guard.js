@@ -6,39 +6,29 @@
 class AuthGuard {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
+    this.allowedDomains = [];
     this.allowedEmails = [];
     this.whitelistLoaded = false;
   }
 
   /**
-   * Load whitelist of allowed emails
-   */
-  async loadWhitelist() {
-    if (this.whitelistLoaded) return;
-    
-    try {
-      const response = await fetch('/whitelist.json');
-      const data = await response.json();
-      this.allowedEmails = data.allowedEmails || [];
-      this.whitelistLoaded = true;
-    } catch (error) {
-      console.error('Failed to load whitelist:', error);
-      this.allowedEmails = [];
-      this.whitelistLoaded = true;
-    }
-  }
-
-  /**
-   * Check if email is in whitelist
+   * Check if email is in whitelist (by domain or specific email)
    * @param {string} email - Email to check
    * @returns {boolean} True if email is allowed
    */
   isEmailAllowed(email) {
     if (!email) return false;
     const normalizedEmail = email.toLowerCase().trim();
-    return this.allowedEmails.some(allowed => 
+    
+    // Check if email matches any allowed domain
+    const domainAllowed = this.allowedDomains.some(domain => normalizedEmail.endsWith(domain));
+    if (domainAllowed) return true;
+    
+    // Check if email is in allowed emails list
+    const emailAllowed = this.allowedEmails.some(allowed => 
       allowed.toLowerCase() === normalizedEmail
     );
+    return emailAllowed;
   }
 
   /**
@@ -81,14 +71,20 @@ class AuthGuard {
   }
 
   /**
-   * Validate if email belongs to allowed domains
-   * @param {string} email - Email address to validate
-   * @returns {boolean} True if email domain is allowed
+   * Load whitelist of allowed domains and emails
    */
-  validateEmailDomain(email) {
-    if (!email) return false;
-    const normalizedEmail = email.toLowerCase().trim();
-    return this.allowedDomains.some(domain => normalizedEmail.endsWith(domain));
+  async loadWhitelist() {
+    if (this.whitelistLoaded) return;
+    
+    try {
+      const response = await fetch('/whitelist.json');
+      const data = await response.json();
+      this.allowedDomains = data.allowedDomains || this.allowedDomains;
+      this.allowedEmails = data.allowedEmails || this.allowedEmails;
+      this.whitelistLoaded = true;
+    } catch (error) {
+      console.error('Failed to load whitelist:', error);
+    }
   }
 
   /**

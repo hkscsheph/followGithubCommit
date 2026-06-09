@@ -72,12 +72,20 @@ This guide covers setting up Supabase for **Google OAuth Authentication** and **
 
 ### Step 6: Email Whitelist Configuration
 
-The system uses a whitelist to restrict access to specific emails:
+The system uses domain-based validation to restrict access:
 
 1. Edit `whitelist.json` in the root directory
-2. Add or remove email addresses from the `allowedEmails` array
-3. Changes take effect immediately on next login attempt
-4. All portfolio pages are protected and will redirect to login if accessed by non-whitelisted users
+2. Modify the `allowedDomains` array to add/remove email domains
+3. Default allowed domains: `@creativehk.edu.hk` and `@student.creativehk.edu.hk`
+4. Changes take effect immediately on next login attempt
+5. All portfolio pages are protected and will redirect to login if accessed by non-allowed users
+
+**Example whitelist.json:**
+```json
+{
+  "allowedDomains": ["@creativehk.edu.hk", "@student.creativehk.edu.hk"]
+}
+```
 
 ### Troubleshooting Google OAuth
 

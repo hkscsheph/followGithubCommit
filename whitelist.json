@@ -1,4 +1,7 @@
 {
+  "allowedDomains": [
+    "@creativehk.edu.hk"
+  ],
   "allowedEmails": [
     "2223107@student.creativehk.edu.hk",
     "2223111@student.creativehk.edu.hk",
@@ -18,8 +21,6 @@
     "2526465@student.creativehk.edu.hk",
     "2223176@student.creativehk.edu.hk",
     "2223179@student.creativehk.edu.hk",
-    "2526470@student.creativehk.edu.hk",
-    "shepherdng@creativehk.edu.hk",
-    "peterng@creativehk.edu.hk"
+    "2526470@student.creativehk.edu.hk"
   ]
 }

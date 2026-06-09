@@ -188,6 +188,7 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="auth-guard.js"></script>
+    <script src="username-masker.js"></script>
   </head>
   <body style="visibility: hidden;">
     <div class="container">
@@ -430,13 +431,21 @@
           return;
         }
 
-        document.getElementById('pageTitle').innerText = `${username} 的作品集`;
+        // Initialize username masker
+        const usernameMasker = new UsernameMasker();
+        await usernameMasker.loadMapping();
+        
+        // Convert display name back to GitHub username for data fetching
+        const githubUsername = usernameMasker.toGithubUsername(username);
+        const displayName = usernameMasker.toDisplayName(githubUsername) || username;
+
+        document.getElementById('pageTitle').innerText = `${displayName} 的作品集`;
 
         try {
           // Fetch portfolio data from static JSON file
           const response = await fetch('/portfolio-data.json');
           const allData = await response.json();
-          const items = allData[username] || [];
+          const items = allData[githubUsername] || [];
 
           if (!items || items.length === 0) {
             document.getElementById('empty').style.display = 'block';
@@ -445,7 +454,7 @@
           }
 
           // Fetch like counts from Supabase
-          const likesMap = await LikeService.fetchLikes(username);
+          const likesMap = await LikeService.fetchLikes(githubUsername);
 
           // Display items
           const grid = document.getElementById('reposGrid');
@@ -456,7 +465,7 @@
             card.className = 'repo-card';
 
             const likeCount = likesMap[item.name] || 0;
-            const isLiked = LikeStorage.isLiked(username, item.name);
+            const isLiked = LikeStorage.isLiked(githubUsername, item.name);
 
             // For directories, try to load index.html as iframe
             if (item.type === 'directory') {
@@ -465,17 +474,17 @@
                   <div class="repo-name">📁 ${item.name}</div>
                 </a>
                 <div class="repo-description">點擊卡片在新視窗開啟</div>
-                <iframe src="portfolio/${username}/${item.name}/index.html" class="repo-iframe" title="${item.name}"></iframe>
+                <iframe src="portfolio/${githubUsername}/${item.name}/index.html" class="repo-iframe" title="${item.name}"></iframe>
               `;
               
               const footer = document.createElement('div');
               footer.className = 'card-footer';
-              footer.appendChild(renderLikeButton(username, item.name, likeCount, isLiked));
+              footer.appendChild(renderLikeButton(githubUsername, item.name, likeCount, isLiked));
               card.appendChild(footer);
 
               card.onclick = (e) => {
                 if (!e.target.closest('.like-btn')) {
-                  const portfolioPath = `portfolio/${username}/${item.name}/index.html`;
+                  const portfolioPath = `portfolio/${githubUsername}/${item.name}/index.html`;
                   window.location.href = `/portfolio-wrapper.html?path=${encodeURIComponent(portfolioPath)}`;
                 }
               };
@@ -489,7 +498,7 @@
               
               const footer = document.createElement('div');
               footer.className = 'card-footer';
-              footer.appendChild(renderLikeButton(username, item.name, likeCount, isLiked));
+              footer.appendChild(renderLikeButton(githubUsername, item.name, likeCount, isLiked));
               card.appendChild(footer);
             }
 

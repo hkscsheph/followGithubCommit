@@ -22,11 +22,13 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     // Load whitelist
+    let allowedDomains = ['@creativehk.edu.hk', '@student.creativehk.edu.hk'];
     let allowedEmails = [];
     try {
       const response = await fetch('/whitelist.json');
       const data = await response.json();
-      allowedEmails = data.allowedEmails || [];
+      allowedDomains = data.allowedDomains || allowedDomains;
+      allowedEmails = data.allowedEmails || allowedEmails;
     } catch (error) {
       console.error('Failed to load whitelist:', error);
     }
@@ -35,9 +37,16 @@
     function isEmailAllowed(email) {
       if (!email) return false;
       const normalizedEmail = email.toLowerCase().trim();
-      return allowedEmails.some(allowed => 
+      
+      // Check if email matches any allowed domain
+      const domainAllowed = allowedDomains.some(domain => normalizedEmail.endsWith(domain));
+      if (domainAllowed) return true;
+      
+      // Check if email is in allowed emails list
+      const emailAllowed = allowedEmails.some(allowed => 
         allowed.toLowerCase() === normalizedEmail
       );
+      return emailAllowed;
     }
 
     try {

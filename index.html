@@ -228,6 +228,7 @@
     </div>
 
     <script src="auth-guard.js"></script>
+    <script src="username-masker.js"></script>
     <script>
       // Supabase Configuration
       const SUPABASE_URL = 'https://wnvgjuhxxwnihmjfrcvk.supabase.co';
@@ -238,7 +239,7 @@
       // Hide body initially until auth check completes
       document.body.style.visibility = 'hidden';
 
-      // 監控目標名單
+      // 監控目標名單 (GitHub usernames)
       const targetUsers = [
         // 'hkscsheph',
         '2223107-cami',
@@ -274,22 +275,32 @@
         return false;
       }
 
+      // Initialize username masker
+      const usernameMasker = new UsernameMasker();
+      let displayUsers = [];
+
       // 初始化卡片
-      function initCards() {
+      async function initCards() {
         grid.innerHTML = '';
-        targetUsers.forEach((user) => {
+        
+        // Load username mapping and get display names
+        await usernameMasker.loadMapping();
+        displayUsers = await usernameMasker.getDisplayUsers(targetUsers);
+        
+        displayUsers.forEach((displayName, index) => {
+          const githubUser = targetUsers[index];
           const card = document.createElement('div');
           card.className = 'card';
-          card.id = `card-${user}`;
+          card.id = `card-${githubUser}`;
           card.innerHTML = `
                 <div class="user-header">
                     <div class="avatar"></div>
                     <div>
-                        <a href="repos.html?user=${user}" class="username">${user}</a>
-                        <span class="badge badge-none" id="badge-${user}">等待中</span>
+                        <a href="repos.html?user=${displayName}" class="username">${displayName}</a>
+                        <span class="badge badge-none" id="badge-${githubUser}">等待中</span>
                     </div>
                 </div>
-                <div class="commit-info" id="info-${user}">
+                <div class="commit-info" id="info-${githubUser}">
                     <div class="repo-name">讀取中...</div>
                 </div>
             `;
@@ -470,6 +481,9 @@
           let statusBadge = '';
           let contentHtml = '';
           let avatarUrl = res.avatar || 'https://github.com/github.png?size=40';
+          
+          // Get display name for this user
+          const displayName = usernameMasker.toDisplayName(res.user);
 
           if (res.error) {
             statusBadge = `<span class="badge badge-error">${res.error}</span>`;
@@ -495,11 +509,11 @@
           }
 
           card.innerHTML = `
-                <button class="portfolio-btn" onclick="window.location.href='repos.html?user=${res.user}'">📁 作品集</button>
+                <button class="portfolio-btn" onclick="window.location.href='repos.html?user=${displayName}'">📁 作品集</button>
                 <div class="user-header">
-                    <img src="${avatarUrl}" class="avatar" alt="${res.user}">
+                    <img src="${avatarUrl}" class="avatar" alt="${displayName}">
                     <div>
-                        <a href="https://github.com/${res.user}" class="username">${res.user}</a>
+                        <a href="https://github.com/${res.user}" class="username">${displayName}</a>
                         ${statusBadge}
                     </div>
                 </div>
